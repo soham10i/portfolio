@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   DARK THEME — Deep Navy / Slate
+   ================================================================ */
+[data-theme="dark"] {
+  --background: 222 30% 5%;
+  --background-hex: #080c14;
+  --foreground: 210 20% 96%;
+  --card: 222 25% 8%;
+  --card-foreground: 210 20% 96%;
+  --popover: 222 25% 8%;
+  --popover-foreground: 210 20% 96%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 60% 50%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 190 80% 45%;
+  --accent-foreground: 222 30% 5%;
+  --muted: 220 15% 14%;
+  --muted-foreground: 215 16% 55%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 15% 16%;
+  --input: 220 15% 16%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+  --gradient-start: #3b82f6;
+  --gradient-end: #8b5cf6;
+  --ripple-color: rgba(100, 149, 237, 0.5);
+}
+
+/* ================================================================
+   LIGHT THEME — Soft Blue / Eye-Friendly
+   ================================================================ */
+[data-theme="light"] {
+  --background: 210 30% 97%;
+  --background-hex: #f0f4f8;
+  --foreground: 220 25% 12%;
+  --card: 210 25% 99%;
+  --card-foreground: 220 25% 12%;
+  --popover: 210 25% 99%;
+  --popover-foreground: 220 25% 12%;
+  --primary: 217 80% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 60% 52%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 190 75% 38%;
+  --accent-foreground: 0 0% 100%;
+  --muted: 210 20% 93%;
+  --muted-foreground: 220 10% 42%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 88%;
+  --input: 210 20% 88%;
+  --ring: 217 80% 48%;
+  --radius: 0.75rem;
+  --gradient-start: #2563eb;
+  --gradient-end: #7c3aed;
+  --ripple-color: rgba(59, 130, 246, 0.35);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: auto;
+    color-scheme: dark light;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: hsl(var(--background));
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.35);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  }
+
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .glass-subtle {
+    background: hsl(var(--card) / 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  /* Smooth theme transition for all theme-able elements */
+  .theme-transition {
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  /* 3D Card utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+}
