@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import Navigation from '@/components/Navigation';
 import Hero from '@/sections/Hero';
 import About from '@/sections/About';
@@ -12,11 +12,6 @@ import Footer from '@/sections/Footer';
 const Chatbot = lazy(() => import('@/components/Chatbot'));
 
 export default function Home() {
-  // Update document title
-  useEffect(() => {
-    document.title = 'Soham Patel — M.Sc. AI & Software Engineer';
-  }, []);
-
   return (
     <div className="relative min-h-screen bg-background text-foreground">
       <Navigation />

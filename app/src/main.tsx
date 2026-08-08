@@ -19,13 +19,13 @@ function raf(time: number) {
 }
 requestAnimationFrame(raf)
 
-// Sync Lenis with anchor clicks
+// Sync Lenis with anchor clicks (only for anchors that target a real element)
 document.addEventListener('click', (e) => {
   const target = e.target as HTMLElement
   const anchor = target.closest('a[href^="#"]')
   if (anchor) {
     const id = anchor.getAttribute('href')?.slice(1)
-    if (id) {
+    if (id && document.getElementById(id)) {
       e.preventDefault()
       lenis.scrollTo(`#${id}`, { offset: -80 })
     }

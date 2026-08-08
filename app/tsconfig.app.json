@@ -8,7 +8,9 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
-    "baseUrl": ".",
+    /* No baseUrl: it's deprecated in TS 6+, and since TS 5.0 "paths"
+       resolve relative to this file. Vite has its own alias in
+       vite.config.ts; this entry is for type-checking and the editor. */
     "paths": {
       "@/*": [
         "./src/*"

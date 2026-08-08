@@ -44,29 +44,29 @@ export function useInView<T extends HTMLElement>(options?: IntersectionObserverI
 
 export function useActiveSection(sectionIds: string[]) {
   const [activeSection, setActiveSection] = useState(sectionIds[0] || '');
+  const idsKey = sectionIds.join(',');
 
   useEffect(() => {
-    const observers: IntersectionObserver[] = [];
+    const ids = idsKey.split(',').filter(Boolean);
+    // A fixed-ratio threshold never fires for sections taller than ~3x the
+    // viewport. Instead, mark a section active while it crosses the middle
+    // band of the viewport — works for any section height.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
+    );
 
-    sectionIds.forEach((id) => {
+    ids.forEach((id) => {
       const element = document.getElementById(id);
-      if (!element) return;
-
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setActiveSection(id);
-          }
-        },
-        { threshold: 0.3 }
-      );
-
-      observer.observe(element);
-      observers.push(observer);
+      if (element) observer.observe(element);
     });
 
-    return () => observers.forEach((o) => o.disconnect());
-  }, [sectionIds]);
+    return () => observer.disconnect();
+  }, [idsKey]);
 
   return activeSection;
 }

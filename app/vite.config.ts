@@ -4,9 +4,12 @@ import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: './',
-  plugins: [inspectAttr(), react()],
+export default defineConfig(({ command }) => ({
+  // base must be absolute for BrowserRouter: with './', assets 404 on hard
+  // loads of nested routes like /project/:id (blank page).
+  base: '/',
+  // inspectAttr stamps source-path attributes on every DOM element — dev only
+  plugins: [...(command === 'serve' ? [inspectAttr()] : []), react()],
   build: {
     chunkSizeWarningLimit: 600,
   },
@@ -24,4 +27,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-})
+}))

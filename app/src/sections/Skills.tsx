@@ -1,16 +1,15 @@
 import { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { skills, education, talks } from '@/data/skills';
+import { education, talks, skillTiers } from '@/data/skills';
 import { Mic } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const categoryGradients: Record<string, string> = {
-  'ML/AI': 'from-blue-500/50 to-indigo-500/50',
-  'Engineering': 'from-violet-500/50 to-fuchsia-500/50',
-  'Data/Cloud': 'from-teal-500/50 to-cyan-500/50',
-  'Leadership': 'from-amber-500/50 to-orange-500/50',
+const tierStyles: Record<string, string> = {
+  'Production-proven': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 dark:border-blue-500/20',
+  'Strong working knowledge': 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/30 dark:border-violet-500/20',
+  'Explored in projects': 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/30 dark:border-teal-500/20',
 };
 
 export default function Skills() {
@@ -26,17 +25,9 @@ export default function Skills() {
         scrollTrigger: { trigger: '.skill-heading', start: 'top 85%', toggleActions: 'play none none none' },
       });
 
-      gsap.fromTo('.skill-card', { y: 40, opacity: 0 }, {
-        y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out',
-        scrollTrigger: { trigger: '.skill-grid', start: 'top 80%', toggleActions: 'play none none none' },
-      });
-
-      gsap.fromTo('.skill-bar', { width: 0 }, {
-        width: 'var(--target-width)',
-        duration: 1.2,
-        stagger: 0.03,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: '.skill-grid', start: 'top 75%', toggleActions: 'play none none none' },
+      gsap.fromTo('.skill-tier', { y: 40, opacity: 0 }, {
+        y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out',
+        scrollTrigger: { trigger: '.skill-tiers', start: 'top 80%', toggleActions: 'play none none none' },
       });
 
       gsap.fromTo('.edu-item', { y: 30, opacity: 0 }, {
@@ -48,12 +39,6 @@ export default function Skills() {
     return () => ctx.revert();
   }, []);
 
-  const grouped = skills.reduce((acc, s) => {
-    if (!acc[s.category]) acc[s.category] = [];
-    acc[s.category].push(s);
-    return acc;
-  }, {} as Record<string, typeof skills>);
-
   return (
     <section id="skills" ref={sectionRef} className="relative py-32 sm:py-48">
       <div className="mx-auto max-w-6xl px-6">
@@ -64,31 +49,23 @@ export default function Skills() {
           </h2>
         </div>
 
-        <div className="skill-grid grid grid-cols-1 lg:grid-cols-2 gap-10 mb-40">
-          {Object.entries(grouped).map(([category, items]) => {
-            const grad = categoryGradients[category] || 'from-foreground/30 to-foreground/10';
-            return (
-              <div key={category} className="skill-card">
-                <h3 className="text-[10px] font-medium text-muted-foreground mb-6 uppercase tracking-[0.2em]">{category}</h3>
-                <div className="space-y-4">
-                  {items.map((skill) => (
-                    <div key={skill.name}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm">{skill.name}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{skill.level}%</span>
-                      </div>
-                      <div className="h-[3px] rounded-full bg-muted/50 overflow-hidden">
-                        <div
-                          className={`skill-bar h-full rounded-full bg-gradient-to-r ${grad}`}
-                          style={{ '--target-width': `${skill.level}%` } as React.CSSProperties}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* Three-tier skill tags */}
+        <div className="skill-tiers space-y-10 mb-40">
+          {skillTiers.map((tier) => (
+            <div key={tier.label} className="skill-tier">
+              <h3 className="text-[10px] font-medium text-muted-foreground mb-4 uppercase tracking-[0.2em]">{tier.label}</h3>
+              <div className="flex flex-wrap gap-2">
+                {tier.items.map((skill) => (
+                  <span
+                    key={skill}
+                    className={`px-3 py-1.5 rounded-full text-sm border ${tierStyles[tier.label] || 'bg-muted/30 text-muted-foreground border-border/30'}`}
+                  >
+                    {skill}
+                  </span>
+                ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Education */}
@@ -127,7 +104,7 @@ export default function Skills() {
                       <h4 className="font-semibold">{talk.title}</h4>
                       <p className="text-sm text-muted-foreground mt-1">
                         {talk.event} · {talk.date}
-                        {talk.grade && <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-500">Grade: {talk.grade}</span>}
+                        {talk.grade && <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400">Grade: {talk.grade}</span>}
                       </p>
                       <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{talk.description}</p>
                     </div>

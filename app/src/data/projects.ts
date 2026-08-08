@@ -2,6 +2,32 @@ import type { Project } from '@/types';
 
 export const projects: Project[] = [
   {
+    id: 'digital-twin-smart-factory-2',
+    title: 'Smart Tabletop Factory — Digital Twin 2.0',
+    tagline: 'Real-time 3D digital twin with live joint telemetry, motor health monitoring, and WebSocket-connected order orchestration',
+    description:
+      'Real-time 3D digital twin of an automated warehouse factory: live joint telemetry with error tracking, motor current & health monitoring, sensor states, and order orchestration (retrieve/store/full-cycle) over a WebSocket-connected backend. Hardware-agnostic adapter layer for MQTT/OPC-UA.',
+    longDescription:
+      'An evolution of the original Smart Tabletop Factory project, this Digital Twin 2.0 adds real-time 3D visualization with live joint telemetry, motor health monitoring, and comprehensive sensor state tracking. The system orchestrates orders (retrieve, store, full-cycle) through a WebSocket-connected backend that communicates with the physical factory hardware via a hardware-agnostic adapter layer supporting MQTT and OPC-UA protocols.',
+    thumbnail: '/images/digital-twin.jpg',
+    images: ['/images/digital-twin-1.jpg', '/images/digital-twin-2.jpg'],
+    demoUrl: '/factory',
+    githubUrl: 'https://github.com/soham10i/stf-hw',
+    technologies: ['Three.js', 'WebSockets', 'Python', 'FastAPI', 'MQTT', 'Docker'],
+    highlights: [
+      'Real-time 3D visualization with live joint telemetry',
+      'Motor current & health monitoring with error tracking',
+      'Order orchestration: retrieve, store, full-cycle',
+      'WebSocket-connected backend for live updates',
+      'Hardware-agnostic adapter layer for MQTT/OPC-UA',
+    ],
+    timeline: 'Oct 2025 – Mar 2026',
+    role: 'Lead Developer & AI Architect',
+    status: 'completed',
+    category: 'AI/ML',
+    impact: 'FLAGSHIP — Real-time 3D digital twin with live telemetry',
+  },
+  {
     id: 'digital-twin-smart-factory',
     title: 'Industry 4.0 Digital Twin — Smart Factory Dashboard',
     tagline: 'Real-time predictive maintenance dashboard for warehouse automation with MQTT sensor pipelines',
@@ -11,7 +37,7 @@ export const projects: Project[] = [
       'This project addresses the growing need for intelligent monitoring in Industry 4.0 environments. I designed and implemented a complete Digital Twin architecture for a Smart Tabletop Factory (STF) cookie production line. The system ingests real-time sensor data via MQTT brokers, stores time-series data in InfluxDB, and presents actionable insights through a Streamlit dashboard. The entire stack is containerized with Docker Compose, making deployment reproducible across environments. Key features include anomaly detection alerts, equipment health scoring, and predictive maintenance scheduling.',
     thumbnail: '/images/digital-twin.jpg',
     images: ['/images/digital-twin-1.jpg', '/images/digital-twin-2.jpg'],
-    demoUrl: 'https://streamlit-demo-placeholder.com',
+    demoUrl: '/factory',
     githubUrl: 'https://github.com/soham10i/stf-hw',
     technologies: ['Python', 'FastAPI', 'MQTT', 'Docker', 'MySQL', 'Streamlit', 'InfluxDB'],
     highlights: [
@@ -25,6 +51,7 @@ export const projects: Project[] = [
     role: 'Lead Developer & AI Architect',
     status: 'completed',
     category: 'AI/ML',
+    impact: 'Predictive maintenance with 85% failure prediction accuracy',
   },
   {
     id: 'realtime-scene-understanding',
@@ -36,7 +63,7 @@ export const projects: Project[] = [
       'This project pushes the boundaries of real-time computer vision by combining object detection (YOLOv8) with vision-language models (VLM) in an agentic framework. The system processes live video streams, detects objects in real-time, and generates natural language descriptions of the scene. The agentic architecture allows the system to make decisions about what to describe based on scene context and user queries. Deployed as a containerized FastAPI service with comprehensive test coverage and CI/CD pipelines for fly.io, Railway, and Render.',
     thumbnail: '/images/scene-understanding.jpg',
     images: ['/images/scene-1.jpg', '/images/scene-2.jpg'],
-    demoUrl: 'https://scene-demo-placeholder.com',
+    demoUrl: '#',
     githubUrl: 'https://github.com/soham10i/Real-Time-Scene-Understanding',
     technologies: ['YOLOv8', 'VLM', 'FastAPI', 'Docker', 'OpenCV', 'LangChain', 'Python'],
     highlights: [
@@ -50,6 +77,7 @@ export const projects: Project[] = [
     role: 'AI Engineer & Full-Stack Developer',
     status: 'completed',
     category: 'Computer Vision',
+    impact: '30 FPS real-time scene narration with agentic decision-making',
   },
   {
     id: 'medqa-rag-pipeline',
@@ -74,6 +102,7 @@ export const projects: Project[] = [
     role: 'ML Engineer & Backend Developer',
     status: 'completed',
     category: 'NLP',
+    impact: 'Deployed as a production FastAPI container with full test suite',
   },
   {
     id: 'wind-turbine-anomaly',
@@ -98,6 +127,7 @@ export const projects: Project[] = [
     role: 'ML Engineer & Data Analyst',
     status: 'completed',
     category: 'AI/ML',
+    impact: 'Benchmarked multi-output regression models for fault detection',
   },
   {
     id: 'autonomous-robots-slam',
@@ -123,6 +153,7 @@ export const projects: Project[] = [
     role: 'Robotics Engineer',
     status: 'completed',
     category: 'Robotics',
+    impact: 'Autonomous SLAM navigation in Webots simulation',
   },
   {
     id: 'indoor-localization-ble',
@@ -147,6 +178,7 @@ export const projects: Project[] = [
     role: 'Embedded Systems Engineer',
     status: 'completed',
     category: 'Embedded',
+    impact: 'Achieved sub-meter accuracy on embedded hardware',
   },
   {
     id: 'smart-home-city',
@@ -171,5 +203,6 @@ export const projects: Project[] = [
     role: 'Full-Stack IoT Developer',
     status: 'completed',
     category: 'Fullstack',
+    impact: 'IoT automation with 20% energy reduction via AI optimization',
   },
 ];

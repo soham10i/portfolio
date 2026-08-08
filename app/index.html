@@ -3,26 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Soham Patel — M.Sc. AI Student & Software Engineer. Portfolio showcasing AI/ML, Computer Vision, NLP, Robotics, and Full-Stack projects." />
-    <meta name="keywords" content="Soham Patel, AI Engineer, Machine Learning, Computer Vision, NLP, Software Engineer, Portfolio, Digital Twin, Python, FastAPI" />
+    <meta name="description" content="Software engineer with 2.5+ years production experience (healthcare ETL, fintech backends) specializing in digital twins, computer vision and predictive maintenance. Gold Medalist M.Sc. IT. Based in Germany." />
+    <meta name="keywords" content="Soham Patel, Software Engineer, Industrial AI, Digital Twin, Machine Learning, Computer Vision, Python, FastAPI, Production Engineering" />
     <meta name="author" content="Soham Patel" />
-    <meta name="theme-color" content="#080a0f" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0f1e" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f7fc" />
     
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Soham Patel — M.Sc. AI & Software Engineer" />
-    <meta property="og:description" content="Portfolio of Soham Patel — AI Engineer, Software Developer, and Digital Twin Architect." />
+    <meta property="og:title" content="Soham Patel — Software Engineer | Industrial AI & Digital Twins" />
+    <meta property="og:description" content="Software engineer with 2.5+ years production experience (healthcare ETL, fintech backends) specializing in digital twins, computer vision and predictive maintenance. Gold Medalist M.Sc. IT. Based in Germany." />
     <meta property="og:site_name" content="Soham Patel Portfolio" />
+    <meta property="og:url" content="https://soham-patel.onrender.com" />
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Soham Patel — M.Sc. AI & Software Engineer" />
-    <meta name="twitter:description" content="Portfolio of Soham Patel — AI Engineer, Software Developer, and Digital Twin Architect." />
+    <meta name="twitter:title" content="Soham Patel — Software Engineer | Industrial AI & Digital Twins" />
+    <meta name="twitter:description" content="Software engineer with 2.5+ years production experience specializing in digital twins, computer vision and predictive maintenance." />
     
-    <title>Soham Patel — M.Sc. AI & Software Engineer</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>" />
+    <title>Soham Patel — Software Engineer | Industrial AI & Digital Twins</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
   </head>
   <body>
+    <script>
+      // Set the theme before first paint to avoid a flash of the wrong theme.
+      (function () {
+        try {
+          var t = localStorage.getItem('sp-theme');
+          if (t !== 'dark' && t !== 'light') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+          document.documentElement.classList.toggle('dark', t === 'dark');
+        } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
