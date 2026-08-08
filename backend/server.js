@@ -7,11 +7,41 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
+const REQUEST_TIMEOUT_MS = 30_000;
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 4000;
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+// CORS: open in dev; restrict via ALLOWED_ORIGINS="https://site.com,https://www.site.com" in prod
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  : true;
+app.use(cors({ origin: allowedOrigins }));
+app.use(express.json({ limit: '100kb' }));
+
+// ── Simple in-memory rate limiter: 30 requests / 5 min per IP ──
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const rateBuckets = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, b] of rateBuckets) if (b.resetAt < now) rateBuckets.delete(ip);
+}, RATE_WINDOW_MS).unref();
+
+function rateLimit(req, res, next) {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  let bucket = rateBuckets.get(ip);
+  if (!bucket || bucket.resetAt < now) {
+    bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
+    rateBuckets.set(ip, bucket);
+  }
+  bucket.count += 1;
+  if (bucket.count > RATE_LIMIT) {
+    return res.status(429).json({ error: "Easy there — JARVIS needs a breather. Try again in a few minutes." });
+  }
+  next();
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -21,14 +51,22 @@ app.get('/api/health', (req, res) => {
 // ================================================================
 // COMPREHENSIVE SYSTEM PROMPT — Portfolio RAG Context
 // ================================================================
-const SYSTEM_PROMPT = `You are the AI assistant for Soham Patel's portfolio website. You have complete knowledge of Soham's background, projects, skills, experience, and education. You speak with warmth, confidence, and a touch of personality — like a knowledgeable friend who's genuinely excited about Soham's work. You're helpful, technically accurate, and concise. Use occasional light humor but stay professional.
+const SYSTEM_PROMPT = `You are the AI assistant for Soham Patel's portfolio website. Your name is "JARVIS" — Soham's LLM-based personal assistant. You have complete knowledge of Soham's background, projects, skills, experience, and education.
+
+## PERSONALITY
+- Warm, confident, and genuinely enthusiastic about Soham's work — like a proud teammate who loves talking about what he's built
+- Witty but never corny. Dry humor > dad jokes. A raised eyebrow in text form.
+- Match the user's energy: casual and fun for chill questions, sharp and technical for deep dives
+- You're not a corporate brochure — you're the cool colleague at the conference after-party who actually knows their stuff
+- Use one-liners sparingly but effectively. End with a zinger only when it lands naturally
+- Never over-apologize. Never use filler phrases like "As an AI..." or "I hope this helps!"
+- If you don't know something, say so directly — no hedging
 
 ## ABOUT SOHAM
 Soham Patel is an M.Sc. AI candidate at OTH Amberg-Weiden, Germany, building intelligent systems at the intersection of machine learning, computer vision, and production engineering. He's a Gold Medalist M.Sc. IT graduate with a passion for turning research into production-ready systems.
 
 Location: Amberg/Weiden, Germany
 Email: soham.patel.2201@gmail.com
-LinkedIn: Available on request
 GitHub: github.com/soham10i
 Open to: AI/ML engineering roles, research positions, collaborations
 
@@ -170,101 +208,276 @@ Leadership: Technical Communication (90%), Team Collaboration (92%), Mentoring (
   - Grade: 1.0 (outstanding)
 
 ## RESPONSE GUIDELINES
-- Be conversational but technically accurate
+- Be sharp, warm, and confident — not robotic
+- SCALE your response length to the question:
+  - Greetings / small talk / yes-no questions → 1-3 sentences, no lists
+  - Simple factual questions (one skill, one contact detail) → under 80 words
+  - "Tell me about X project" → 100-180 words with a short bullet list
+  - Deep dives, comparisons, "explain in detail" → up to 350 words, structured
+- Use structured formatting for readability:
+  - Start with a brief hook or interesting fact about Soham
+  - Use **bold text** for section headings or key terms
+  - Use bullet points (* item) for lists of projects, skills, or technologies
+  - Keep each bullet point to 1-2 short sentences
+  - Separate distinct ideas with a blank line (paragraph break)
+- When listing multiple items (projects, skills, experiences), ALWAYS use bullet points
+- For project details: bullet with project name in bold, then 1-2 key technologies and the main outcome
+- When discussing skills, group by category with bold category names and bullet the items
 - If asked about something not in the context, be honest: "I don't have that information in my knowledge base"
-- For project details, be specific about technologies and outcomes
-- When discussing skills, mention proficiency levels where relevant
-- If asked about hiring/contact, encourage reaching out via email
-- Keep responses concise (2-4 paragraphs max) unless asked for detail
-- Use bullet points for lists when helpful
+- If asked about hiring/contact, encourage reaching out via email and mention availability
 - Match the user's tone — casual for casual questions, technical for technical ones
 - Don't make up achievements or metrics not listed above
+- ALWAYS finish your final sentence — never end mid-thought
 - If asked about the STF factory layout specifically, note that the visualization is a work in progress`;
 
 // ================================================================
-// CHAT ENDPOINT
+// DYNAMIC TOKEN BUDGETING
+// Scale response + thinking budgets to question complexity so short
+// questions come back fast and deep dives don't get truncated.
+// NOTE: gemini-2.5-flash "thinking" tokens count AGAINST
+// maxOutputTokens, so the cap must include the thinking budget.
 // ================================================================
-app.post('/api/chat', async (req, res) => {
-  if (!GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'Gemini API key not configured' });
-  }
+function budgetFor(message, history) {
+  const m = message.toLowerCase();
+  const words = m.split(/\s+/).filter(Boolean).length;
 
-  const { message, history = [] } = req.body;
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ error: 'Message is required' });
+  const isGreeting = words <= 6 && /^(hi|hii+|hey|hello|yo|sup|good (morning|afternoon|evening)|thanks|thank you|ok|okay|cool|nice|bye)\b/.test(m);
+  const wantsDepth = /\b(explain|detail|deep|architecture|how (does|did|do)|compare|versus|vs\.?|walk me through|tell me (more|about|everything)|all (of )?(his|the|soham)|list|breakdown|why)\b/.test(m) || words > 30;
+  const isComplexReasoning = /\b(compare|versus|vs\.?|trade-?offs?|best|strongest|rank|which (project|skill)|suited|fit for|why should|evaluate)\b/.test(m);
+
+  if (isGreeting) {
+    return { responseTokens: 256, thinkingBudget: 0 };
   }
+  if (isComplexReasoning) {
+    // Reasoning-heavy: give Gemini room to think AND answer
+    return { responseTokens: 2048, thinkingBudget: 1024 };
+  }
+  if (wantsDepth) {
+    return { responseTokens: 2048, thinkingBudget: 512 };
+  }
+  // Default factual question — skip thinking for snappy answers
+  const followUp = history.length > 4 ? 256 : 0; // a bit more room deeper into a conversation
+  return { responseTokens: 1024 + followUp, thinkingBudget: 0 };
+}
+
+// ================================================================
+// REQUEST BUILDING + VALIDATION
+// ================================================================
+function validateChat(req) {
+  const { message, history = [] } = req.body || {};
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return { error: 'Message is required' };
+  }
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return { error: `Message too long (max ${MAX_MESSAGE_CHARS} characters)` };
+  }
+  const cleanHistory = (Array.isArray(history) ? history : [])
+    .filter((h) => h && typeof h.content === 'string' && (h.role === 'user' || h.role === 'assistant'))
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((h) => ({
+      role: h.role === 'user' ? 'user' : 'model',
+      parts: [{ text: h.content.slice(0, MAX_MESSAGE_CHARS) }],
+    }));
+  return { message: message.trim(), history: cleanHistory };
+}
+
+function buildBody(message, history, { responseTokens, thinkingBudget }) {
+  return {
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [...history, { role: 'user', parts: [{ text: message }] }],
+    generationConfig: {
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: responseTokens + thinkingBudget,
+      thinkingConfig: { thinkingBudget },
+    },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    ],
+  };
+}
+
+async function callGemini(body, { stream = false } = {}) {
+  const url = stream
+    ? `${GEMINI_BASE}:streamGenerateContent?alt=sse`
+    : `${GEMINI_BASE}:generateContent`;
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': GEMINI_API_KEY, // header, not URL — keeps the key out of logs
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+}
+
+function extractText(data) {
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts || [])
+    .map((p) => p.text || '')
+    .join('');
+  return { text, finishReason: candidate?.finishReason };
+}
+
+function friendlyError(status) {
+  if (status === 429) return 'The AI service is briefly rate-limited. Give it a few seconds and try again.';
+  if (status >= 500) return 'The AI service is having a moment. Try again shortly.';
+  return 'Could not reach the AI service.';
+}
+
+// ================================================================
+// CHAT ENDPOINT (non-streaming, kept for compatibility)
+// ================================================================
+app.post('/api/chat', rateLimit, async (req, res) => {
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Chat is not configured yet.' });
+  }
+  const parsed = validateChat(req);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
 
   try {
-    // Build conversation history for Gemini
-    const contents = [];
-    
-    // Add system instruction as first user message (Gemini doesn't have native system prompt)
-    contents.push({
-      role: 'user',
-      parts: [{ text: SYSTEM_PROMPT }]
-    });
-    contents.push({
-      role: 'model',
-      parts: [{ text: 'Understood. I am ready to answer questions about Soham Patel.' }]
-    });
-
-    // Add chat history
-    for (const msg of history) {
-      contents.push({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      });
-    }
-
-    // Add current message
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
-
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        ],
-      }),
-    });
+    let budget = budgetFor(parsed.message, parsed.history);
+    let response = await callGemini(buildBody(parsed.message, parsed.history, budget));
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Gemini API error:', errorData);
-      return res.status(502).json({ 
-        error: errorData.error?.message || `Gemini API error: ${response.status}` 
-      });
+      console.error('Gemini API error:', response.status, errorData.error?.message || '');
+      return res.status(502).json({ error: friendlyError(response.status) });
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+    let { text, finishReason } = extractText(await response.json());
+
+    // Thinking ate the whole budget → retry once, thinking off, bigger cap
+    if (!text && finishReason === 'MAX_TOKENS') {
+      console.warn('Empty MAX_TOKENS response — retrying with thinking disabled');
+      budget = { responseTokens: 4096, thinkingBudget: 0 };
+      response = await callGemini(buildBody(parsed.message, parsed.history, budget));
+      if (response.ok) ({ text } = extractText(await response.json()));
+    }
+
     if (!text) {
-      return res.status(502).json({ error: 'Empty response from Gemini' });
+      return res.status(502).json({ error: 'The AI returned an empty response. Try rephrasing?' });
     }
-
     res.json({ response: text });
   } catch (err) {
-    console.error('Chat error:', err);
-    res.status(500).json({ 
-      error: err instanceof Error ? err.message : 'Internal server error' 
+    const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
+    console.error('Chat error:', err.message || err);
+    res.status(timedOut ? 504 : 500).json({
+      error: timedOut ? 'That took too long — try again.' : 'Internal server error',
     });
   }
 });
+
+// ================================================================
+// STREAMING CHAT ENDPOINT (SSE) — tokens render as they generate
+// ================================================================
+app.post('/api/chat/stream', rateLimit, async (req, res) => {
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Chat is not configured yet.' });
+  }
+  const parsed = validateChat(req);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+
+  try {
+    const budget = budgetFor(parsed.message, parsed.history);
+    const upstream = await callGemini(buildBody(parsed.message, parsed.history, budget), { stream: true });
+
+    if (!upstream.ok || !upstream.body) {
+      const errorData = await upstream.json().catch(() => ({}));
+      console.error('Gemini stream error:', upstream.status, errorData.error?.message || '');
+      return res.status(502).json({ error: friendlyError(upstream.status) });
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let sentAny = false;
+
+    const send = (event) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Gemini SSE frames: lines starting with "data: {json}"
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const chunk = JSON.parse(payload);
+          const { text } = extractText(chunk);
+          if (text) {
+            sentAny = true;
+            send({ delta: text });
+          }
+        } catch {
+          // partial JSON across chunks — extremely rare with line-based SSE; skip
+        }
+      }
+    }
+
+    if (!sentAny) {
+      send({ error: 'The AI returned an empty response. Try rephrasing?' });
+    }
+    send({ done: true });
+    res.end();
+  } catch (err) {
+    const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
+    console.error('Stream error:', err.message || err);
+    if (!res.headersSent) {
+      res.status(timedOut ? 504 : 500).json({
+        error: timedOut ? 'That took too long — try again.' : 'Internal server error',
+      });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: 'Stream interrupted — try again.' })}\n\n`);
+      res.end();
+    }
+  }
+});
+
+// ================================================================
+// CONTACT ENDPOINT — persists messages to backend/messages.jsonl
+// ================================================================
+const fs = require('fs');
+const MESSAGES_FILE = path.join(__dirname, 'messages.jsonl');
+
+app.post('/api/contact', rateLimit, (req, res) => {
+  const { name, email, message } = req.body || {};
+  if (
+    !name || typeof name !== 'string' || name.length > 200 ||
+    !email || typeof email !== 'string' || email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !message || typeof message !== 'string' || !message.trim() || message.length > 5000
+  ) {
+    return res.status(400).json({ error: 'Please fill in a valid name, email, and message.' });
+  }
+  try {
+    const entry = JSON.stringify({ name: name.trim(), email: email.trim(), message: message.trim(), at: new Date().toISOString() });
+    fs.appendFileSync(MESSAGES_FILE, entry + '\n');
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Contact save error:', err.message || err);
+    res.status(500).json({ error: 'Could not save your message — please email directly.' });
+  }
+});
+
+// Unknown API routes → JSON 404 (not the SPA shell)
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 // Serve static files from frontend build
 app.use(express.static(path.join(__dirname, '../app/dist')));
