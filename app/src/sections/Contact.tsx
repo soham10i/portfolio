@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Mail, MapPin, Send, Github, Linkedin } from 'lucide-react';
+import { Mail, MapPin, Send, Github, Linkedin, Globe, Calendar } from 'lucide-react';
+import { socials } from '@/data/navigation';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,6 +28,10 @@ export default function Contact() {
         y: 0, opacity: 1, duration: 0.8, delay: 0.15, ease: 'power3.out',
         scrollTrigger: { trigger: '.contact-form', start: 'top 85%', toggleActions: 'play none none none' },
       });
+      gsap.fromTo('.languages-section', { y: 40, opacity: 0 }, {
+        y: 0, opacity: 1, duration: 0.8, ease: 'power3.out',
+        scrollTrigger: { trigger: '.languages-section', start: 'top 85%', toggleActions: 'play none none none' },
+      });
     }, section);
     return () => ctx.revert();
   }, []);
@@ -34,11 +39,25 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setSubmitted(true);
-    setFormData({ name: '', email: '', message: '' });
-    setTimeout(() => setSubmitted(false), 5000);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) throw new Error('send failed');
+      setSubmitted(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch {
+      // Backend unavailable — fall back to a prefilled email draft so the
+      // message is never silently lost.
+      const subject = encodeURIComponent(`Portfolio contact from ${formData.name}`);
+      const body = encodeURIComponent(`${formData.message}\n\n— ${formData.name} (${formData.email})`);
+      window.location.href = `mailto:soham.patel.2201@gmail.com?subject=${subject}&body=${body}`;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -56,27 +75,34 @@ export default function Contact() {
             <div className="space-y-6">
               {[
                 { icon: Mail, label: 'Email', value: 'soham.patel.2201@gmail.com', href: 'mailto:soham.patel.2201@gmail.com' },
-                { icon: MapPin, label: 'Location', value: 'Amberg, Germany', href: '#' },
-              ].map((item) => (
-                <a key={item.label} href={item.href} className="flex items-center gap-4 group">
-                  <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center group-hover:bg-foreground/5 transition-colors duration-300">
-                    <item.icon className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
-                    <p className="text-sm font-medium">{item.value}</p>
-                  </div>
-                </a>
-              ))}
+                { icon: MapPin, label: 'Location', value: 'Amberg, Germany' },
+              ].map((item) => {
+                const inner = (
+                  <>
+                    <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center group-hover:bg-foreground/5 transition-colors duration-300">
+                      <item.icon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
+                      <p className="text-sm font-medium">{item.value}</p>
+                    </div>
+                  </>
+                );
+                return item.href ? (
+                  <a key={item.label} href={item.href} className="flex items-center gap-4 group">{inner}</a>
+                ) : (
+                  <div key={item.label} className="flex items-center gap-4 group">{inner}</div>
+                );
+              })}
             </div>
 
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-4">Social</p>
               <div className="flex gap-3">
                 {[
-                  { icon: Github, label: 'GitHub', href: 'https://github.com/soham10i' },
-                  { icon: Linkedin, label: 'LinkedIn', href: 'https://linkedin.com/in/soham10i' },
-                ].map((social) => (
+                  { icon: Github, label: 'GitHub', href: socials.github },
+                  { icon: Linkedin, label: 'LinkedIn', href: socials.linkedin },
+                ].filter((s) => s.href).map((social) => (
                   <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-full border border-border/50 hover:bg-foreground hover:text-background transition-all duration-300">
                     <social.icon className="w-4 h-4" />{social.label}
@@ -85,13 +111,13 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               Available for opportunities
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="contact-form space-y-5">
+          <form onSubmit={handleSubmit} className="contact-form glass rounded-2xl p-6 sm:p-8 space-y-5">
             {[
               { id: 'name', label: 'Name', type: 'text', placeholder: 'Your name' },
               { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com' },
@@ -132,6 +158,41 @@ export default function Contact() {
               )}
             </button>
           </form>
+        </div>
+
+        {/* Languages & Availability */}
+        <div className="languages-section mt-32 pt-16 border-t border-border/20">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-6">Languages & Availability</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-5 rounded-2xl glass">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium">English</span>
+              </div>
+              <p className="text-xs text-muted-foreground">C1 — Professional working proficiency (IELTS 6.5)</p>
+            </div>
+            <div className="p-5 rounded-2xl glass">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-medium">German</span>
+              </div>
+              <p className="text-xs text-muted-foreground">A2 — Actively learning, target B1</p>
+            </div>
+            <div className="p-5 rounded-2xl glass">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-teal-400" />
+                <span className="text-sm font-medium">Gujarati</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Native</p>
+            </div>
+            <div className="p-5 rounded-2xl glass">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-medium">Availability</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Immediately available for full-time software/automation engineering roles in Germany. EU Blue Card eligible.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -1,55 +1,38 @@
 import type { Skill, Education, Talk } from '@/types';
 
-export const skills: Skill[] = [
-  // ML / AI
-  { name: 'PyTorch', level: 85, category: 'ML/AI' },
-  { name: 'Scikit-learn', level: 90, category: 'ML/AI' },
-  { name: 'HuggingFace', level: 80, category: 'ML/AI' },
-  { name: 'LangChain', level: 82, category: 'ML/AI' },
-  { name: 'YOLOv8', level: 78, category: 'ML/AI' },
-  { name: 'RAG', level: 85, category: 'ML/AI' },
-  { name: 'LLMs', level: 83, category: 'ML/AI' },
-  { name: 'Model Benchmarking', level: 80, category: 'ML/AI' },
-  { name: 'Computer Vision', level: 82, category: 'ML/AI' },
-  { name: 'Deep Learning', level: 80, category: 'ML/AI' },
+// ================================================================
+// SKILLS — Three-tier grouping (no percentages)
+// ================================================================
 
-  // Engineering
-  { name: 'Python', level: 95, category: 'Engineering' },
-  { name: 'FastAPI', level: 90, category: 'Engineering' },
-  { name: 'Django', level: 75, category: 'Engineering' },
-  { name: 'C#', level: 80, category: 'Engineering' },
-  { name: 'Java', level: 70, category: 'Engineering' },
-  { name: 'SQL', level: 88, category: 'Engineering' },
-  { name: 'Docker', level: 85, category: 'Engineering' },
-  { name: 'Git', level: 90, category: 'Engineering' },
-  { name: 'CI/CD', level: 82, category: 'Engineering' },
-  { name: 'Clean Code / OOP', level: 90, category: 'Engineering' },
-  { name: 'React / TypeScript', level: 78, category: 'Engineering' },
+export interface SkillTier {
+  label: string;
+  items: string[];
+}
 
-  // Data / Cloud
-  { name: 'MSSQL', level: 85, category: 'Data/Cloud' },
-  { name: 'MySQL', level: 88, category: 'Data/Cloud' },
-  { name: 'NoSQL', level: 75, category: 'Data/Cloud' },
-  { name: 'ETL', level: 85, category: 'Data/Cloud' },
-  { name: 'Azure', level: 78, category: 'Data/Cloud' },
-  { name: 'Power BI', level: 70, category: 'Data/Cloud' },
-  { name: 'Streamlit', level: 85, category: 'Data/Cloud' },
-  { name: 'InfluxDB', level: 80, category: 'Data/Cloud' },
-  { name: 'MQTT', level: 82, category: 'Data/Cloud' },
-
-  // Leadership
-  { name: 'Technical Communication', level: 90, category: 'Leadership' },
-  { name: 'Team Collaboration', level: 92, category: 'Leadership' },
-  { name: 'Mentoring', level: 85, category: 'Leadership' },
-  { name: 'Public Speaking', level: 82, category: 'Leadership' },
+export const skillTiers: SkillTier[] = [
+  {
+    label: 'Production-proven',
+    items: ['Python', 'FastAPI', 'SQL', 'Docker', 'Git', 'CI/CD', 'Azure', 'ETL'],
+  },
+  {
+    label: 'Strong working knowledge',
+    items: ['PyTorch', 'Scikit-learn', 'HuggingFace', 'LangChain', 'YOLOv8', 'RAG', 'MQTT', 'InfluxDB', 'Streamlit', 'C# / .NET'],
+  },
+  {
+    label: 'Explored in projects',
+    items: ['React / TypeScript', 'Kalman / Particle filters', 'SLAM / Webots', 'Diffusion models', 'KNIME', 'Power BI'],
+  },
 ];
+
+// Legacy export kept for type compatibility (percentages removed from UI)
+export const skills: Skill[] = [];
 
 export const education: Education[] = [
   {
     institution: 'OTH Amberg-Weiden',
     location: 'Weiden, Germany',
-    degree: 'M.Sc. AI for Industrial Applications',
-    period: 'Oct 2024 – Present',
+    degree: 'Graduate Coursework — AI for Industrial Applications (45 ECTS completed)',
+    period: 'Oct 2024 – Aug 2026',
     grade: 'GPA 2.0 · 45 ECTS completed',
     details: [
       'Core: Machine Learning, Deep Learning, Computer Vision & AI, NLP & Information Retrieval',

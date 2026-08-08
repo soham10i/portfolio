@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -58,6 +59,7 @@ function ProjectCard({ project }: { project: Project }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const hasVideo = !!VIDEO_SOURCES[project.id];
+  const isFlagship = project.impact?.startsWith('FLAGSHIP');
 
   useEffect(() => {
     const el = cardRef.current;
@@ -71,7 +73,6 @@ function ProjectCard({ project }: { project: Project }) {
     return () => ctx.revert();
   }, []);
 
-  // 3D tilt effect on mouse move
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const inner = innerRef.current;
     if (!inner) return;
@@ -92,6 +93,8 @@ function ProjectCard({ project }: { project: Project }) {
   };
 
   const videoThumb = VIDEO_SOURCES[project.id];
+  const hasDemo = project.demoUrl && project.demoUrl !== '#';
+  const hasSource = project.githubUrl && project.githubUrl !== '#';
 
   return (
     <>
@@ -102,6 +105,11 @@ function ProjectCard({ project }: { project: Project }) {
         >
           {/* Card Image Container */}
           <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-muted/40 mb-6 shadow-lg shadow-black/5 group-hover:shadow-xl group-hover:shadow-black/10 transition-shadow duration-500">
+            {isFlagship && (
+              <div className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full bg-amber-500/90 text-black text-[10px] font-bold uppercase tracking-wider">
+                Flagship
+              </div>
+            )}
             {videoThumb && (
               <video src={videoThumb} muted playsInline preload="metadata"
                 className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity duration-500" />
@@ -126,15 +134,39 @@ function ProjectCard({ project }: { project: Project }) {
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
               <span className="text-[10px] text-muted-foreground">{project.timeline}</span>
             </div>
-            <h3 className="text-xl font-semibold tracking-tight group-hover:text-foreground/80 transition-colors duration-300">{project.title}</h3>
+            <h3 className="text-xl font-semibold tracking-tight group-hover:text-foreground/80 transition-colors duration-300">
+              <Link to={`/project/${project.id}`} className="hover:underline underline-offset-4 decoration-foreground/30">{project.title}</Link>
+            </h3>
             <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{project.description}</p>
-            <div className="flex items-center gap-4 pt-1">
-              <a href={`/project/${project.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors">
+            
+            {/* Impact line */}
+            {project.impact && !isFlagship && (
+              <p className="text-xs text-blue-700/90 dark:text-blue-400/80 font-medium">{project.impact}</p>
+            )}
+            {isFlagship && project.impact && (
+              <p className="text-xs text-amber-700/90 dark:text-amber-400/80 font-medium">{project.impact.replace('FLAGSHIP — ', '')}</p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              {hasDemo && (
+                project.demoUrl!.startsWith('/') ? (
+                  <Link to={project.demoUrl!} className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors">
+                    Live Demo <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+                ) : (
+                  <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors">
+                    Live Demo <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                )
+              )}
+              {hasSource && (
+                <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Source <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              )}
+              <Link to={`/project/${project.id}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Details <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
-              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Source <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -179,7 +211,7 @@ export default function Projects() {
         <div className="proj-filter flex flex-wrap gap-2 mb-20 pb-8 border-b border-border/30">
           {categories.map((cat) => (
             <button key={cat} onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-2.5 text-sm rounded-full transition-all duration-300 ${activeCategory === cat ? 'bg-foreground text-background font-medium' : 'text-muted-foreground hover:text-foreground'}`}>
+              className={`px-5 py-2.5 text-sm rounded-full transition-all duration-300 ${activeCategory === cat ? 'bg-foreground text-background font-medium shadow-lg' : 'glass-pill text-muted-foreground hover:text-foreground'}`}>
               {cat}
             </button>
           ))}

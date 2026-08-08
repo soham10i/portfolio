@@ -17,6 +17,7 @@ export interface Project {
   role: string;
   status: 'completed' | 'ongoing';
   category: 'AI/ML' | 'Computer Vision' | 'NLP' | 'Robotics' | 'Fullstack' | 'Embedded';
+  impact?: string;
 }
 
 export interface Experience {

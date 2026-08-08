@@ -19,7 +19,7 @@ const highlights = [
   },
   {
     title: 'Continuous Growth',
-    desc: 'Gold Medalist M.Sc. IT, now M.Sc. AI. Teaching Assistant, keynote speaker, always learning.',
+    desc: 'Gold Medalist M.Sc. Information Technology (Rank 1, GPA 9.55/10). Graduate AI coursework (45 ECTS) at OTH Amberg-Weiden, Germany. Teaching Assistant for SQL & ML. Keynote speaker, AI Conference 2025 (Grade 1.0).',
   },
 ];
 
@@ -32,18 +32,22 @@ export default function About() {
     const heading = headingRef.current;
     if (!section || !heading) return;
 
-    // Split heading into words
     const text = heading.textContent ?? '';
+    // pb/-mb gives the overflow-hidden mask room for descenders (the "g"
+    // in "Bridging") without changing line spacing. The joining space is
+    // the only word gap (a right margin as well would double it), and it
+    // keeps textContent round-tripping so a re-run re-splits identically.
     heading.innerHTML = text
+      .trim()
       .split(/\s+/)
-      .map((w) => `<span class="inline-block overflow-hidden mr-[0.25em]"><span class="inline-block word-inner">${w}</span></span>`)
+      .map((w) => `<span class="inline-block overflow-hidden pb-[0.2em] -mb-[0.2em]"><span class="inline-block word-inner">${w}</span></span>`)
       .join(' ');
 
     const ctx = gsap.context(() => {
-      // Heading word reveal
       gsap.fromTo(
         heading.querySelectorAll('.word-inner'),
-        { y: '120%', opacity: 0 },
+        // 130% clears the mask's extra descender padding
+        { y: '130%', opacity: 0 },
         {
           y: '0%',
           opacity: 1,
@@ -54,7 +58,6 @@ export default function About() {
         }
       );
 
-      // Cards stagger
       gsap.fromTo(
         '.about-card',
         { y: 50, opacity: 0 },
@@ -84,11 +87,11 @@ export default function About() {
           Bridging research and production
         </h2>
 
-        <div className="about-grid grid grid-cols-1 md:grid-cols-2 gap-px bg-border/20 rounded-2xl overflow-hidden">
+        <div className="about-grid grid grid-cols-1 md:grid-cols-2 gap-5">
           {highlights.map((item) => (
             <div
               key={item.title}
-              className="about-card p-8 lg:p-10 bg-background group hover:bg-muted/[0.03] transition-colors duration-500"
+              className="about-card glass rounded-2xl p-8 lg:p-10 group transition-transform duration-500 hover:-translate-y-1"
             >
               <h3 className="text-base font-semibold mb-3 group-hover:text-foreground/90 transition-colors duration-300">
                 {item.title}

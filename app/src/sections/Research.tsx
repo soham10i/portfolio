@@ -42,7 +42,7 @@ export default function Research() {
 
         <div className="research-grid grid grid-cols-1 md:grid-cols-3 gap-10">
           {interests.map((item) => (
-            <div key={item.title} className="research-card group">
+            <div key={item.title} className="research-card glass rounded-2xl p-8 group transition-transform duration-500 hover:-translate-y-1">
               <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center mb-6 group-hover:bg-foreground/5 transition-colors duration-300">
                 <item.icon className="w-5 h-5 text-muted-foreground" />
               </div>

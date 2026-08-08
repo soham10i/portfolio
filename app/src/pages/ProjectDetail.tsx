@@ -17,6 +17,16 @@ export default function ProjectDetail() {
   const [videoOpen, setVideoOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    if (videoOpen && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [videoOpen]);
+
   if (!project) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -30,16 +40,6 @@ export default function ProjectDetail() {
 
   const videoSrc = VIDEO_SOURCES[project.id] || null;
   const hasVideo = !!videoSrc;
-
-  useEffect(() => {
-    if (videoOpen && videoRef.current) {
-      videoRef.current.play().catch(() => {});
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [videoOpen]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -104,7 +104,7 @@ export default function ProjectDetail() {
               </div>
             </div>
             <div className="space-y-8">
-              <div className="p-6 rounded-2xl border border-border/50">
+              <div className="glass p-6 rounded-2xl">
                 <h3 className="text-[10px] font-medium text-muted-foreground mb-4 uppercase tracking-[0.2em]">Details</h3>
                 <div className="space-y-4 text-sm">
                   <div><p className="text-muted-foreground">Role</p><p className="font-medium mt-0.5">{project.role}</p></div>
