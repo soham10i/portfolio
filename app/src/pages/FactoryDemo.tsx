@@ -594,7 +594,7 @@ export default function FactoryDemo() {
             </h2>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
             {/* System Status */}
             <div className="glass rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
@@ -681,7 +681,7 @@ export default function FactoryDemo() {
                 <Radio className="w-4 h-4 text-green-400" />
                 <span className="text-xs font-medium">MQTT Stream</span>
               </div>
-              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              <div data-lenis-prevent className="space-y-1.5 max-h-40 overflow-y-auto overscroll-contain">
                 {state.mqttMessages.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">Waiting for messages...</p>
                 )}

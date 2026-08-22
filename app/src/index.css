@@ -350,3 +350,61 @@
     }
   }
 }
+
+/* ================================================================
+   3D twin / robot viewer support
+   Station inspector card entrance (FactoryTwin3D) — referenced as
+   `animation: fadeIn .25s ease both` on the floating panel.
+   ================================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Range input used by the twin scrubber: keep the thumb visible on the
+   1px track in both themes without importing a component library. */
+input[type='range'].twin-scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #22d3ee;
+  border: 2px solid #0a0f1e;
+  cursor: pointer;
+}
+input[type='range'].twin-scrub::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #0a0f1e;
+  border-radius: 999px;
+  background: #22d3ee;
+  cursor: pointer;
+}
+
+/* ================================================================
+   DESIGN-HANDOFF TOKENS — the palette table from
+   design_handoff_portfolio/README.md. Aurora Navy is inlined here so
+   the first paint is correct before src/lib/palettes.ts runs; the
+   theme switcher overrides these same custom properties on :root.
+   ================================================================ */
+:root {
+  --bg:    #0a0f1e;
+  --bg2:   #0d1830;
+  --surf:  rgba(20, 27, 46, 0.60);
+  --surf2: rgba(255, 255, 255, 0.05);
+  --fg:    #e2e8f0;
+  --fg2:   #94a3b8;
+  --fg3:   #64748b;
+  --line:  rgba(255, 255, 255, 0.11);
+  --p:     #5ea2ff;
+  --s:     #b18cff;
+  --a:     #22d3ee;
+}
+
+/* 2D cell diagram on the project-detail page (Portfolio Project Detail v2). */
+@keyframes flow { to { stroke-dashoffset: -200; } }
+@keyframes pulseNode {
+  0%, 100% { opacity: .35; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.5); }
+}

@@ -9,6 +9,21 @@ module.exports = {
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
+        /* Design-handoff tokens (design_handoff_portfolio/README.md → "Design
+           tokens"). Set on :root by src/lib/palettes.ts; four palettes swap
+           these and nothing else. Use them for every new page. */
+        bg: "var(--bg)",
+        bg2: "var(--bg2)",
+        surf: "var(--surf)",
+        surf2: "var(--surf2)",
+        fg: "var(--fg)",
+        fg2: "var(--fg2)",
+        fg3: "var(--fg3)",
+        line: "var(--line)",
+        p: "var(--p)",
+        s: "var(--s)",
+        a: "var(--a)",
+
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -114,6 +129,26 @@ module.exports = {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        /* Background layers and entrances from the design pages. */
+        "drift": {
+          "0%": { transform: "translate3d(0,0,0) scale(1)" },
+          "50%": { transform: "translate3d(4%,-3%,0) scale(1.12)" },
+          "100%": { transform: "translate3d(0,0,0) scale(1)" },
+        },
+        "drift2": {
+          "0%": { transform: "translate3d(0,0,0) scale(1.05)" },
+          "50%": { transform: "translate3d(-5%,4%,0) scale(.95)" },
+          "100%": { transform: "translate3d(0,0,0) scale(1.05)" },
+        },
+        "dash": { to: { strokeDashoffset: "-1000" } },
+        "ping-slow": {
+          "0%": { transform: "scale(1)", opacity: ".8" },
+          "75%,100%": { transform: "scale(2.4)", opacity: "0" },
+        },
+        "rise": {
+          from: { opacity: "0", transform: "translateY(26px)" },
+          to: { opacity: "1", transform: "none" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +163,12 @@ module.exports = {
         "typing": "typing 2s steps(20) forwards",
         "blink": "blink 1s step-end infinite",
         "spin-slow": "spin-slow 8s linear infinite",
+        "drift": "drift 26s ease-in-out infinite",
+        "drift2": "drift2 34s ease-in-out infinite",
+        "drift-slow": "drift 42s ease-in-out infinite",
+        "dash": "dash 30s linear infinite",
+        "ping-slow": "ping-slow 2s cubic-bezier(0,0,.2,1) infinite",
+        "rise": "rise .9s cubic-bezier(.16,1,.3,1) both",
       },
     },
   },

@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Sparkles, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { lenis } from '@/lib/lenis';
 import type { ChatMessage } from '@/types';
+import MarkdownText from '@/components/MarkdownText';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -18,102 +20,6 @@ const WELCOME: ChatMessage = {
   timestamp: Date.now(),
 };
 
-// ─── Inline Markdown Parser ──────────────────────────────────────
-
-function MarkdownText({ text }: { text: string }) {
-  const elements = useMemo(() => parseMarkdown(text), [text]);
-  return <>{elements}</>;
-}
-
-function parseMarkdown(text: string): React.ReactNode[] {
-  const blocks = text.split(/\n\n+/);
-  const out: React.ReactNode[] = [];
-
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i].trim();
-    if (!block) continue;
-
-    // Numbered list block
-    if (/^\d+\.\s/m.test(block)) {
-      const items = block
-        .split(/\n/)
-        .map((l) => l.trim())
-        .filter((l) => /^\d+\.\s/.test(l))
-        .map((l) => l.replace(/^\d+\.\s+/, ''));
-      out.push(
-        <ol key={i} className="list-decimal list-inside space-y-0.5 my-1 text-inherit">
-          {items.map((item, j) => (
-            <li key={j}>{renderInline(item)}</li>
-          ))}
-        </ol>
-      );
-      continue;
-    }
-
-    // Bullet list block
-    if (/^(?:[*\-•]\s)/m.test(block)) {
-      const items = block
-        .split(/\n/)
-        .map((l) => l.trim())
-        .filter((l) => l.startsWith('* ') || l.startsWith('- ') || l.startsWith('• '))
-        .map((l) => l.replace(/^[*\-•]\s+/, ''));
-      out.push(
-        <ul key={i} className="list-disc list-inside space-y-0.5 my-1 text-inherit">
-          {items.map((item, j) => (
-            <li key={j}>{renderInline(item)}</li>
-          ))}
-        </ul>
-      );
-      continue;
-    }
-
-    // Single line that's just a heading-like bold line
-    if (/^\*\*[^*]+\*\*$/.test(block)) {
-      out.push(
-        <p key={i} className="font-semibold my-1 text-inherit">
-          {renderInline(block)}
-        </p>
-      );
-      continue;
-    }
-
-    // Regular paragraph
-    out.push(
-      <p key={i} className="my-1 text-inherit leading-relaxed">
-        {renderInline(block)}
-      </p>
-    );
-  }
-
-  return out;
-}
-
-function renderInline(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let key = 0;
-
-  const pattern = /\*\*(.+?)\*\*|\*(.+?)\*/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    if (match[1]) {
-      parts.push(<strong key={key++} className="font-semibold text-inherit">{match[1]}</strong>);
-    } else if (match[2]) {
-      parts.push(<em key={key++} className="italic text-inherit">{match[2]}</em>);
-    }
-    lastIndex = pattern.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
-  }
-
-  return parts.length ? parts : [text];
-}
 
 // ─── Component ───────────────────────────────────────────────────
 
@@ -136,6 +42,14 @@ export default function Chatbot() {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
+
+  // Maximized covers the viewport, so freeze the page behind it. Docked
+  // stays scrollable — you may want to move the page around the panel.
+  useEffect(() => {
+    if (!isOpen || !isMaximized) return;
+    lenis.stop();
+    return () => lenis.start();
+  }, [isOpen, isMaximized]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
@@ -326,7 +240,11 @@ export default function Chatbot() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            {/* data-lenis-prevent: Lenis swallows wheel/touch globally and
+                scrolls the window, so without this the page scrolls instead
+                of the chat. overscroll-contain stops scroll chaining to the
+                page once the list hits its top/bottom. */}
+            <div data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
               {messages.map((msg, idx) => (
                 <motion.div
                   key={msg.id}
