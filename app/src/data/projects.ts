@@ -11,7 +11,7 @@ export const projects: Project[] = [
       'An evolution of the original Smart Tabletop Factory project, this Digital Twin 2.0 adds real-time 3D visualization with live joint telemetry, motor health monitoring, and comprehensive sensor state tracking. The system orchestrates orders (retrieve, store, full-cycle) through a WebSocket-connected backend that communicates with the physical factory hardware via a hardware-agnostic adapter layer supporting MQTT and OPC-UA protocols.',
     thumbnail: '/images/digital-twin.jpg',
     images: ['/images/digital-twin-1.jpg', '/images/digital-twin-2.jpg'],
-    demoUrl: '/factory',
+    demoUrl: '/factory-twin',
     githubUrl: 'https://github.com/soham10i/stf-hw',
     technologies: ['Three.js', 'WebSockets', 'Python', 'FastAPI', 'MQTT', 'Docker'],
     highlights: [
@@ -139,7 +139,8 @@ export const projects: Project[] = [
       'Autonomous navigation is a foundational challenge in robotics. This project implements SLAM algorithms using ROS (Robot Operating System) within the Webots simulation environment. The ROSBot platform explores unknown environments, builds real-time maps, and plans collision-free paths to target destinations. The implementation covers sensor fusion (LIDAR + odometry), particle filter-based localization, occupancy grid mapping, and A* path planning.',
     thumbnail: '/images/slam-robot.jpg',
     images: ['/images/slam-1.jpg', '/images/slam-2.jpg'],
-    video: '/videos/slam-demo.mp4',
+    video: '/videos/maze4.mp4',
+    demoUrl: '/robot',
     githubUrl: 'https://github.com/soham10i/autonomouse_robots',
     technologies: ['Python', 'ROS', 'Webots', 'SLAM', 'LIDAR', 'A* Path Planning'],
     highlights: [
