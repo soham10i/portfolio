@@ -1,347 +1,200 @@
-# Soham Patel Portfolio — System Design Document
+# Soham Patel Portfolio — System Design
 
-## Overview
-A modern, highly interactive, dark-themed portfolio web application built with React + TypeScript + Vite + Tailwind CSS + shadcn/ui. Features smooth scroll-driven animations, interactive project showcases with embedded demos, and an LLM-powered chatbot with RAG capabilities and 10% humor.
+A single-page portfolio with three interactive engineering demos and an
+LLM-backed assistant. React + TypeScript + Vite on the front, a small Express
+service on the back.
+
+This document describes what is actually in the repository. If you change the
+architecture, change this file in the same commit.
 
 ---
 
-## Tech Stack
+## Tech stack
 
-| Layer | Technology | Purpose |
+| Layer | Technology | Notes |
 |---|---|---|
-| Framework | React 19 + Vite 7 | UI framework + build tool |
-| Language | TypeScript 5 | Type safety |
-| Styling | Tailwind CSS 3.4 + shadcn/ui | Utility-first CSS + component primitives |
-| Routing | React Router v7 | SPA navigation |
-| Animations | GSAP + ScrollTrigger + Lenis | Scroll-driven animations, smooth scroll |
-| React Animations | Framer Motion | Component-level animations |
-| Icons | Lucide React | Iconography |
-| State | React hooks + Zustand (lightweight) | Global state for chatbot, theme |
-| Chatbot Backend | FastAPI (Python) + OpenAI/Anthropic API + vector store | LLM chat with RAG |
-| Deployment | Vercel (Frontend) + Fly.io/Railway (Backend) | Hosting |
+| Framework | React 19 + Vite 7 | SPA, built with `tsc -b && vite build` |
+| Language | TypeScript 5 | Strict project references |
+| Styling | Tailwind CSS 3.4 | Custom design tokens in `src/index.css`; no component library |
+| Routing | React Router 7 | `BrowserRouter`, five routes plus a catch-all |
+| Animation | Framer Motion (factory demo), CSS keyframes elsewhere | GSAP was removed with the old sections |
+| 3D | Three.js r147 loaded at runtime | Vendored in `public/vendor/`, unpkg as fallback |
+| Icons | lucide-react | |
+| Backend | Express 4 | `backend/server.js`, ~450 lines, no framework beyond Express |
+| LLM | Google Gemini 2.5 Flash | Direct REST call, streaming via SSE |
+| Deployment | Render (single service) | Express serves the built SPA from `app/dist` |
+
+The runtime dependency list is deliberately small — six packages. Anything that
+is not imported by `src/` should not be in `package.json`.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         USER BROWSER                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │  Portfolio   │  │  Interactive │  │      Chatbot Widget      │  │
-│  │   Sections   │  │   Demos      │  │  (Floating, collapsible) │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────────┘  │
-│         │                 │                      │                  │
-│         └─────────────────┴──────────────────────┘                  │
-│                           │                                        │
-│                    React Router (SPA)                               │
-│                           │                                        │
-│         ┌─────────────────┴──────────────────────┐                  │
-│         │            GSAP + Lenis                │                  │
-│         │       (Scroll animations, smooth)      │                  │
-│         └────────────────────────────────────────┘                  │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              │ HTTP / WebSocket
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         CHATBOT BACKEND                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │   FastAPI    │  │  LLM Service │  │    Vector Store (RAG)    │  │
-│  │   Server     │  │  (OpenAI/    │  │  (ChromaDB / Pinecone)   │  │
-│  │              │  │   Anthropic) │  │                          │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────────┘  │
-│         │                 │                      │                  │
-│         └─────────────────┴──────────────────────┘                  │
-│                           │                                        │
-│              Knowledge Base: Resume + Project Docs                  │
-└─────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                          BROWSER                               │
+│                                                                │
+│  Home (/)            ProjectDetail (/project/:id)              │
+│  FactoryDemo (/factory)                                        │
+│  FactoryTwin3D (/factory-twin)   ─┐  lazy-loaded, each pulls   │
+│  AutonomousRobot (/robot)        ─┘  the Three.js engine       │
+│  NotFound (*)                                                  │
+│                                                                │
+│  ChatPanel — lazy-loaded, opens on demand                      │
+└────────────────────────────────────────────────────────────────┘
+                            │
+                            │  POST /api/chat/stream  (SSE)
+                            │  POST /api/contact
+                            ▼
+┌────────────────────────────────────────────────────────────────┐
+│                    EXPRESS (backend/server.js)                 │
+│                                                                │
+│  rate limit (30 req / 5 min / IP, in-memory)                   │
+│  validation  →  token budgeting  →  Gemini 2.5 Flash           │
+│  contact     →  Resend email + local .jsonl log                │
+│  static      →  serves ../app/dist, SPA fallback to index.html │
+└────────────────────────────────────────────────────────────────┘
 ```
+
+There is **no vector store and no embedding step**. The assistant's knowledge is
+a single hand-written system prompt constant in `backend/server.js`. This is a
+deliberate trade: the corpus is one person's résumé, it fits comfortably in
+context, and it costs nothing to operate. Do not describe this as RAG.
 
 ---
 
-## Directory Structure
+## Directory structure
 
 ```
 app/
 ├── public/
-│   ├── images/           # Project screenshots, profile photos
-│   ├── videos/           # Demo recordings
-│   ├── resume.pdf        # Downloadable CV
-│   └── favicon.ico
+│   ├── factory-twin-3d.js      # <factory-twin-3d> custom element
+│   ├── webots-world-3d.js      # <webots-world-3d> custom element
+│   ├── vendor/                 # three.min.js, OrbitControls.js
+│   ├── videos/                 # demo recordings (large — see Known issues)
+│   ├── worlds/                 # maze world JSON for the robot sim
+│   ├── og-image.png            # 1200×630 social card
+│   ├── robots.txt
+│   └── sitemap.xml
 ├── src/
-│   ├── App.tsx           # Root router
-│   ├── main.tsx          # Entry point
-│   ├── index.css         # Global styles + CSS variables
-│   ├── pages/
-│   │   ├── Home.tsx      # Landing page (all sections)
-│   │   └── ProjectDetail.tsx  # Individual project deep-dive
-│   ├── sections/         # Page sections
-│   │   ├── Hero.tsx
-│   │   ├── About.tsx
-│   │   ├── Experience.tsx
-│   │   ├── Projects.tsx
-│   │   ├── ProjectShowcase.tsx
-│   │   ├── Skills.tsx
-│   │   ├── Research.tsx
-│   │   ├── Academics.tsx
-│   │   ├── Contact.tsx
-│   │   └── Footer.tsx
-│   ├── components/
-│   │   ├── ui/           # shadcn/ui components (auto-generated)
-│   │   ├── Navigation.tsx
-│   │   ├── Chatbot.tsx   # Floating LLM chatbot
-│   │   ├── ChatMessage.tsx
-│   │   ├── AnimatedText.tsx
-│   │   ├── ParticleBackground.tsx
-│   │   ├── ProjectCard.tsx
-│   │   ├── TechBadge.tsx
-│   │   ├── Timeline.tsx
-│   │   ├── ScrollReveal.tsx
-│   │   ├── SectionHeading.tsx
-│   │   ├── SkillBar.tsx
-│   │   └── DemoEmbed.tsx
-│   ├── hooks/
-│   │   ├── useScrollProgress.ts
-│   │   ├── useInView.ts
-│   │   ├── useChatbot.ts
-│   │   └── useTheme.ts
-│   ├── lib/
-│   │   ├── utils.ts      # cn() helper
-│   │   ├── animations.ts # GSAP animation configs
-│   │   └── chat-api.ts   # Chatbot API client
-│   ├── types/
-│   │   └── index.ts      # Shared TypeScript types
-│   └── data/
-│       ├── projects.ts   # Project metadata
-│       ├── experience.ts # Work experience data
-│       ├── skills.ts     # Skills data
-│       └── chat-knowledge.ts # RAG knowledge base
-├── backend/              # FastAPI chatbot server (separate)
-│   ├── main.py
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── knowledge/
-│       └── soham-kb.json
-├── tailwind.config.js
-├── vite.config.ts
-└── index.html
+│   ├── App.tsx                 # routes
+│   ├── main.tsx                # entry, Lenis smooth scroll, ThemeProvider
+│   ├── index.css               # design tokens, both themes, glass material
+│   ├── pages/                  # Home, ProjectDetail, FactoryDemo,
+│   │                           #   FactoryTwin3D, AutonomousRobot, NotFound
+│   ├── components/             # SiteHeader, SiteBackground, ChatPanel,
+│   │                           #   MarkdownText, FactoryTwin, MazeWorld,
+│   │                           #   CellDiagram, ThemeProvider
+│   ├── lib/                    # palettes, twin (engine loaders), lenis, markdown
+│   └── data/                   # portfolio.ts (all content), twinDetail.ts
+└── index.html                  # meta, OG/Twitter cards, JSON-LD, theme bootstrap
+
+backend/
+├── server.js                   # the whole API
+├── Dockerfile
+└── package.json
 ```
+
+All page content lives in `src/data/portfolio.ts`. Adding a project means
+editing that file, not writing a component.
 
 ---
 
-## Data Models
+## Design system
 
-### Project
-```typescript
-interface Project {
-  id: string;
-  title: string;
-  tagline: string;
-  description: string;
-  longDescription: string;
-  thumbnail: string;
-  images: string[];
-  video?: string;
-  demoUrl?: string;          // Embedded demo (Streamlit, etc.)
-  githubUrl: string;
-  paperUrl?: string;
-  technologies: string[];
-  highlights: string[];
-  architecture?: string;     // SVG diagram path
-  codeSnippets?: CodeSnippet[];
-  timeline: string;
-  role: string;
-  status: 'completed' | 'ongoing';
-  category: 'AI/ML' | 'Computer Vision' | 'NLP' | 'Robotics' | 'Fullstack' | 'Embedded';
-}
-```
+Defined entirely as CSS custom properties in `src/index.css`.
 
-### Experience
-```typescript
-interface Experience {
-  id: string;
-  company: string;
-  location: string;
-  role: string;
-  period: string;
-  type: 'full-time' | 'part-time' | 'internship' | 'freelance';
-  description: string;
-  achievements: string[];
-  technologies: string[];
-}
-```
-
-### ChatMessage
-```typescript
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-  sources?: string[];  // RAG source citations
-}
-```
+- **Two themes.** `:root` and `[data-theme="dark"]` carry the dark values so the
+  first paint is never colourless; `[data-theme="light"]` overrides. An inline
+  script in `index.html` sets the attribute before first paint, which is what
+  prevents the flash of wrong theme.
+- **Four swappable palettes** (`src/lib/palettes.ts`), persisted to
+  `localStorage` and applied by rewriting the `--p` / `--s` / `--a` tokens.
+- **Glass material.** A set of `--glass-*` tokens — tint, hairline, specular
+  rim, two shadows, and an opaque fallback. Dark mode tints with the navy
+  surface rather than white, which is what stops it looking grey.
+- Primary/secondary/accent pairs are chosen to hold WCAG AA (4.5:1) against both
+  the page background and the lightened glass surface.
 
 ---
 
-## Animation Strategy
+## Chat assistant
 
-| Section | Animation | Library | Trigger |
-|---|---|---|---|
-| Hero | Text reveal, particle bg, typing effect | GSAP + custom canvas | Page load |
-| About | Fade up, parallax image | GSAP ScrollTrigger | Scroll into view |
-| Experience | Timeline slide-in, staggered cards | GSAP ScrollTrigger | Scroll |
-| Projects | Card hover effects, 3D tilt | Framer Motion | Hover + scroll |
-| Skills | Animated bars, floating badges | GSAP + Framer Motion | Scroll |
-| Research | Slide-in, paper card flip | GSAP ScrollTrigger | Scroll |
-| Contact | Form field animations | Framer Motion | Focus |
-| Navigation | Hide/show on scroll, active section | Custom hook | Scroll |
-| Page Transitions | Fade between routes | Framer Motion AnimatePresence | Route change |
-| Chatbot | Slide up, message stagger | Framer Motion | Toggle + new msg |
-| Cursor | Custom cursor with trail | Custom canvas | Mouse move |
+**Personality and knowledge**: one `SYSTEM_PROMPT` constant. It covers
+education, four roles, seven projects, skills, and response-length rules.
 
----
+**Token budgeting** (`budgetFor`): the prompt classifies the incoming message as
+a greeting, a reasoning-heavy question, a depth request, or a plain factual
+question, and sets `maxOutputTokens` and `thinkingBudget` accordingly. Gemini
+2.5 Flash counts thinking tokens against `maxOutputTokens`, so the cap always
+includes the thinking budget — getting this wrong returns an empty response with
+`finishReason: MAX_TOKENS`. The non-streaming endpoint retries once with
+thinking disabled if that happens.
 
-## Color System (Dark Theme)
+**Streaming**: `/api/chat/stream` proxies Gemini's SSE frames and re-emits them
+as `{delta}` / `{done}` / `{error}` events. `/api/chat` is the non-streaming
+equivalent, kept for compatibility.
 
-```css
-:root {
-  /* Base */
-  --background: 220 20% 4%;        /* #080a0f */
-  --foreground: 210 20% 96%;       /* #f1f5f9 */
-  
-  /* Surface */
-  --card: 220 17% 8%;              /* #11131a */
-  --card-foreground: 210 20% 96%;
-  --popover: 220 17% 8%;
-  
-  /* Primary — Electric Blue */
-  --primary: 217 91% 60%;          /* #3b82f6 */
-  --primary-foreground: 0 0% 100%;
-  
-  /* Secondary — Deep Purple */
-  --secondary: 262 83% 58%;        /* #7c3aed */
-  --secondary-foreground: 0 0% 100%;
-  
-  /* Accent — Teal */
-  --accent: 174 72% 56%;           /* #2dd4bf */
-  --accent-foreground: 220 20% 4%;
-  
-  /* Muted */
-  --muted: 220 14% 14%;
-  --muted-foreground: 215 16% 57%; /* #94a3b8 */
-  
-  /* Border */
-  --border: 220 14% 18%;
-  --input: 220 14% 18%;
-  --ring: 217 91% 60%;
-  
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%);
-  --gradient-accent: linear-gradient(135deg, #2dd4bf 0%, #3b82f6 100%);
-}
-```
+**Safety and limits**: 30 requests per 5 minutes per IP (in-memory, so it resets
+when the instance restarts), 4,000 characters per message, 20 messages of
+history, 30-second upstream timeout, four Gemini safety categories at
+`BLOCK_MEDIUM_AND_ABOVE`. The API key travels in the `x-goog-api-key` header,
+never in the URL, so it stays out of request logs.
 
 ---
 
-## Responsive Breakpoints
+## Contact form
 
-| Name | Width | Use |
+`POST /api/contact` validates the payload, appends it to `backend/messages.jsonl`
+as a local convenience log, then delivers it by email through Resend.
+
+The disk is ephemeral on Render — every redeploy and idle spin-down wipes it —
+so the email is the only real delivery path. When `RESEND_API_KEY` is unset the
+endpoint returns `{ok: true, delivered: false}` and the UI tells the sender to
+email directly instead of claiming the message arrived.
+
+---
+
+## Environment variables
+
+| Variable | Required | Purpose |
 |---|---|---|
-| sm | 640px | Mobile landscape |
-| md | 768px | Tablet |
-| lg | 1024px | Desktop |
-| xl | 1280px | Large desktop |
-| 2xl | 1536px | Ultra-wide |
+| `GEMINI_API_KEY` | for chat | Gemini REST auth |
+| `RESEND_API_KEY` | for contact | Transactional email; without it the form reports non-delivery |
+| `CONTACT_TO` | no | Recipient address (defaults to Soham's) |
+| `CONTACT_FROM` | no | Verified sender domain |
+| `ALLOWED_ORIGINS` | production | Comma-separated CORS allowlist; open when unset |
+| `PORT` | no | Defaults to 3001 |
+| `VITE_CHAT_API_BASE` | no | Front-end API base; defaults to `/api` |
 
 ---
 
-## Chatbot Design (10% Humor + RAG)
+## Build and performance
 
-### Personality
-- **Primary**: Professional, helpful, knowledgeable about Soham's work
-- **Secondary**: 10% humor — occasional light wit, tech puns, friendly tone
-- **Context aware**: Knows which page/section user is viewing
+`npm run build` in `app/` produces roughly:
 
-### RAG Pipeline
-1. **Knowledge Base**: Resume, project docs, GitHub READMEs, research papers
-2. **Embedding**: OpenAI text-embedding-3-small / sentence-transformers
-3. **Vector Store**: ChromaDB (local) or Pinecone (cloud)
-4. **Retrieval**: Top-k similarity search per query
-5. **Generation**: GPT-4o-mini / Claude 3.5 Haiku with system prompt + retrieved context
-6. **Citations**: Show which document/source was used
-
-### UI
-- Floating action button (bottom-right)
-- Expandable chat drawer
-- Typing indicator
-- Message bubbles with avatar
-- Source citation chips
-- Suggested questions
-- Clear history button
-
----
-
-## Performance Targets
-
-| Metric | Target |
-|---|---|
-| First Contentful Paint | < 1.5s |
-| Largest Contentful Paint | < 2.5s |
-| Time to Interactive | < 3.5s |
-| Cumulative Layout Shift | < 0.1 |
-| Lighthouse Score | 95+ all categories |
-| Bundle Size (initial) | < 200KB gzipped |
-
----
-
-## SEO & Meta
-
-- Open Graph tags for LinkedIn sharing
-- Twitter Card meta
-- Structured data (JSON-LD): Person, CreativeWork, EducationalOccupationalCredential
-- Sitemap.xml
-- robots.txt
-- Canonical URLs
-
----
-
-## Deployment Plan
-
-| Component | Platform | Cost |
+| Asset | Raw | Gzip |
 |---|---|---|
-| Frontend (Static) | Vercel (Hobby) | FREE |
-| Chatbot API | Fly.io / Railway / Render | FREE tier (~$5/mo if exceeds) |
-| Vector Store | ChromaDB (self-hosted) or Pinecone (free tier) | FREE |
-| Domain | Namecheap / Cloudflare | ~$12/year |
-| Images/Assets | Cloudinary (free tier) | FREE |
-| **Total** | | **$0–$17/year** |
+| Initial JS | 471 KB | 148 KB |
+| CSS | 45 KB | 9 KB |
+| ChatPanel (lazy) | 12 KB | 4 KB |
+| Each 3D viewer (lazy) | 14–16 KB | 4–5 KB |
+
+The 3D viewers and the chat panel are route- and interaction-split so they stay
+out of the initial payload. Three.js itself is never bundled — the custom
+elements fetch it at runtime only when a viewer mounts.
 
 ---
 
-## Phase Roadmap
+## Known issues
 
-| Phase | Duration | Deliverables |
-|---|---|---|
-| 0 | 1 day | Scaffold, design system, dependencies |
-| 1 | 2 days | Hero, Navigation, smooth scroll, base animations |
-| 2 | 2 days | About, Experience, Skills sections |
-| 3 | 3 days | Projects grid, project cards, hover effects |
-| 4 | 3 days | Project detail pages, demo embeds, architecture diagrams |
-| 5 | 2 days | Research/Talks, Academics, Contact, Footer |
-| 6 | 3 days | Chatbot UI + FastAPI backend + RAG pipeline |
-| 7 | 2 days | Advanced animations, polish, performance |
-| 8 | 1 day | SEO, PWA, deployment config |
-
----
-
-## Risk Mitigation
-
-| Risk | Mitigation |
-|---|---|
-| Bundle size too large | Code splitting, lazy load sections, tree shake |
-| Chatbot API costs | Use GPT-4o-mini, rate limiting, client-side caching |
-| Demo embeds slow pages | Lazy load iframes, placeholder images |
-| Mobile performance | Reduce particle count, disable heavy effects on mobile |
-| Accessibility | ARIA labels, keyboard nav, reduced motion support |
+- **Video weight.** `app/public/videos/` holds ~25 MB of mp4 committed to git,
+  which is most of the repository's size. These should be re-encoded and moved
+  to a CDN or Git LFS.
+- **No tests, no CI.** Neither the front-end nor the Express service has a test
+  suite or a build check on push.
+- **No résumé PDF.** `public/` has no `resume.pdf`, so the site cannot offer the
+  download a portfolio of this kind is expected to have.
+- **Rate limiting is per-instance.** In-memory buckets reset on restart, which
+  on Render's free tier happens often.

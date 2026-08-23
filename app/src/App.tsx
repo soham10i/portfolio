@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import ProjectDetail from './pages/ProjectDetail'
 import FactoryDemo from './pages/FactoryDemo'
+import NotFound from './pages/NotFound'
 
 // The two 3D viewers pull a runtime engine and a lot of geometry code; keep
 // them out of the initial bundle so the home page still paints fast.
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/factory" element={<FactoryDemo />} />
         <Route path="/factory-twin" element={<FactoryTwin3D />} />
         <Route path="/robot" element={<AutonomousRobot />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   )

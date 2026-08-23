@@ -207,9 +207,17 @@ function ContactForm() {
           message: form.get('message'),
         }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Send failed.');
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Send failed.');
       setStatus('sent');
-      setNote('Thanks — that reached my inbox. I usually reply within a day.');
+      /* The server tells us whether it actually delivered the mail. Without a
+         mail provider configured it only logs to an ephemeral disk, so don't
+         promise an inbox that never received anything. */
+      setNote(
+        body.delivered
+          ? 'Thanks — that reached my inbox. I usually reply within a day.'
+          : `Thanks — got it. Mail delivery isn't configured yet, so please also email me at ${CONTACT.email} to be sure.`,
+      );
       e.currentTarget.reset();
     } catch (err) {
       setStatus('error');

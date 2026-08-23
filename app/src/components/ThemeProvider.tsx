@@ -1,24 +1,12 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect } from 'react';
+import { ThemeContext, type Theme } from '@/lib/theme';
 
 /* ================================================================
    THEME SYSTEM — Dark & Light Mode
+
+   The context and the useTheme hook live in lib/theme.ts so this file
+   exports only a component and fast refresh keeps working.
    ================================================================ */
-
-export type Theme = 'dark' | 'light';
-
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextType>({
-  theme: 'dark',
-  toggleTheme: () => {},
-});
-
-export function useTheme() {
-  return useContext(ThemeContext);
-}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {

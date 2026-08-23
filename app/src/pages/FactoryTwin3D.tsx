@@ -193,7 +193,7 @@ export default function FactoryTwin3D() {
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-rose-300">3D engine failed to load</p>
                 <p className="mt-2 text-[12.5px] text-fg3">{engineError}</p>
-                <p className="mt-1 text-[12.5px] text-fg3">The engine pulls Three.js r147 from unpkg on first mount — check the network, or vendor it into <code className="font-mono">public/vendor/</code>.</p>
+                <p className="mt-1 text-[12.5px] text-fg3">The engine loads Three.js r147 from <code className="font-mono">public/vendor/</code>, falling back to unpkg — check that both are reachable.</p>
               </div>
             </div>
           ) : (
