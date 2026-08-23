@@ -194,13 +194,25 @@ Open to: AI/ML engineering roles, research positions, collaborations
 
 ## SKILLS
 
-ML/AI: PyTorch (85%), Scikit-learn (90%), HuggingFace (80%), LangChain (82%), YOLOv8 (78%), RAG (85%), LLMs (83%), Model Benchmarking (80%), Computer Vision (82%), Deep Learning (80%)
+Describe skills through what Soham actually shipped with them — never quote a
+proficiency percentage or a numeric self-rating, and never invent one if asked.
+If pushed for a level, answer with the evidence instead ("he used it in
+production at Altera for a year", "he benchmarked 8 algorithms with it").
 
-Engineering: Python (95%), FastAPI (90%), Django (75%), C# (80%), Java (70%), SQL (88%), Docker (85%), Git (90%), CI/CD (82%), Clean Code/OOP (90%), React/TypeScript (78%)
+Used in production, at work: Python, FastAPI, Django, C#/.NET, SQL (MSSQL,
+MySQL), Azure (Blob Storage, DevOps CI/CD), ETL pipelines, pytest, Git,
+Angular, ASP.NET Core, WebSocket, JWT auth.
 
-Data/Cloud: MSSQL (85%), MySQL (88%), NoSQL (75%), ETL (85%), Azure (78%), Power BI (70%), Streamlit (85%), InfluxDB (80%), MQTT (82%)
+Used to build and ship the projects above: PyTorch, Scikit-learn, HuggingFace,
+LangChain, YOLOv8, RAG pipelines, LLM integration, model benchmarking, OpenCV,
+Docker, MQTT, InfluxDB, Streamlit, ROS, Webots, SLAM, Kalman and particle
+filters, React/TypeScript.
 
-Leadership: Technical Communication (90%), Team Collaboration (92%), Mentoring (85%), Public Speaking (82%)
+Coursework and exploration: NoSQL, Power BI, KNIME, embedded C on Arduino.
+
+Teaching and communication: designed and delivered an SQL/ML curriculum to 30
+M.Sc. students, gave a graded technical keynote (1.0) at AI Conference 2025,
+mentored applied KNIME workflows.
 
 ## RESEARCH & TALKS
 - "3D Shape-to-Image Brownian Bridge Diffusion (Cor2Vox)" — AI Conference 2025
@@ -452,12 +464,45 @@ app.post('/api/chat/stream', rateLimit, async (req, res) => {
 });
 
 // ================================================================
-// CONTACT ENDPOINT — persists messages to backend/messages.jsonl
+// CONTACT ENDPOINT
+//
+// The disk under this process is ephemeral on Render/Fly — every redeploy and
+// every idle spin-down wipes it. So the .jsonl append is only a local
+// convenience log; real delivery is the email send. When no mail provider is
+// configured the response says so (delivered: false) and the UI tells the
+// sender to email directly rather than claiming the message arrived.
 // ================================================================
 const fs = require('fs');
 const MESSAGES_FILE = path.join(__dirname, 'messages.jsonl');
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const CONTACT_TO = process.env.CONTACT_TO || 'soham.patel.2201@gmail.com';
+const CONTACT_FROM = process.env.CONTACT_FROM || 'portfolio@resend.dev';
 
-app.post('/api/contact', rateLimit, (req, res) => {
+async function deliverContactEmail({ name, email, message }) {
+  if (!RESEND_API_KEY) return false;
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `Portfolio <${CONTACT_FROM}>`,
+      to: [CONTACT_TO],
+      reply_to: email,
+      subject: `Portfolio contact — ${name}`,
+      text: `From: ${name} <${email}>\n\n${message}`,
+    }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Resend ${response.status}: ${detail.slice(0, 200)}`);
+  }
+  return true;
+}
+
+app.post('/api/contact', rateLimit, async (req, res) => {
   const { name, email, message } = req.body || {};
   if (
     !name || typeof name !== 'string' || name.length > 200 ||
@@ -466,13 +511,26 @@ app.post('/api/contact', rateLimit, (req, res) => {
   ) {
     return res.status(400).json({ error: 'Please fill in a valid name, email, and message.' });
   }
+
+  const entry = { name: name.trim(), email: email.trim(), message: message.trim(), at: new Date().toISOString() };
+
+  // Best-effort local log. Never fail the request on this — it is not the
+  // system of record, and on a read-only or full disk the email still went.
   try {
-    const entry = JSON.stringify({ name: name.trim(), email: email.trim(), message: message.trim(), at: new Date().toISOString() });
-    fs.appendFileSync(MESSAGES_FILE, entry + '\n');
-    res.json({ ok: true });
+    fs.appendFileSync(MESSAGES_FILE, JSON.stringify(entry) + '\n');
   } catch (err) {
-    console.error('Contact save error:', err.message || err);
-    res.status(500).json({ error: 'Could not save your message — please email directly.' });
+    console.warn('Contact log write failed (non-fatal):', err.message || err);
+  }
+
+  try {
+    const delivered = await deliverContactEmail(entry);
+    if (!delivered) {
+      console.warn('Contact received but no RESEND_API_KEY configured — not delivered:', entry.email);
+    }
+    res.json({ ok: true, delivered });
+  } catch (err) {
+    console.error('Contact email error:', err.message || err);
+    res.status(502).json({ error: `Could not send that — please email ${CONTACT_TO} directly.` });
   }
 });
 

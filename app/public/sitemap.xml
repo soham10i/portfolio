@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://soham-patel.onrender.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://soham-patel.onrender.com/factory</loc><priority>0.8</priority></url>
+  <url><loc>https://soham-patel.onrender.com/factory-twin</loc><priority>0.8</priority></url>
+  <url><loc>https://soham-patel.onrender.com/robot</loc><priority>0.8</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/digital-twin</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/scene</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/medqa</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/wind</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/slam</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/ble</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/cv-uad</loc><priority>0.7</priority></url>
+  <url><loc>https://soham-patel.onrender.com/project/smart-home</loc><priority>0.7</priority></url>
+</urlset>

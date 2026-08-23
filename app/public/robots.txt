@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://soham-patel.onrender.com/sitemap.xml
