@@ -4,7 +4,7 @@
 ```
 /Users/sohampatel/workspace/Porfolio/
 ├── backend/                       # Chatbot API server
-│   ├── server.js                  # Express + Gemini API integration
+│   ├── server.js                  # Express + self-hosted LLM integration
 │   ├── package.json               # Backend dependencies
 │   ├── .env.example               # API key template
 │   └── node_modules/
@@ -85,14 +85,14 @@ npm run dev        # Dev server on port 3000
 - **Frontend:** Static export (`base: './'` in vite.config.ts) → Vercel/Netlify/GitHub Pages
 - **Backend:** Express server on port 3001, serves both API + static frontend
 - **Full deploy:** Build frontend → backend serves `../app/dist/` + `/api/chat`
-- **Estimated cost:** $0/month (Gemini free tier + static hosting free tier)
+- **Estimated cost:** $0/month if the model runs on Soham's own machine; a hosted GPU endpoint is the only line item if the demo must be public 24/7
 
 ## Chatbot Architecture
-- **Model:** Google Gemini 2.5 Flash (free tier: 1,500 req/day)
-- **Backend:** Express + CORS, calls Gemini REST API
+- **Model:** self-hosted, OpenAI-compatible (`LLM_API_BASE`). Default local stack: Ollama + `qwen2.5:7b-instruct` (text) and `qwen2.5vl:7b` (vision)
+- **Backend:** Express + CORS, calls the model's `/chat/completions`
 - **Frontend:** Floating chat widget, calls `/api/chat` endpoint
 - **RAG:** System prompt contains complete resume + all projects + experience + skills (~3,000 tokens)
-- **No vector DB needed:** Gemini's 1M context window handles everything in one prompt
+- **No vector DB needed:** the whole profile is ~6k tokens, so it fits in one prompt on any modern context window
 
 ## Design Decisions Log
 - **Hero background:** Blue radial gradient with 3D depth (replaced water ripple and 3D neural network)
@@ -100,7 +100,7 @@ npm run dev        # Dev server on port 3000
 - **Project cards:** CSS 3D transforms with perspective + preserve-3d + hover rotate
 - **Light theme:** Blue-tinted instead of pure white for eye comfort
 - **Water ripple:** Component kept in codebase but not used in hero
-- **Chatbot:** Full Gemini API integration replacing hardcoded keyword responses
+- **Chatbot:** Full LLM integration replacing hardcoded keyword responses
 - Static export (`base: './'` in vite.config.ts)
 - Can deploy to Vercel, Netlify, GitHub Pages, or any static host
 - Estimated cost: $0–$5/month (free tier on most platforms)

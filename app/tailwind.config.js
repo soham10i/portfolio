@@ -23,6 +23,7 @@ module.exports = {
         p: "var(--p)",
         s: "var(--s)",
         a: "var(--a)",
+        canvas: "var(--canvas)",
 
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

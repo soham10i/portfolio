@@ -17,3 +17,11 @@ npm-debug.log*
 
 # OS metadata
 Thumbs.db
+
+# Uncompressed source recordings — nothing serves these, and they are 49 MB.
+# The compressed clips in app/public/videos/*.mp4 ARE tracked and must ship.
+app/public/videos/_orig/
+
+# Local .env backups made when rotating tokens
+backend/.env.bak.*
+backend/.env.gemini.bak

@@ -1,161 +1,93 @@
-# Deployment Guide — Soham's Portfolio
+# Deploying
 
-> **Goal:** One-command deploy. Push to GitHub → site updates automatically.
+One process serves the built frontend *and* the API, so there is nothing to
+configure between them — no CORS, no proxy, no second service. That is the
+whole reason for this shape.
 
----
-
-## Option 1: Render.com (Recommended — Free, Easiest)
-
-### Step 1: Push to GitHub
+## Before the first deploy
 
 ```bash
-cd /Users/sohampatel/workspace/Porfolio
-git init
-git add .
-git commit -m "initial portfolio"
-# Create repo on github.com/soham10i and:
-git remote add origin https://github.com/soham10i/portfolio.git
-git push -u origin main
+cd app && npm ci && npm run build     # must be clean
+cd ../backend && npm ci --omit=dev
+NODE_ENV=production node server.js    # boot log states CORS and model status
 ```
 
-### Step 2: Connect Render
+The production boot log must say `🌐 CORS: same-origin only`. If it says
+`any origin (dev)`, `NODE_ENV` did not reach the process — fix that before
+going public, or any website can call this API from a visitor's browser.
 
-1. Go to [dashboard.render.com](https://dashboard.render.com)
-2. Click **New +** → **Blueprint**
-3. Connect your GitHub repo `soham10i/portfolio`
-4. Render reads `render.yaml` and auto-configures everything
+## The one real decision: where the language model lives
 
-### Step 3: Set Environment Variable
+The backend speaks OpenAI's `/chat/completions` to whatever `LLM_API_BASE`
+names. On your Mac that is Ollama at `127.0.0.1:11434/v1`. **A cloud instance
+cannot reach your Mac**, so there are three options and they are not equal:
 
-In Render dashboard → Your Service → Environment:
+| Option | Cost | What a visitor gets |
+|---|---|---|
+| **Ship with no LLM** | £0 | Detection, keyframes, detector-written descriptions and clip summaries all work. Chat and Q&A return an honest 503. |
+| Hosted OpenAI-compatible endpoint | ~£0–20/mo | Everything works. Set `LLM_API_BASE`, `LLM_MODEL`, `LLM_VISION_MODEL`, `LLM_API_KEY`. |
+| Small GPU box running vLLM | £30+/mo | Everything works, and it is genuinely *your* deployment — the strongest version for a CV. |
 
-| Key | Value |
-|-----|-------|
-| `GEMINI_API_KEY` | `<set GEMINI_API_KEY from backend/.env — do not commit the real key>` |
+Option 1 is a legitimate launch state, not a broken one: the scene demo falls
+back to detector-only narration and says so on the page. **Do not block the
+deploy on the model.** A live site with an honest 503 on the chatbot beats a
+perfect site nobody can reach.
 
-> ⚠️ **Never commit `.env` to GitHub.** It's already in `.gitignore`.
+## Render
 
-### Step 4: Deploy
+Root directory `backend/`.
 
-Render auto-deploys on every `git push`. Your URL will be:
-```
-https://soham-portfolio.onrender.com
-```
+- Build: `cd ../app && npm ci && npm run build && cd ../backend && npm ci --omit=dev`
+- Start: `node server.js`
 
-### Re-deploy (after any change)
+| Key | Notes |
+|---|---|
+| `NODE_ENV` | `production` — required, or CORS stays open |
+| `ADMIN_TOKEN` | notes editing; omit to make the notes section read-only |
+| `LLM_API_BASE` | omit to launch without a model (see above) |
+| `LLM_MODEL`, `LLM_VISION_MODEL`, `LLM_API_KEY` | only alongside `LLM_API_BASE` |
+| `ALLOWED_ORIGINS` | leave unset — same-origin is what a single service wants |
+| `SCENE_API_BASE` | only if the FastAPI + BLIP service is hosted |
+
+Free tier sleeps after 15 minutes idle; the first request then takes ~10 s.
+
+## Fly
 
 ```bash
-cd /Users/sohampatel/workspace/Porfolio
-bash scripts/deploy.sh render
-```
-
-Or just:
-```bash
-git add .
-git commit -m "update: description"
-git push
-# Render auto-deploys in ~2 minutes
-```
-
----
-
-## Option 2: Fly.io (Faster Global, $5/mo minimum)
-
-If you want faster load times worldwide (Fly has edge servers everywhere):
-
-```bash
-# Install Fly CLI
-brew install flyctl
-
-# Login
-fly auth login
-
-# Launch (first time only)
-fly launch --name soham-portfolio --region fra
-
-# Set secrets
-fly secrets set GEMINI_API_KEY="your-key"
-
-# Deploy
+fly launch --name <name> --region fra     # dockerfile = backend/Dockerfile
+fly secrets set NODE_ENV=production ADMIN_TOKEN=...
 fly deploy
 ```
 
-Your URL: `https://soham-portfolio.fly.dev`
+The Dockerfile passes secrets at run time only (never baked into a layer),
+runs as the unprivileged `node` user, and has a `HEALTHCHECK` on
+`/api/health`. It has **not been built yet** — build it once locally before
+relying on it.
 
-Re-deploy:
-```bash
-bash scripts/deploy.sh fly
-```
+## Payload
 
----
+`app/public` carries ~36 MB that must ship: the vendored three.js and ONNX
+Runtime (13 MB), the YOLOv8n-seg weights (14 MB), and the maze recordings
+(9 MB). None of it downloads until a visitor opens the page that needs it —
+the model only on `/scene`, a clip only when its tab is opened
+(`preload="metadata"`, with a poster frame so the panel is never blank).
 
-## Option 3: Self-Hosted / VPS (DigitalOcean, Hetzner, etc.)
+The uncompressed source clips are kept in `app/public/videos/_orig/`.
+**Do not commit that folder** — nothing serves it, and it is 49 MB.
 
-```bash
-# On your server
-git clone https://github.com/soham10i/portfolio.git
-cd portfolio
-
-# Build
-cd app && npm ci && npm run build && cd ../backend
-npm ci
-cp .env.example .env
-# Edit .env with your API key
-
-# Run with PM2 for auto-restart
-npm install -g pm2
-pm2 start server.js --name portfolio
-pm2 startup
-pm2 save
-```
-
----
-
-## 🔒 Security Checklist
-
-Before deploying, verify:
-
-- [ ] `.env` is in `.gitignore` (API keys never committed)
-- [ ] `backend/.env` has `GEMINI_API_KEY` set
-- [ ] No hardcoded secrets in any source file
-- [ ] `NODE_ENV=production` on the server
-- [ ] CORS is configured (already done in `server.js`)
-
----
-
-## 🔄 Update Workflow (After Any Change)
+## After deploying
 
 ```bash
-# 1. Make your changes in /Users/sohampatel/workspace/Porfolio
-
-# 2. Run validation
-node scripts/validate.js
-
-# 3. Build & test locally
-cd app && npm run build && cd ..
-
-# 4. Deploy
-bash scripts/deploy.sh
+curl -s https://<host>/api/health          # llm true/false, models named
+curl -s https://<host>/api/scene/status    # which captioner, if any
+curl -sI https://<host>/ | grep -i strict-transport   # HSTS, TLS only
 ```
 
----
+Then open `/`, `/robot`, `/scene`, `/notes` and confirm no console errors.
 
-## 📊 Monitoring
+## Security
 
-| Platform | Dashboard |
-|----------|-----------|
-| Render | https://dashboard.render.com |
-| Fly.io | https://fly.io/dashboard |
-| Uptime | Add to [UptimeRobot](https://uptimerobot.com) (free) for alerts |
-
----
-
-## 🆘 Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| "Gemini API key not configured" | Set `GEMINI_API_KEY` env var in platform dashboard |
-| Blank page, 404 on refresh | SPA fallback already in `server.js` — check `dist/` folder exists |
-| Chatbot 500 error | Check backend logs in Render/Fly dashboard |
-| Slow first load | Render free tier sleeps after 15min idle — first request wakes it up (~10s) |
-| CORS error | Already handled by `cors()` middleware — verify `VITE_API_URL` is empty (uses proxy) |
+`SECURITY.md` lists the nine findings that were fixed and the limits that were
+accepted. The two that matter on a public deploy: `NODE_ENV=production` must
+be set, and `ADMIN_TOKEN` must be a long random value — if it leaks, notes are
+rendered as HTML and stored XSS becomes possible.
