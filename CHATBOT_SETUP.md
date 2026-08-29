@@ -2,13 +2,13 @@
 
 ## What You Just Got
 
-A fully functional AI assistant for your portfolio, powered by **Google Gemini 2.5 Flash** with complete RAG (Retrieval-Augmented Generation) — it knows your entire resume, all 7 projects, your work experience, skills, and education.
+A fully functional AI assistant for your portfolio, powered by a **self-hosted LLM** (any OpenAI-compatible endpoint) with complete RAG (Retrieval-Augmented Generation) — it knows your entire resume, all 7 projects, your work experience, skills, and education.
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Frontend      │────▶│  Backend (Node)  │────▶│  Gemini API     │
+│   Frontend      │────▶│  Backend (Node)  │────▶│  Your LLM (/v1) │
 │   (React/Vite)  │◀────│  Express + CORS  │◀────│  (Google AI)    │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
    Port 3000                Port 3001
@@ -16,19 +16,35 @@ A fully functional AI assistant for your portfolio, powered by **Google Gemini 2
 
 **In production:** The backend serves both the API and the static frontend from a single server.
 
-## Step 1: Get Your Gemini API Key (FREE)
+## Step 1: Point the Backend at a Model
 
-1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Click **"Create API Key"**
-3. Copy the key (starts with `AIza...`)
-4. Paste it in `/Users/sohampatel/workspace/Porfolio/backend/.env`:
+There is no third-party AI vendor in this project. The backend talks to **any
+OpenAI-compatible `/chat/completions` endpoint**, so the model can be one you
+run yourself.
+
+**Fastest path — Ollama on the Mac:**
 
 ```bash
+ollama pull qwen2.5:7b-instruct     # chat, summaries, Q&A
+ollama pull qwen2.5vl:7b            # frame captions (or moondream / gemma3:4b / qwen3-vl:4b)
+ollama serve                        # exposes http://127.0.0.1:11434/v1
+
 cd /Users/sohampatel/workspace/Porfolio/backend
-echo "GEMINI_API_KEY=your_actual_key_here" > .env
+cat > .env <<'ENV'
+PORT=3001
+LLM_API_BASE=http://127.0.0.1:11434/v1
+LLM_MODEL=qwen2.5:7b-instruct
+LLM_VISION_MODEL=qwen2.5vl:7b
+ENV
 ```
 
-> 💡 **Gemini 2.5 Flash free tier:** 1,500 requests/day, 1M tokens/minute. More than enough for a portfolio.
+`GET /api/health` reports which models are wired up. If `LLM_API_BASE` is
+unset, chat and narration return **503 with an honest message** rather than
+pretending to work.
+
+> The same four variables point at vLLM, llama.cpp `--server`, LM Studio, a
+> Hugging Face Inference Endpoint, or any hosted OpenAI-compatible gateway.
+> Swapping the model is an env change, not a code change.
 
 ## Step 2: Run Locally
 
@@ -57,7 +73,7 @@ npm run build
 
 # 2. Set production API key
 cd /Users/sohampatel/workspace/Porfolio/backend
-echo "GEMINI_API_KEY=your_key" > .env
+echo "LLM_API_BASE=https://<your-model-server>/v1\nLLM_MODEL=qwen2.5-7b-instruct" > .env
 
 # 3. Start server (serves frontend + API)
 npm start
@@ -76,19 +92,19 @@ The server runs on port 3001 and serves:
 3. Root directory: `backend/`
 4. Build command: `cd ../app && npm install && npm run build`
 5. Start command: `node server.js`
-6. Add environment variable: `GEMINI_API_KEY`
+6. Add environment variables: `LLM_API_BASE`, `LLM_MODEL`, `LLM_VISION_MODEL` (a laptop Ollama is not reachable from Render — use a hosted endpoint)
 
 ### Railway ($5/month free credit)
 1. Push to GitHub
 2. Deploy the `backend/` folder
-3. Add `GEMINI_API_KEY` as environment variable
+3. Add `LLM_API_BASE` / `LLM_MODEL` / `LLM_VISION_MODEL` as environment variables
 4. The `npm start` command handles everything
 
 ## Files Created/Modified
 
 | File | Purpose |
 |------|---------|
-| `backend/server.js` | Express server with Gemini API integration |
+| `backend/server.js` | Express server; one `callLLM()` transport for chat, captions, summaries and Q&A |
 | `backend/package.json` | Backend dependencies (Express, CORS, dotenv) |
 | `backend/.env.example` | API key template |
 | `app/src/components/Chatbot.tsx` | Frontend chat widget (updated to call API) |
@@ -103,7 +119,7 @@ The system prompt includes your complete portfolio:
 - **Skills:** 40+ skills with proficiency levels
 - **Research:** AI Conference talk on Cor2Vox
 
-All of this is embedded in the prompt — no vector DB needed. Gemini's 1M token window handles it easily.
+All of this is embedded in the system prompt — no vector DB needed. It is ~6k tokens, so any 8k-context model handles it; 32k gives comfortable room for conversation history.
 
 ## Customizing the Personality
 
@@ -113,7 +129,8 @@ Edit `/Users/sohampatel/workspace/Porfolio/backend/server.js` and modify the `SY
 
 | Issue | Fix |
 |-------|-----|
-| "Gemini API key not configured" | Add `.env` file with `GEMINI_API_KEY=...` in `backend/` |
+| 503 "Chat is not configured" | Add `LLM_API_BASE=...` to `backend/.env` and restart |
 | CORS errors in browser | Backend CORS is enabled by default; check port 3001 is running |
-| "Empty response from Gemini" | Usually a safety filter; check the prompt isn't blocked |
+| 502 from `/api/chat` | Model server reachable but erroring — check its own log and that `LLM_MODEL` matches a model it has loaded |
+| Captions say "no captioning engine" | Neither `SCENE_API_BASE` nor `LLM_API_BASE` is answering; detection still runs locally in the browser |
 | Chat button not showing | Check browser console for errors; verify build succeeded |

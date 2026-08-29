@@ -330,8 +330,67 @@
       this._gn = Math.ceil(span / P.RES);
       this._go = [this._center[0] - span / 2, this._center[1] - span / 2];
       this._grid = new Float32Array(this._gn * this._gn);   // log-odds
+      this._ensureOpenSpawn();
       this._syncRobot();
       this._pushState(true);
+    }
+
+    /* How open is a candidate pose? Casts a coarse fan and reports the longest
+       sightline and the nearest obstacle. Used only at load time. */
+    _openness(x, y) {
+      const T = window.THREE;
+      const origin = new T.Vector3(x, P.LIDAR_Z, -y);
+      const dir = new T.Vector3();
+      let maxd = 0, clear = Infinity;
+      for (let i = 0; i < 36; i++) {
+        const a = (i / 36) * Math.PI * 2;
+        dir.set(Math.cos(a), 0, -Math.sin(a));
+        this._ray.set(origin, dir);
+        const hit = this._ray.intersectObjects(this._walls, false)[0];
+        const d = hit ? hit.distance : P.LIDAR_MAX;
+        if (d > maxd) maxd = d;
+        if (d < clear) clear = d;
+      }
+      return { maxd, clear };
+    }
+
+    /* Maze 4's exported geometry seals the robot's start pose inside a closed
+       ~1 m pocket — 0 of 120 rays escape, so no plan can ever leave it and the
+       robot sits at 0.00 m forever. That is a defect in the .wbt export, not in
+       the controller, so rather than silently failing we detect the enclosure
+       and move the spawn to the nearest genuinely open pose. The relocation is
+       reported in sim-state so the UI can say the run does not start where the
+       Webots world does. Nothing in the original project is touched. */
+    _ensureOpenSpawn() {
+      this._spawnMoved = null;
+      if (!this._walls || !this._walls.length || !this._ray) return;
+      /* reset() runs before the first render, so the wall meshes still carry
+         stale world matrices — without this every probe ray misses and the
+         pocket looks wide open. */
+      this._scene.updateMatrixWorld(true);
+      const OPEN = P.LIDAR_MAX * 0.5;
+      if (this._openness(this._pose.x, this._pose.y).maxd >= OPEN) return;
+
+      const span = Math.max((this._world && this._world.span) || 6, 4);
+      const half = span / 2;
+      for (let r = 0.4; r <= half * 1.4; r += 0.2) {
+        for (let i = 0; i < 24; i++) {
+          const a = (i / 24) * Math.PI * 2;
+          const x = this._pose.x + Math.cos(a) * r;
+          const y = this._pose.y + Math.sin(a) * r;
+          if (Math.abs(x - this._center[0]) > half || Math.abs(y - this._center[1]) > half) continue;
+          const o = this._openness(x, y);
+          if (o.clear > P.ROBOT_RADIUS * 2.2 && o.maxd >= OPEN) {
+            this._spawnMoved = {
+              from: [+this._pose.x.toFixed(2), +this._pose.y.toFixed(2)],
+              to: [+x.toFixed(2), +y.toFixed(2)], by: +r.toFixed(2),
+            };
+            this._pose.x = x; this._pose.y = y;
+            return;
+          }
+        }
+      }
+      this._spawnMoved = { sealed: true };
     }
 
     _cell(x, y) {
@@ -397,8 +456,12 @@
       this._occCount = occ.length / 3; this._freeCount = free.length / 3;
     }
 
-    _blocked(k) {
-      const inflate = Math.ceil(P.ROBOT_RADIUS / P.RES);
+    /* Occupancy test with the robot radius inflated. `cells` lets the planner
+       relax the inflation when the robot is boxed in by its own halo — without
+       that escape hatch a start pose within one robot radius of a wall has no
+       passable neighbour at all and A* can never expand. */
+    _blocked(k, cells) {
+      const inflate = cells === undefined ? Math.ceil(P.ROBOT_RADIUS / P.RES) : cells;
       const i = k % this._gn, j = (k - i) / this._gn;
       for (let dj = -inflate; dj <= inflate; dj++) {
         for (let di = -inflate; di <= inflate; di++) {
@@ -408,6 +471,43 @@
         }
       }
       return false;
+    }
+
+    /* The mission targets are the pillars themselves, and a pillar cell is
+       surrounded by its own inflated halo — so it is never enterable. Aim at
+       the nearest passable cell around it instead, which is what the Python
+       controller does implicitly by driving to within GOAL_TOL of the post. */
+    /* True when no 8-neighbour of k is passable at this inflation. */
+    _boxedIn(k, inflate) {
+      const n = this._gn, i0 = k % n, j0 = (k - i0) / n;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue;
+        const ii = i0 + di, jj = j0 + dj;
+        if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
+        if (!this._blocked(jj * n + ii, inflate)) return false;
+      }
+      return true;
+    }
+
+    _freeNear(k0, maxCells, inflate) {
+      if (k0 < 0) return -1;
+      if (!this._blocked(k0, inflate)) return k0;
+      const n = this._gn, i0 = k0 % n, j0 = (k0 - i0) / n;
+      for (let r = 1; r <= maxCells; r++) {
+        let best = -1, bestKnown = -1;
+        for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;   // ring only
+          const ii = i0 + di, jj = j0 + dj;
+          if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
+          const k = jj * n + ii;
+          if (this._blocked(k, inflate)) continue;
+          if (this._grid[k] < -0.7) { bestKnown = k; break; }         // known free — best
+          if (best === -1) best = k;
+        }
+        if (bestKnown !== -1) return bestKnown;
+        if (best !== -1) return best;
+      }
+      return -1;
     }
 
     _pickFrontier() {
@@ -434,7 +534,7 @@
       return best.k;
     }
 
-    _astar(startK, goalK) {
+    _astar(startK, goalK, inflate) {
       const n = this._gn, total = n * n;
       const g = new Float32Array(total).fill(Infinity);
       const from = new Int32Array(total).fill(-1);
@@ -459,7 +559,7 @@
           if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
           const nk = jj * n + ii;
           if (seen[nk]) continue;
-          if (nk !== goalK && this._blocked(nk)) continue;
+          if (nk !== goalK && this._blocked(nk, inflate)) continue;
           const step = (di && dj ? 1.414 : 1) * P.RES;
           const ng = g[cur] + step;
           if (ng < g[nk]) {
@@ -485,19 +585,54 @@
       const startK = this._cell(this._pose.x, this._pose.y);
       this._replanIn = P.REPLAN_S;
       const target = this._missionTarget();
-      let goalK = -1;
-      if (target) goalK = this._cell(target.xy[0], target.xy[1]);
-      if (goalK < 0) goalK = this._pickFrontier();       // fall back to frontier exploration
-      if (startK < 0 || goalK < 0) {
+      const full = Math.ceil(P.ROBOT_RADIUS / P.RES);
+
+      if (startK < 0) {
+        this._path = null; this._goal = null; this._goalMark.visible = false;
+        this._state = 'SEARCH';
+        return;
+      }
+
+      /* If the robot's own cell is inside the inflated halo of a nearby wall,
+         every neighbour fails the full-radius test and A* expands nothing —
+         the robot then sits at 0.00 m forever. Shrink the inflation just
+         enough to get moving; the front-clearance gate in _drive still stops
+         it from driving into anything. */
+      let inflate = full;
+      while (inflate > 0 && this._boxedIn(startK, inflate)) inflate -= 1;
+
+      const plan = (gk) => {
+        if (gk < 0) return null;
+        const pth = this._astar(startK, gk, inflate);
+        return pth && pth.length >= 2 ? pth : null;
+      };
+
+      let goalK = -1, path = null, exploring = false;
+
+      if (target) {
+        // Aim beside the pillar, not at its (permanently blocked) centre.
+        const pillar = this._cell(target.xy[0], target.xy[1]);
+        goalK = this._freeNear(pillar, 12, inflate);
+        path = plan(goalK);
+      }
+
+      // No mission target, or the target is unreachable right now — explore
+      // instead of latching into SEARCH and standing still.
+      if (!path) {
+        const fk = this._pickFrontier();
+        const fpath = plan(fk);
+        if (fpath) { goalK = fk; path = fpath; exploring = true; }
+      }
+
+      if (!path) {
         this._path = null; this._goal = null; this._goalMark.visible = false;
         this._state = target ? 'SEARCH' : 'MISSION_DONE';
         return;
       }
-      const path = this._astar(startK, goalK);
-      if (!path || path.length < 2) { this._path = null; this._state = 'SEARCH'; return; }
+
       this._path = path; this._pathI = 0;
       this._goal = this._cellCenter(goalK);
-      this._state = target ? 'GOTO_' + target.key.toUpperCase() : 'EXPLORE';
+      this._state = (target && !exploring) ? 'GOTO_' + target.key.toUpperCase() : 'EXPLORE';
       this._goalMark.visible = true;
       this._goalMark.position.set(this._goal[0], 0.14, -this._goal[1]);
       const pos = this._pathLine.geometry.attributes.position;
@@ -515,21 +650,61 @@
         this._w = 1.2; this._v = 0;
         this._spun += this._w * dt;
         if (this._spun >= Math.PI * 2) { this._spun = 0; this._replan(); }
+      } else if (this._state === 'UNSTICK') {
+        /* Recovery. The Python controller has one; this port did not, so once
+           the robot wedged itself against a wall it stayed there until the
+           3-second replan timer happened to free it. Back out along a gentle
+           arc, then force a fresh plan. */
+        this._v = -P.V_MAX * 0.45;
+        this._w = this._unstickSign * P.W_MAX * 0.55;
+        this._unstickT -= dt;
+        if (this._unstickT <= 0) { this._state = 'EXPLORE'; this._replanIn = 0; this._stuckT = 0; }
       } else if (this._path) {
-        // pure pursuit: carrot ≈ 0.42 m along the remaining path
-        let acc = 0, carrot = this._path[this._path.length - 1];
-        for (let i = this._pathI; i < this._path.length - 1; i++) {
-          const a = this._path[i], b = this._path[i + 1];
-          acc += Math.hypot(b[0] - a[0], b[1] - a[1]);
-          if (Math.hypot(a[0] - pose.x, a[1] - pose.y) < P.RES * 2) this._pathI = i;
-          if (acc > P.CARROT) { carrot = b; break; }
+        /* Pure pursuit, done properly.
+         *
+         * The previous version tracked progress by waiting for a path node to
+         * come within RES*2 (0.10 m) of the robot, and measured the lookahead
+         * arc from that index. But pure pursuit deliberately cuts corners, so
+         * the robot routinely passes 0.15-0.25 m from a grid-centre node and
+         * the index never advanced. The carrot was then measured 0.42 m along
+         * the path from a point already behind the robot: the bearing error
+         * swung past PIVOT_BEARING, forward speed was forced to zero, and it
+         * pivoted on the spot until REPLAN_S fired and the cycle repeated.
+         * That is the stall-spin-lurch behaviour, and it is why the web run
+         * never looked like the Webots run.
+         *
+         * Correct pure pursuit projects the robot onto the path first, then
+         * measures the lookahead from that projection. */
+        const path = this._path;
+
+        // 1. nearest point on the path, searched forward only, so progress is
+        //    monotonic and a doubling-back route cannot drag the carrot back
+        let bestI = this._pathI, bestD = Infinity;
+        const upto = Math.min(path.length - 1, this._pathI + 60);
+        for (let i = this._pathI; i <= upto; i++) {
+          const d = Math.hypot(path[i][0] - pose.x, path[i][1] - pose.y);
+          if (d < bestD) { bestD = d; bestI = i; }
         }
+        this._pathI = bestI;
+
+        // 2. walk forward from the projection by the lookahead distance
+        let acc = 0, carrot = path[path.length - 1];
+        for (let i = bestI; i < path.length - 1; i++) {
+          const a = path[i], b = path[i + 1];
+          acc += Math.hypot(b[0] - a[0], b[1] - a[1]);
+          if (acc >= P.CARROT) { carrot = b; break; }
+        }
+
         const bearing = wrapPi(Math.atan2(carrot[1] - pose.y, carrot[0] - pose.x) - pose.th);
         const frontClear = this._frontClear();
         this._w = clamp(2.0 * bearing, -P.W_MAX, P.W_MAX);
         this._v = Math.abs(bearing) > P.PIVOT_BEARING ? 0
           : P.V_MAX * Math.cos(bearing) * clamp((frontClear - 0.14) / 0.5, 0, 1);
         if (frontClear < 0.16) { this._v = 0; this._w = P.W_MAX * 0.5; this._replanIn = 0; }
+
+        /* Drifted far off the route? The plan is stale — replan rather than
+           chase a carrot on a path we are no longer following. */
+        if (bestD > 0.6) this._replanIn = 0;
         const tg = this._missionTarget();
         if (tg && Math.hypot(tg.xy[0] - pose.x, tg.xy[1] - pose.y) < 0.36) {
           this._reached[tg.key] = true;
@@ -546,7 +721,26 @@
       pose.th = wrapPi(pose.th + this._w * dt);
       const step = this._v * dt;
       const nx = pose.x + Math.cos(pose.th) * step, ny = pose.y + Math.sin(pose.th) * step;
-      if (this._frontClear() > 0.13) { pose.x = nx; pose.y = ny; this._dist += Math.abs(step); }
+      /* Reversing during recovery must not be blocked by the forward-clearance
+         gate — that was what made a wedged robot unable to free itself. */
+      if (step < 0 || this._frontClear() > 0.13) { pose.x = nx; pose.y = ny; this._dist += Math.abs(step); }
+
+      /* Stuck detector. Anything that is supposed to be driving but has moved
+         less than 6 cm in 2.5 s is wedged; hand it to the recovery state. */
+      if (this._state !== 'INIT_SCAN' && this._state !== 'MISSION_DONE' && this._state !== 'UNSTICK') {
+        const moved = Math.hypot(pose.x - (this._lastX ?? pose.x), pose.y - (this._lastY ?? pose.y));
+        this._stuckT = (this._stuckT || 0) + dt;
+        if (this._stuckT > 2.5) {
+          if (moved < 0.06) {
+            this._state = 'UNSTICK';
+            this._unstickT = 1.1;
+            // turn away from whichever side has more room
+            this._unstickSign = this._sideClear(+1) >= this._sideClear(-1) ? 1 : -1;
+            this._path = null;
+          }
+          this._stuckT = 0; this._lastX = pose.x; this._lastY = pose.y;
+        }
+      }
       this._syncRobot();
       for (const w of this._wheels) w.rotation.x += (this._v / 0.043) * dt;
     }
@@ -555,6 +749,19 @@
       const N = P.LIDAR_RAYS, span = Math.round(N * 0.08);   // ±~30°
       let min = Infinity;
       for (let i = -span; i <= span; i++) {
+        const d = this._scan[(i + N) % N];
+        if (d < min) min = d;
+      }
+      return min;
+    }
+
+    /** Clearance to one side (+1 left, -1 right); picks the escape direction. */
+    _sideClear(sign) {
+      const N = P.LIDAR_RAYS;
+      const centre = Math.round((sign > 0 ? 0.25 : 0.75) * N);
+      const span = Math.round(N * 0.06);
+      let min = Infinity;
+      for (let i = centre - span; i <= centre + span; i++) {
         const d = this._scan[(i + N) % N];
         if (d < min) min = d;
       }
@@ -578,6 +785,7 @@
           occ: this._occCount || 0, coverage: known / total,
           pathLen: this._path ? this._path.length : 0,
           goal: this._goal, playing: this._playing, force: !!force,
+          spawnMoved: this._spawnMoved || null,
           blue: this._reached ? this._reached.blue : false,
           yellow: this._reached ? this._reached.yellow : false,
         },

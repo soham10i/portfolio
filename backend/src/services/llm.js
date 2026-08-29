@@ -1,0 +1,96 @@
+/* One transport for every model call in this codebase.
+ *
+ * Chat, streaming chat, frame captions, clip summaries and Q&A all go through
+ * callLLM, so swapping the backing model is an environment change rather than
+ * a code change — which is the whole point of speaking the OpenAI wire format
+ * instead of a vendor SDK. */
+const config = require('../config');
+const { SYSTEM_PROMPT } = require('../prompts/systemPrompt');
+
+const LLM = config.llm;
+
+function buildMessages(message, history) {
+  return [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history,
+    { role: 'user', content: message },
+  ];
+}
+
+async function callLLM({ messages, maxTokens = 1024, temperature = 0.7, stream = false, model = LLM.model, timeoutMs = LLM.timeoutMs }) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (LLM.apiKey) headers.Authorization = `Bearer ${LLM.apiKey}`;
+  return fetch(`${LLM.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, stream }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
+
+function extractText(data) {
+  const choice = data?.choices?.[0];
+  const c = choice?.message?.content;
+  // Some servers return content as an array of parts rather than a string
+  const text = typeof c === 'string'
+    ? c
+    : Array.isArray(c) ? c.map((p) => p?.text || '').join('') : '';
+  return { text: text.trim(), finishReason: choice?.finish_reason };
+}
+
+function extractDelta(chunk) {
+  const d = chunk?.choices?.[0]?.delta?.content;
+  return typeof d === 'string' ? d : '';
+}
+
+function isUnreachable(err) {
+  const code = err?.cause?.code || err?.code || '';
+  return err?.name === 'TypeError'
+    || ['ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH', 'ECONNRESET'].includes(code);
+}
+
+function friendlyError(status) {
+  if (status === 429) return 'The AI service is briefly rate-limited. Give it a few seconds and try again.';
+  if (status >= 500) return 'The AI service is having a moment. Try again shortly.';
+  return 'Could not reach the AI service.';
+}
+
+function budgetFor(message, history) {
+  const m = message.toLowerCase();
+  const words = m.split(/\s+/).filter(Boolean).length;
+
+  const isGreeting = words <= 6 && /^(hi|hii+|hey|hello|yo|sup|good (morning|afternoon|evening)|thanks|thank you|ok|okay|cool|nice|bye)\b/.test(m);
+  const wantsDepth = /\b(explain|detail|deep|architecture|how (does|did|do)|compare|versus|vs\.?|walk me through|tell me (more|about|everything)|all (of )?(his|the|soham)|list|breakdown|why)\b/.test(m) || words > 30;
+  const isComplexReasoning = /\b(compare|versus|vs\.?|trade-?offs?|best|strongest|rank|which (project|skill)|suited|fit for|why should|evaluate)\b/.test(m);
+
+  if (isGreeting) return { responseTokens: 256 };
+  if (isComplexReasoning) return { responseTokens: 2048 };
+  if (wantsDepth) return { responseTokens: 2048 };
+  const followUp = history.length > 4 ? 256 : 0; // a bit more room deeper into a conversation
+  return { responseTokens: 1024 + followUp };
+}
+
+const UNREACHABLE_MSG = `No model server is answering at ${LLM.baseUrl || '(unset)'}. Start it (e.g. \`ollama serve\`) or point LLM_API_BASE somewhere that is running.`;
+
+/* "Configured" and "answering" are different states, and the UI should show
+   the second. Cached briefly so a page full of keyframes does not hammer
+   /models on every request. */
+let probe = { at: 0, up: false };
+async function reachable() {
+  if (!LLM.baseUrl) return false;
+  if (Date.now() - probe.at < 15_000) return probe.up;
+  try {
+    const headers = LLM.apiKey ? { Authorization: `Bearer ${LLM.apiKey}` } : {};
+    const r = await fetch(`${LLM.baseUrl}/models`, { headers, signal: AbortSignal.timeout(4000) });
+    probe = { at: Date.now(), up: r.ok };
+  } catch {
+    probe = { at: Date.now(), up: false };
+  }
+  return probe.up;
+}
+
+module.exports = {
+  buildMessages, callLLM, extractText, extractDelta,
+  isUnreachable, friendlyError, budgetFor, reachable,
+  UNREACHABLE_MSG,
+};

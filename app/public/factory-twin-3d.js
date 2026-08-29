@@ -36,6 +36,91 @@
   const BIN_COLORS = [0xef4444, 0x22c55e, 0x3b82f6];
   window.FactoryTwinSim = { PHASES, TOTAL, phaseAt, BIN_COLORS };
 
+
+  /* ──────────────────────────────────────────────────────────────────────
+     fischertechnik parts library
+
+     Everything below is dimensioned on the real fischertechnik 15 mm grid —
+     the raster the kit is named after (Baustein 15, Baustein 30, Baustein
+     15x30x5). One grid unit is FT scene units, so a part is placed by
+     integer multiples of FT and is dimensionally correct by construction.
+
+       1 grid unit = 15 mm = FT scene units   →   1 scene unit = 200 mm
+
+     Material albedos were sampled from the fischertechnik 536634 reference
+     photographs (k-means over the hue bands, median of each cluster, taken
+     towards the shadow side because the scene adds its own lighting).
+     ────────────────────────────────────────────────────────────────────── */
+
+  const FT = 0.075;            // one 15 mm grid unit in scene units
+  const MM = FT / 15;          // one millimetre
+
+  const FT_COLORS = {
+    red:        0xc2141c,      // ft signal red — sampled #d0333a..#e23f42
+    redDark:    0xa8222a,      // shadowed red, used for recessed faces
+    black:      0x17161a,      // black profile / structural beams
+    darkGrey:   0x3d3c40,      // motor and gearbox housings
+    midGrey:    0x6e7073,      // grey plastic parts
+    alu:        0xb0b1b3,      // aluminium rods and extrusions
+    plate:      0xdcdddd,      // base plate / table
+    blue:       0x1a72b8,      // compressor
+    white:      0xe8e8e6,      // white workpiece
+    workRed:    0xd8323a,
+    workBlue:   0x1a72b8,
+    oven:       0xd8323a,      // the Brennofen shell is ft red
+  };
+
+  /* Procedural textures. Drawn once, shared by every instance — the whole
+     factory is a few dozen distinct parts repeated, exactly like the kit. */
+  const TEX = {};
+
+  function slotTexture() {
+    if (TEX.slot) return TEX.slot;
+    const px = 128, c = document.createElement('canvas');
+    c.width = px; c.height = px;
+    const g = c.getContext('2d');
+    g.fillStyle = '#17161a'; g.fillRect(0, 0, px, px);
+    // centre groove running the length of the beam
+    g.fillStyle = '#0e0d10';
+    g.fillRect(px * 0.38, 0, px * 0.24, px);
+    g.fillStyle = '#232227';
+    g.fillRect(px * 0.36, 0, px * 0.02, px);
+    g.fillRect(px * 0.62, 0, px * 0.02, px);
+    // one mounting hole per 15 mm grid step
+    for (let i = 0; i < 4; i++) {
+      const y = px * (0.125 + i * 0.25);
+      g.beginPath(); g.arc(px * 0.5, y, px * 0.075, 0, 6.283);
+      g.fillStyle = '#08070a'; g.fill();
+      g.beginPath(); g.arc(px * 0.5, y - px * 0.012, px * 0.075, 0, 3.14, true);
+      g.fillStyle = '#2c2b31'; g.fill();
+    }
+    const t = new window.THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = window.THREE.RepeatWrapping;
+    TEX.slot = t;
+    return t;
+  }
+
+  function plateTexture() {
+    if (TEX.plate) return TEX.plate;
+    const px = 256, c = document.createElement('canvas');
+    c.width = px; c.height = px;
+    const g = c.getContext('2d');
+    g.fillStyle = '#1b1a1f'; g.fillRect(0, 0, px, px);
+    // the ft building plate is perforated on the same 15 mm raster
+    const n = 8, step = px / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const x = i * step + step * 0.5, y = j * step + step * 0.5;
+      g.fillStyle = '#0b0a0d';
+      g.fillRect(x - step * 0.17, y - step * 0.17, step * 0.34, step * 0.34);
+      g.fillStyle = '#2a292f';
+      g.fillRect(x - step * 0.17, y - step * 0.19, step * 0.34, step * 0.03);
+    }
+    const t = new window.THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = window.THREE.RepeatWrapping;
+    TEX.plate = t;
+    return t;
+  }
+
   const lerp = (a, b, t) => a + (b - a) * Math.min(Math.max(t, 0), 1);
   const ease = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
@@ -102,30 +187,34 @@
       r.shadowMap.enabled = true;
       r.shadowMap.type = T.PCFSoftShadowMap;
       r.outputEncoding = T.sRGBEncoding;
+      r.toneMapping = T.ACESFilmicToneMapping;
+      r.toneMappingExposure = 0.78;
       Object.assign(r.domElement.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', display: 'block', cursor: 'grab' });
       this.insertBefore(r.domElement, this._label);
 
       const scene = this._scene = new T.Scene();
-      scene.fog = new T.Fog(0x0a0f1e, 9, 20);
+      scene.fog = new T.Fog(0x0a0f1e, 11, 24);
 
       const cam = this._cam = new T.PerspectiveCamera(38, 16 / 9, 0.1, 100);
-      cam.position.set(3.4, 2.6, 4.2);
+      cam.position.set(3.6, 2.45, 4.35);
 
       const ctl = this._ctl = new T.OrbitControls(cam, r.domElement);
-      ctl.target.set(0, 0.45, 0);
+      ctl.target.set(0, 0.42, 0);
       ctl.enableDamping = true; ctl.dampingFactor = 0.07;
-      ctl.minDistance = 2.4; ctl.maxDistance = 11;
+      ctl.minDistance = 2.0; ctl.maxDistance = 15;
       ctl.maxPolarAngle = Math.PI / 2.08;
       ctl.enablePan = false;
 
-      scene.add(new T.HemisphereLight(0x8fb2ee, 0x070c18, 0.38));
-      const key = new T.DirectionalLight(0xffffff, 0.9);
-      key.position.set(3.2, 5, 3);
+      scene.add(new T.HemisphereLight(0x93a9cc, 0x101014, 0.12));
+      const key = new T.DirectionalLight(0xfff4e6, 1.25);
+      key.position.set(3.6, 6.2, 3.4);
       key.castShadow = true;
-      key.shadow.mapSize.set(1024, 1024);
-      const s = key.shadow.camera; s.left = -5; s.right = 5; s.top = 5; s.bottom = -5; s.near = 0.5; s.far = 20;
+      key.shadow.mapSize.set(2048, 2048);
+      key.shadow.bias = -0.0009;
+      const s = key.shadow.camera; s.left = -4.2; s.right = 4.2; s.top = 4.2; s.bottom = -4.2; s.near = 0.5; s.far = 22;
       scene.add(key);
-      const rim = new T.DirectionalLight(0x5ea2ff, 0.6); rim.position.set(-4, 2.4, -3); scene.add(rim);
+      const rim = new T.DirectionalLight(0x86aae6, 0.12); rim.position.set(-4.4, 2.8, -3.4); scene.add(rim);
+      const fill = new T.DirectionalLight(0xffe9d8, 0.12); fill.position.set(-1.5, 2.2, 4.5); scene.add(fill);
 
       this._build();
       this._applyTheme();
@@ -149,7 +238,7 @@
     }
 
     _mat(color, opts) {
-      return new window.THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.62, metalness: 0.18 }, opts || {}));
+      return new window.THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.55, metalness: 0.05 }, opts || {}));
     }
 
     _box(w, h, d, mat, x, y, z, id) {
@@ -160,111 +249,312 @@
       return m;
     }
 
+    /* A fischertechnik structural beam: 15 x 15 mm cross-section, length in
+       whole grid units, carrying the slot-and-hole pattern as a texture.
+       axis: 'x' | 'y' | 'z'. */
+    _ftBeam(units, axis, x, y, z, id) {
+      const T = window.THREE;
+      const len = units * FT;
+      const w = FT, h = FT;
+      const g = axis === 'y' ? new T.BoxGeometry(w, len, h)
+              : axis === 'x' ? new T.BoxGeometry(len, h, w)
+              :                new T.BoxGeometry(w, h, len);
+      const tex = slotTexture().clone();
+      tex.needsUpdate = true;
+      tex.repeat.set(1, Math.max(1, Math.round(units / 4)));
+      const m = new T.Mesh(g, new T.MeshStandardMaterial({
+        color: FT_COLORS.black, map: tex, roughness: 0.62, metalness: 0.12,
+      }));
+      m.position.set(x, y, z);
+      m.castShadow = true; m.receiveShadow = true;
+      if (id) m.userData.id = id;
+      return m;
+    }
+
+    /* Chromed guide rod — the VSG and the Regalbediengerät run on these. */
+    _rod(lenUnits, axis, x, y, z, id) {
+      const T = window.THREE;
+      const g = new T.CylinderGeometry(2 * MM, 2 * MM, lenUnits * FT, 12);
+      const m = new T.Mesh(g, this._matAlu);
+      if (axis === 'x') m.rotation.z = Math.PI / 2;
+      if (axis === 'z') m.rotation.x = Math.PI / 2;
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      if (id) m.userData.id = id;
+      return m;
+    }
+
+    /* Encoder motor — 24 V, 25:1 gearbox, 75 pulses per output revolution.
+       Housing is 4 x 2 x 2 grid units (60 x 30 x 30 mm). */
+    _encoderMotor(x, y, z, id, rotY) {
+      const T = window.THREE;
+      const g = new T.Group();
+      g.add(this._box(4 * FT, 2 * FT, 2 * FT, this._matRed, 0, 0, 0, id));
+      for (let i = -1; i <= 1; i++) {
+        g.add(this._box(4 * FT * 0.98, 1.5 * MM, 1.5 * MM, this._matRedDark, 0, 4 * MM, i * 8 * MM, id));
+      }
+      const shaft = new T.Mesh(new T.CylinderGeometry(2 * MM, 2 * MM, 8 * MM, 10), this._matAlu);
+      shaft.rotation.z = Math.PI / 2; shaft.position.set(2 * FT + 4 * MM, 0, 0);
+      g.add(shaft);
+      g.position.set(x, y, z);
+      if (rotY) g.rotation.y = rotY;
+      return g;
+    }
+
+    /* S-Motor 24 V with U-gearbox (64.8:1) — drives the conveyor belts. */
+    _sMotor(x, y, z, id, rotY) {
+      const T = window.THREE;
+      const g = new T.Group();
+      g.add(this._box(3 * FT, 1.6 * FT, 1.6 * FT, this._matDark, 0, 0, 0, id));
+      g.add(this._box(1.4 * FT, 2 * FT, 2 * FT, this._matDark, 2.2 * FT, -2 * MM, 0, id));
+      g.position.set(x, y, z);
+      if (rotY) g.rotation.y = rotY;
+      return g;
+    }
+
+    /* Membrane compressor — 24 V, 0.7 bar. The blue box on every board. */
+    _compressor(x, y, z, id) {
+      const T = window.THREE;
+      const g = new T.Group();
+      g.add(this._box(4.5 * FT, 2.2 * FT, 2 * FT, this._matBlue, 0, 0, 0, id));
+      for (let i = 0; i < 3; i++) {
+        g.add(this._box(3.6 * FT, 1.5 * MM, 1.5 * MM, this._mat(0x125e97), 0, 6 * MM, -6 * MM + i * 6 * MM, id));
+      }
+      g.position.set(x, y, z);
+      return g;
+    }
+
+    /* Pneumatic cylinder — two of these, mechanically coupled, generate the
+       vacuum for the Sauggreifer. */
+    _cylinder(lenUnits, x, y, z, id) {
+      const T = window.THREE;
+      const g = new T.Group();
+      const body = new T.Mesh(new T.CylinderGeometry(5 * MM, 5 * MM, lenUnits * FT, 14), this._matGrey);
+      body.rotation.z = Math.PI / 2; body.castShadow = true;
+      if (id) body.userData.id = id;
+      g.add(body);
+      for (const sx of [-1, 1]) {
+        g.add(this._box(2 * MM, 1.6 * FT, 1.6 * FT, this._matRed, sx * lenUnits * FT * 0.5, 0, 0, id));
+      }
+      const rod = new T.Mesh(new T.CylinderGeometry(1.6 * MM, 1.6 * MM, 6 * MM, 8), this._matAlu);
+      rod.rotation.z = Math.PI / 2; rod.position.x = lenUnits * FT * 0.5 + 3 * MM;
+      g.add(rod);
+      g.position.set(x, y, z);
+      return g;
+    }
+
+    /* Vacuum suction cup — the effector of the VSG. */
+    _suctionCup(x, y, z, id) {
+      const T = window.THREE;
+      const g = new T.Group();
+      const stem = new T.Mesh(new T.CylinderGeometry(2 * MM, 2 * MM, 8 * MM, 10), this._matGrey);
+      stem.position.y = 4 * MM; g.add(stem);
+      const cup = new T.Mesh(new T.CylinderGeometry(5.5 * MM, 3 * MM, 5 * MM, 16), this._matWhite);
+      cup.position.y = -2 * MM; cup.castShadow = true;
+      if (id) cup.userData.id = id;
+      g.add(cup);
+      g.position.set(x, y, z);
+      return g;
+    }
+
+    /* Werkstückträger — the white carrier tray that sits in a shelf bay. */
+    _carrier(x, y, z, id) {
+      const T = window.THREE;
+      const g = new T.Group();
+      g.add(this._box(4 * FT, 0.5 * FT, 3 * FT, this._matWhite, 0, 0, 0, id));
+      g.add(this._box(4 * FT * 0.55, 0.55 * FT, 3 * FT * 0.55, this._mat(0xc9c9c6), 0, 1.5 * MM, 0, id));
+      g.position.set(x, y, z);
+      return g;
+    }
+
     _build() {
       const T = window.THREE;
       const scene = this._scene;
       const root = this._root = new T.Group();
       scene.add(root);
       this._pickables = [];
+      this._accentParts = [];
 
-      const shellMat = this._mat(0x101728, { roughness: 0.72 });
-      const frameMat = this._mat(0x1b2740, { metalness: 0.45, roughness: 0.42 });
-      const steel = this._mat(0x5f7391, { metalness: 0.8, roughness: 0.3 });
+      // Shared materials — one instance each, reused across every part.
+      this._matRed     = this._mat(FT_COLORS.red,      { roughness: 0.6, metalness: 0.02 });
+      this._matRedDark = this._mat(FT_COLORS.redDark,  { roughness: 0.5 });
+      this._matDark    = this._mat(FT_COLORS.darkGrey, { roughness: 0.58, metalness: 0.2 });
+      this._matGrey    = this._mat(FT_COLORS.midGrey,  { roughness: 0.55, metalness: 0.15 });
+      this._matAlu     = this._mat(FT_COLORS.alu,      { roughness: 0.28, metalness: 0.85 });
+      this._matBlue    = this._mat(FT_COLORS.blue,     { roughness: 0.45 });
+      this._matWhite   = this._mat(FT_COLORS.white,    { roughness: 0.6 });
+      this._matBlack   = this._mat(FT_COLORS.black,    { roughness: 0.62, metalness: 0.12 });
 
-      // Base plate + grid
-      const plate = this._box(5.4, 0.09, 3.1, this._mat(0x0d1424, { roughness: 0.85 }), 0, -0.045, 0);
+      // ── Table and perforated building plate ───────────────────────────
+      const table = this._box(5.7, 0.10, 3.4, this._mat(FT_COLORS.plate, { roughness: 0.92 }), 0, -0.11, 0);
+      root.add(table);
+
+      const ptex = plateTexture().clone();
+      ptex.needsUpdate = true;
+      ptex.repeat.set(18, 10);
+      const plate = new T.Mesh(new T.BoxGeometry(5.4, 0.06, 3.1),
+        new T.MeshStandardMaterial({ color: 0x232227, map: ptex, roughness: 0.8, metalness: 0.1 }));
+      plate.position.y = -0.03; plate.receiveShadow = true;
       root.add(plate);
-      const grid = this._grid = new T.GridHelper(5.4, 27, 0x2a3a55, 0x18233a);
-      grid.position.y = 0.002; root.add(grid);
 
-      // ── HBW rack (x = -2.05)
+      const grid = this._grid = new T.GridHelper(5.4, 72, 0x3a3942, 0x2a2930);
+      grid.material.transparent = true; grid.material.opacity = 0.22;
+      grid.position.y = 0.032; root.add(grid);
+
+      // ── Hochregallager: 3 x 3 rack on 15 mm raster (x = -2.05) ─────────
       const hbw = this._hbw = new T.Group(); hbw.position.set(-2.05, 0, 0); root.add(hbw);
-      hbw.add(this._box(0.5, 1.34, 1.5, shellMat, 0, 0.67, 0, 'hbw'));
+      const ROW = 0.4, COL = 0.52;                     // shelf pitch
+      const rackH = 18;                               // 18 grid units = 270 mm
+      for (const sx of [-0.22, 0.22]) for (const sz of [-0.78, -0.26, 0.26, 0.78]) {
+        hbw.add(this._ftBeam(rackH, 'y', sx, rackH * FT * 0.5, sz, 'hbw'));
+      }
+      for (let row = 0; row < 3; row++) {
+        const y = 0.14 + row * ROW;
+        for (const sx of [-0.22, 0.22]) hbw.add(this._ftBeam(22, 'z', sx, y, 0, 'hbw'));
+      }
       this._shelfCells = [];
       for (let row = 0; row < 3; row++) for (let col = 0; col < 3; col++) {
         const filled = (row * 3 + col) % 4 !== 2;
-        const c = this._box(0.34, 0.3, 0.4, this._mat(filled ? 0x1e3a5f : 0x0f1929, { roughness: 0.75 }),
-          0.1, 0.28 + row * 0.4, -0.5 + col * 0.5, 'hbw');
+        const c = this._carrier(0, 0.19 + row * ROW, -COL + col * COL, 'hbw');
+        c.visible = filled;
         this._shelfCells.push(c); hbw.add(c);
       }
-      this._lift = this._box(0.14, 0.28, 0.42, steel, 0.28, 0.28, 0, 'hbw');
-      hbw.add(this._lift);
+      // Regalbediengerät: vertical rods + red carriage + telescoping Ausleger
+      hbw.add(this._rod(rackH, 'y', 0.4, rackH * FT * 0.5, -0.09, 'hbw'));
+      hbw.add(this._rod(rackH, 'y', 0.4, rackH * FT * 0.5, 0.09, 'hbw'));
+      this._lift = new T.Group(); this._lift.position.set(0.4, 0.28, 0); hbw.add(this._lift);
+      this._lift.add(this._box(2 * FT, 2.5 * FT, 5 * FT, this._matRed, 0, 0, 0, 'hbw'));
+      this._lift.add(this._box(5 * FT, 0.6 * FT, 1.2 * FT, this._matBlack, -2.2 * FT, 0, 0, 'hbw'));
+      hbw.add(this._encoderMotor(0.4, 0.06, 0.42, 'hbw', Math.PI / 2));
 
-      // ── VGR-1 (x = -1.3)
+      // ── Vakuum-Sauggreifer VGR-1 (x = -1.28) ──────────────────────────
       const vgr1 = this._vgr1 = new T.Group(); vgr1.position.set(-1.28, 0, 0); root.add(vgr1);
-      const b1 = new T.Mesh(new T.CylinderGeometry(0.22, 0.26, 0.12, 28), frameMat);
-      b1.position.y = 0.06; b1.castShadow = true; b1.userData.id = 'vgr1'; vgr1.add(b1);
-      const col1 = this._col1 = new T.Group(); col1.position.y = 0.12; vgr1.add(col1);
-      const post = new T.Mesh(new T.CylinderGeometry(0.09, 0.1, 0.72, 20), steel);
-      post.position.y = 0.36; post.castShadow = true; post.userData.id = 'vgr1'; col1.add(post);
-      const arm1 = this._arm1 = new T.Group(); arm1.position.y = 0.72; col1.add(arm1);
-      arm1.add(this._box(0.78, 0.09, 0.13, steel, 0.36, 0, 0, 'vgr1'));
-      const grip1 = this._grip1 = new T.Group(); grip1.position.set(0.72, 0, 0); arm1.add(grip1);
-      grip1.add(this._box(0.12, 0.2, 0.12, this._mat(0x5ea2ff, { emissive: 0x1b3f77, metalness: 0.5 }), 0, -0.12, 0, 'vgr1'));
+      vgr1.add(this._box(8 * FT, 0.6 * FT, 8 * FT, this._matBlack, 0, 0.02, 0, 'vgr1'));
+      const ring1 = new T.Mesh(new T.CylinderGeometry(3.4 * FT, 3.6 * FT, 1.2 * FT, 28), this._matRed);
+      ring1.position.y = 0.08; ring1.castShadow = true; ring1.userData.id = 'vgr1';
+      vgr1.add(ring1);
+      vgr1.add(this._compressor(0.34, 0.11, -0.34, 'vgr1'));
 
-      // ── Conveyor (x -0.95 → 1.15, z 0)
+      const col1 = this._col1 = new T.Group(); col1.position.y = 0.14; vgr1.add(col1);
+      // vertical axis: two chromed rods in a red carrier, exactly as built
+      for (const sz of [-0.05, 0.05]) col1.add(this._rod(46, 'y', 0, 0.345, sz, 'vgr1'));
+      col1.add(this._box(4 * FT, 2 * FT, 6 * FT, this._matRed, 0, 0.02, 0, 'vgr1'));
+      col1.add(this._box(4 * FT, 2 * FT, 6 * FT, this._matRed, 0, 0.68, 0, 'vgr1'));
+      col1.add(this._encoderMotor(0.14, 0.66, 0, 'vgr1'));
+
+      const arm1 = this._arm1 = new T.Group(); arm1.position.y = 0.6; col1.add(arm1);
+      // horizontal axis: aluminium extrusion carrying the effector
+      const ext = this._box(0.78, 1.4 * FT, 1.6 * FT, this._matAlu, 0.34, 0, 0, 'vgr1');
+      arm1.add(ext);
+      arm1.add(this._box(3 * FT, 3 * FT, 4 * FT, this._matRed, 0.04, 0, 0, 'vgr1'));
+
+      const grip1 = this._grip1 = new T.Group(); grip1.position.set(0.7, 0, 0); arm1.add(grip1);
+      const gripRing = new T.Mesh(new T.TorusGeometry(2.2 * FT, 3 * MM, 8, 20),
+        this._mat(0x5ea2ff, { emissive: 0x11315e, metalness: 0.4 }));
+      gripRing.rotation.x = Math.PI / 2; gripRing.position.y = -0.02;
+      gripRing.userData.id = 'vgr1';
+      grip1.add(gripRing);
+      this._accentParts.push({ mesh: gripRing, key: 'primary' });
+      grip1.add(this._box(2 * FT, 2.4 * FT, 2 * FT, this._matRed, 0, -0.02, 0, 'vgr1'));
+      grip1.add(this._suctionCup(0, -0.12, 0, 'vgr1'));
+
+      // ── Förderband (x -0.95 → 1.15) ───────────────────────────────────
       const conv = this._conv = new T.Group(); root.add(conv);
-      conv.add(this._box(2.1, 0.1, 0.42, frameMat, 0.1, 0.36, 0, 'conveyor'));
-      this._belt = this._box(2.06, 0.03, 0.36, this._mat(0x0f1929, { roughness: 0.9 }), 0.1, 0.42, 0, 'conveyor');
+      for (const sz of [-0.21, 0.21]) conv.add(this._ftBeam(28, 'x', 0.1, 0.4, sz, 'conveyor'));
+      this._belt = this._box(2.06, 0.02, 0.36, this._mat(0x2a2a2e, { roughness: 0.92 }), 0.1, 0.42, 0, 'conveyor');
       conv.add(this._belt);
       for (const x of [-0.9, 1.1]) {
-        const leg = this._box(0.08, 0.32, 0.34, frameMat, x, 0.16, 0, 'conveyor');
-        conv.add(leg);
+        const roller = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 0.38, 16), this._matRed);
+        roller.rotation.x = Math.PI / 2; roller.position.set(x, 0.42, 0);
+        roller.castShadow = true; roller.userData.id = 'conveyor';
+        conv.add(roller);
+        conv.add(this._ftBeam(5, 'y', x, 0.2, -0.21, 'conveyor'));
+        conv.add(this._ftBeam(5, 'y', x, 0.2, 0.21, 'conveyor'));
       }
+      conv.add(this._sMotor(1.24, 0.42, 0, 'conveyor'));
       this._beltDashes = [];
       for (let i = 0; i < 14; i++) {
-        const d = this._box(0.07, 0.012, 0.3, this._mat(0x22d3ee, { emissive: 0x0b5566, roughness: 0.4 }), -0.9 + i * 0.15, 0.442, 0, 'conveyor');
+        const d = this._box(0.05, 0.008, 0.3, this._mat(0x22d3ee, { emissive: 0x0b5566, roughness: 0.4 }),
+          -0.9 + i * 0.15, 0.432, 0, 'conveyor');
         this._beltDashes.push(d); conv.add(d);
+        this._accentParts.push({ mesh: d, key: 'accent' });
       }
 
-      // ── Oven (straddles belt at x = -0.12)
+      // ── Brennofen (straddles the belt at x = -0.12) ───────────────────
       const oven = this._oven = new T.Group(); oven.position.set(-0.12, 0, 0); root.add(oven);
-      oven.add(this._box(0.5, 0.1, 0.62, shellMat, 0, 0.9, 0, 'oven'));
-      oven.add(this._box(0.5, 0.4, 0.09, shellMat, 0, 0.68, -0.3, 'oven'));
-      oven.add(this._box(0.5, 0.4, 0.09, shellMat, 0, 0.68, 0.3, 'oven'));
-      oven.add(this._box(0.09, 0.4, 0.62, shellMat, -0.22, 0.68, 0, 'oven'));
+      oven.add(this._box(0.52, 0.42, 0.06, this._matRed, 0, 0.66, -0.30, 'oven'));
+      oven.add(this._box(0.52, 0.42, 0.06, this._matRed, 0, 0.66, 0.30, 'oven'));
+      oven.add(this._box(0.06, 0.42, 0.60, this._matRed, -0.23, 0.66, 0, 'oven'));
+      for (const sz of [-0.30, 0.30]) oven.add(this._ftBeam(4, 'x', 0, 0.90, sz, 'oven'));
+      oven.add(this._ftBeam(28, 'z', -0.23, 0.90, 0, 'oven'));
+      for (const sx of [-0.23, 0.23]) for (const sz of [-0.30, 0.30]) {
+        oven.add(this._ftBeam(6, 'y', sx, 0.49, sz, 'oven'));
+      }
+      // Ofenschieber — the slide that pushes the workpiece into the kiln
+      oven.add(this._box(0.10, 0.05, 0.26, this._matRed, -0.30, 0.47, 0, 'oven'));
+      oven.add(this._cylinder(6, -0.02, 0.98, -0.16, 'oven'));
       this._ovenGlow = new T.Mesh(new T.BoxGeometry(0.44, 0.34, 0.5),
         new T.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.08 }));
-      this._ovenGlow.position.set(0, 0.66, 0); oven.add(this._ovenGlow);
-      this._ovenLight = new T.PointLight(0xff7a1a, 0, 1.6); this._ovenLight.position.set(-0.12, 0.66, 0); root.add(this._ovenLight);
+      this._ovenGlow.position.set(0, 0.62, 0); oven.add(this._ovenGlow);
+      this._ovenLight = new T.PointLight(0xff7a1a, 0, 1.6);
+      this._ovenLight.position.set(-0.12, 0.62, 0); root.add(this._ovenLight);
 
-      // ── Color sensor (x = 0.58)
+      // ── Farbsensor / Lichtschranke (x = 0.58) ─────────────────────────
       const sens = this._sens = new T.Group(); sens.position.set(0.58, 0, 0); root.add(sens);
-      sens.add(this._box(0.06, 0.5, 0.06, frameMat, 0, 0.72, 0.26, 'sensor'));
-      sens.add(this._box(0.16, 0.12, 0.16, this._mat(0x0f1929, { emissive: 0x073844 }), 0, 0.9, 0.05, 'sensor'));
-      this._beam = new T.Mesh(new T.CylinderGeometry(0.035, 0.06, 0.42, 16, 1, true),
+      sens.add(this._ftBeam(8, 'y', 0, 0.30, 0.26, 'sensor'));
+      sens.add(this._ftBeam(4, 'x', 0, 0.60, 0.26, 'sensor'));
+      sens.add(this._box(2.4 * FT, 1.6 * FT, 2.4 * FT, this._matDark, 0, 0.58, 0.06, 'sensor'));
+      // opposing lens lamp of the light barrier
+      sens.add(this._ftBeam(6, 'y', 0, 0.22, -0.24, 'sensor'));
+      sens.add(this._box(1.4 * FT, 1.2 * FT, 1.2 * FT, this._matWhite, 0, 0.46, -0.24, 'sensor'));
+      this._beam = new T.Mesh(new T.CylinderGeometry(0.02, 0.05, 0.30, 16, 1, true),
         new T.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0 }));
-      this._beam.position.set(0, 0.66, 0.05); sens.add(this._beam);
+      this._beam.position.set(0, 0.50, 0.06); sens.add(this._beam);
+      this._accentParts.push({ mesh: this._beam, key: 'accent' });
 
-      // ── VGR-2 (x = 1.32, z = 0.62)
+      // ── Sauggreifer VGR-2 (x = 1.32, z = 0.62) ────────────────────────
       const vgr2 = this._vgr2 = new T.Group(); vgr2.position.set(1.32, 0, 0.62); root.add(vgr2);
-      const b2 = new T.Mesh(new T.CylinderGeometry(0.16, 0.19, 0.1, 24), frameMat);
-      b2.position.y = 0.05; b2.castShadow = true; b2.userData.id = 'vgr2'; vgr2.add(b2);
-      const col2 = this._col2 = new T.Group(); col2.position.y = 0.1; vgr2.add(col2);
-      const post2 = new T.Mesh(new T.CylinderGeometry(0.07, 0.08, 0.5, 18), steel);
-      post2.position.y = 0.25; post2.castShadow = true; post2.userData.id = 'vgr2'; col2.add(post2);
-      col2.add(this._box(0.5, 0.07, 0.1, steel, 0.24, 0.5, 0, 'vgr2'));
+      vgr2.add(this._box(6 * FT, 0.5 * FT, 6 * FT, this._matBlack, 0, 0.02, 0, 'vgr2'));
+      const ring2 = new T.Mesh(new T.CylinderGeometry(2.4 * FT, 2.6 * FT, FT, 24), this._matRed);
+      ring2.position.y = 0.07; ring2.castShadow = true; ring2.userData.id = 'vgr2';
+      vgr2.add(ring2);
+      const col2 = this._col2 = new T.Group(); col2.position.y = 0.12; vgr2.add(col2);
+      for (const sz of [-0.04, 0.04]) col2.add(this._rod(30, 'y', 0, 0.22, sz, 'vgr2'));
+      col2.add(this._box(3 * FT, 2 * FT, 4 * FT, this._matRed, 0, 0.44, 0, 'vgr2'));
+      col2.add(this._box(0.44, 1.2 * FT, 1.4 * FT, this._matAlu, 0.22, 0.44, 0, 'vgr2'));
+      col2.add(this._suctionCup(0.42, 0.38, 0, 'vgr2'));
+      vgr2.add(this._sMotor(-0.2, 0.06, 0.2, 'vgr2'));
 
-      // ── Sorter bins (x = 1.9)
+      // ── Sortierstrecke: three colour bins (x = 1.92) ──────────────────
       const sorter = this._sorter = new T.Group(); sorter.position.set(1.92, 0, 0); root.add(sorter);
-      sorter.add(this._box(0.62, 0.1, 1.7, frameMat, 0, 0.3, 0, 'sorter'));
+      sorter.add(this._box(0.62, 0.06, 1.74, this._matBlack, 0, 0.24, 0, 'sorter'));
+      for (const sz of [-0.84, 0.84]) sorter.add(this._ftBeam(3, 'y', -0.28, 0.11, sz, 'sorter'));
+      const WORK = [FT_COLORS.white, FT_COLORS.workRed, FT_COLORS.workBlue];
       this._bins = BIN_COLORS.map((c, i) => {
-        const bin = this._box(0.5, 0.26, 0.44, this._mat(0x111a2c, { roughness: 0.7 }), 0, 0.48, -0.55 + i * 0.55, 'sorter');
+        const z = -0.55 + i * 0.55;
+        const bin = this._box(0.46, 0.22, 0.42, this._mat(0x2b2a30, { roughness: 0.75 }), 0, 0.38, z, 'sorter');
         sorter.add(bin);
-        const edge = new T.LineSegments(new T.EdgesGeometry(bin.geometry), new T.LineBasicMaterial({ color: c, transparent: true, opacity: 0.5 }));
+        // colour tab identifying the bay — white / red / blue, as in the kit
+        sorter.add(this._box(0.47, 0.03, 0.43, this._mat(WORK[i], { roughness: 0.5 }), 0, 0.50, z, 'sorter'));
+        const edge = new T.LineSegments(new T.EdgesGeometry(bin.geometry),
+          new T.LineBasicMaterial({ color: c, transparent: true, opacity: 0.5 }));
         edge.position.copy(bin.position); sorter.add(edge);
         bin.userData.edge = edge;
         return bin;
       });
+      sorter.add(this._compressor(-0.02, 0.13, 0, 'sorter'));
 
-      // ── Item (cookie puck)
-      this._item = new T.Mesh(new T.CylinderGeometry(0.085, 0.085, 0.05, 24), this._mat(0xd97706, { roughness: 0.5 }));
+      // ── Werkstück (the puck the cycle moves) ──────────────────────────
+      this._item = new T.Mesh(new T.CylinderGeometry(11 * MM, 11 * MM, 12 * MM, 24),
+        this._mat(FT_COLORS.white, { roughness: 0.5 }));
       this._item.castShadow = true; this._item.visible = false; root.add(this._item);
 
       // Selection ring
       this._ring = new T.Mesh(new T.RingGeometry(0.3, 0.36, 40),
         new T.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.75, side: T.DoubleSide }));
-      this._ring.rotation.x = -Math.PI / 2; this._ring.position.y = 0.012; this._ring.visible = false; root.add(this._ring);
+      this._ring.rotation.x = -Math.PI / 2; this._ring.position.y = 0.014; this._ring.visible = false;
+      root.add(this._ring);
+      this._accentParts.push({ mesh: this._ring, key: 'accent' });
 
       root.traverse((o) => { if (o.isMesh && o.userData.id) this._pickables.push(o); });
       this._partAnchors = {
@@ -279,10 +569,11 @@
       const p = this.getAttribute('primary') || '#5ea2ff';
       try {
         const ca = new T.Color(a), cp = new T.Color(p);
-        this._beltDashes.forEach((d) => { d.material.color.copy(ca); d.material.emissive.copy(ca).multiplyScalar(0.35); });
-        this._beam.material.color.copy(ca);
-        this._ring.material.color.copy(ca);
-        this._grip1.children[0].material.color.copy(cp);
+        (this._accentParts || []).forEach(({ mesh, key }) => {
+          const c = key === 'primary' ? cp : ca;
+          mesh.material.color.copy(c);
+          if (mesh.material.emissive) mesh.material.emissive.copy(c).multiplyScalar(0.32);
+        });
       } catch (e) { /* invalid color string */ }
     }
 
@@ -341,7 +632,7 @@
       const item = this._item;
 
       // HBW lift
-      const liftTarget = name === 'picking' ? 0.68 : 0.28;
+      const liftTarget = name === 'picking' ? 0.59 : 0.19;
       this._lift.position.y += (liftTarget - this._lift.position.y) * 0.06;
 
       // VGR-1: swings from rack (-90°) to belt (0°)
@@ -382,11 +673,11 @@
       });
 
       // Item transport
-      const beltY = 0.49;
+      const beltY = 0.445;
       item.visible = name !== 'idle';
       item.rotation.y = t * 0.6;
       if (name === 'picking') {
-        const rackY = 0.28 + 0.4;
+        const rackY = 0.19 + 0.4;
         item.position.set(lerp(-1.9, -0.9, ease(p)), lerp(rackY, beltY + 0.1, ease(p)), 0);
       } else if (name === 'moving') {
         item.position.set(lerp(-0.9, -0.12, p), beltY, 0);
@@ -400,7 +691,7 @@
         item.position.set(1.92, lerp(beltY, 0.58, ease(p)), -0.55 + binIdx * 0.55);
       }
       const cooked = name === 'baking' ? p : (name === 'idle' || name === 'picking' || name === 'moving') ? 0 : 1;
-      item.material.color.setHex(0xd9a706).lerp(new window.THREE.Color(BIN_COLORS[binIdx]), cooked * 0.75);
+      item.material.color.setHex(FT_COLORS.white).lerp(new window.THREE.Color(BIN_COLORS[binIdx]), cooked * 0.85);
     }
   }
 
