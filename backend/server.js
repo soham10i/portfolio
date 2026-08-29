@@ -51,9 +51,6 @@ app.use('/api/contact', smallJson, require('./src/routes/contact'));
 app.use('/api/scene', sceneJson, require('./src/routes/scene'));
 app.use('/api/notes', notesJson, require('./src/routes/notes'));
 app.use('/api/medqa', smallJson, require('./src/routes/medqa'));
-app.use('/api/contact', smallJson, require('./src/routes/contact'));
-app.use('/api/scene', sceneJson, require('./src/routes/scene'));
-app.use('/api/notes', notesJson, require('./src/routes/notes'));
 
 // Unknown API routes → JSON 404, never the SPA shell
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
