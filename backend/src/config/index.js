@@ -19,14 +19,14 @@ const config = {
     model: process.env.LLM_MODEL || 'qwen2.5:7b-instruct',
     visionModel: process.env.LLM_VISION_MODEL || process.env.LLM_MODEL || 'qwen2.5vl:7b',
     apiKey: process.env.LLM_API_KEY || '',
-    timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 30_000,
+    timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 120_000,
     get ready() { return !!this.baseUrl; },
   },
 
   /* The project's own FastAPI + BLIP captioning service, when it is hosted. */
   scene: {
     baseUrl: (process.env.SCENE_API_BASE || '').replace(/\/$/, ''),
-    timeoutMs: Number(process.env.SCENE_TIMEOUT_MS) || 25_000,
+    timeoutMs: Number(process.env.SCENE_TIMEOUT_MS) || 120_000,
     maxImageBytes: 1_500_000,          // ~1.5 MB of JPEG is plenty at 512 px
   },
 

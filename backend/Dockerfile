@@ -34,6 +34,9 @@ COPY backend/src ./src
 # Study notes are content the API serves; without this the notes list is empty
 # in production, which is exactly the kind of bug that only shows up on deploy.
 COPY backend/notes ./notes
+# MedQA RAG index and seed data — without this the MedQA endpoint returns 503
+# "index not found" in production. The files are ~1 MB total and read-only.
+COPY backend/data ./data
 
 # server.js resolves the frontend as path.join(__dirname, '../app/dist').
 # With server.js at /app/server.js that normalises to /app/dist, so this is
