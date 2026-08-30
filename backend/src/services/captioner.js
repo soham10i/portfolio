@@ -6,9 +6,8 @@
  *      the demo still produces descriptions when the BLIP service is asleep or
  *      not yet hosted — the normal state for a free-tier ML service.
  *
- * Both are Soham's own deployments; no third-party vision API is involved. The
- * response always names the engine that answered, and the UI shows it, so a
- * visitor is never misled about what produced the text. */
+ * Vision can be on a different provider than text (e.g. NVIDIA NIM for vision,
+ * OpenRouter for text). The response always names the engine that answered. */
 const config = require('../config');
 const { callLLM, extractText } = require('./llm');
 
@@ -42,12 +41,12 @@ async function withBlip(bytes) {
    what vLLM, llama.cpp, Ollama and LM Studio all accept for Qwen-VL, SmolVLM,
    MiniCPM-V and friends, so one code path covers whichever is running. */
 async function withVlm(bytes, labels) {
-  if (!config.llm.ready) return null;
-  // Handing over what the detector saw keeps the description grounded in the
-  // detections instead of free-associating.
+  if (!config.llm.visionReady) return null;
+
   const hint = labels && labels.length
     ? `An object detector found: ${labels.join(', ')}. Use these as ground truth.`
     : 'No detector labels are available for this frame.';
+
   const messages = [{
     role: 'user',
     content: [
@@ -55,6 +54,7 @@ async function withVlm(bytes, labels) {
       { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${bytes.toString('base64')}` } },
     ],
   }];
+
   try {
     const r = await callLLM({
       messages,
@@ -62,6 +62,8 @@ async function withVlm(bytes, labels) {
       maxTokens: 160,
       temperature: 0.4,
       timeoutMs: config.scene.timeoutMs,
+      baseUrl: config.llm.visionBaseUrl,
+      apiKey: config.llm.visionApiKey,
     });
     if (!r.ok) return null;
     const { text } = extractText(await r.json());

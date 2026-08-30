@@ -17,10 +17,29 @@ const config = {
   llm: {
     baseUrl: (process.env.LLM_API_BASE || '').replace(/\/$/, ''),
     model: process.env.LLM_MODEL || 'qwen2.5:7b-instruct',
-    visionModel: process.env.LLM_VISION_MODEL || process.env.LLM_MODEL || 'qwen2.5vl:7b',
     apiKey: process.env.LLM_API_KEY || '',
     timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 120_000,
     get ready() { return !!this.baseUrl; },
+
+    /* Vision can be hosted on a different provider (e.g. NVIDIA NIM for vision
+       while OpenRouter handles text). When the vision-specific env vars are
+       absent they fall back to the primary text provider. */
+    visionModel: process.env.LLM_VISION_MODEL || process.env.LLM_MODEL || 'qwen2.5vl:7b',
+    visionBaseUrl: (process.env.LLM_VISION_API_BASE || process.env.LLM_API_BASE || '').replace(/\/$/, ''),
+    visionApiKey: process.env.LLM_VISION_API_KEY || process.env.LLM_API_KEY || '',
+    get visionReady() { return !!this.visionBaseUrl; },
+
+    /* Optional second OpenAI-compatible provider, tried when the primary is
+       rate-limited or down (429 / 5xx). Free tiers rate-limit hard — pointing the fallback
+       at a different vendor (e.g. primary Gemini, fallback OpenRouter or
+       NVIDIA NIM) keeps JARVIS answering through a quota wall. */
+    fallback: process.env.LLM_FALLBACK_API_BASE
+      ? {
+          baseUrl: process.env.LLM_FALLBACK_API_BASE.replace(/\/$/, ''),
+          model: process.env.LLM_FALLBACK_MODEL || '',
+          apiKey: process.env.LLM_FALLBACK_API_KEY || '',
+        }
+      : null,
   },
 
   /* The project's own FastAPI + BLIP captioning service, when it is hosted. */

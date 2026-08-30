@@ -1,18 +1,27 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { AlertCircle, Maximize2, Send, Sparkles, X } from 'lucide-react';
+import { AlertCircle, AudioLines, Maximize2, Mic, MicOff, Send, Sparkles, X } from 'lucide-react';
 import MarkdownText from '@/features/chat/components/MarkdownText';
+import {
+  createRecognizer, createSpeaker, sttSupported, ttsSupported,
+  type Recognizer, type Speaker,
+} from '@/features/chat/lib/voice';
 import { lenis } from '@/shared/lib/lenis';
 
 /* JARVIS chat panel.
    Posts to `${API_BASE}/chat/stream` on the Express backend and parses the SSE
    frames it returns, sending prior turns as context. The base URL comes from
    VITE_CHAT_API_BASE (see app/.env.example) and defaults to '/api', which the
-   Vite dev proxy forwards to the backend. */
+   Vite dev proxy forwards to the backend.
+
+   Voice: the mic button (one-shot "talkback") and the AudioLines toggle
+   (hands-free voice mode) use the browser's Web Speech API — SpeechRecognition
+   for STT, speechSynthesis for TTS — so voice adds no API cost. Spoken turns
+   are flagged `voice: true` so the backend answers in short, speakable prose. */
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 
 const GREETING =
-  "Hey! I'm JARVIS — Soham's LLM-based personal assistant. Ask me anything: projects, skills, whether he can actually center a div. I come with facts, wit, and zero corporate fluff.";
+  "Hey! I'm JARVIS — Soham's LLM-based personal assistant. Ask me anything: projects, skills, whether he can actually center a div. I come with facts, wit, and zero corporate fluff. Tap the mic and we can just talk.";
 
 const SUGGESTIONS = [
   'What projects has Soham built?',
@@ -28,7 +37,7 @@ interface Message { role: 'user' | 'assistant'; content: string }
 const GEOM: Record<'docked' | 'max', CSSProperties> = {
   docked: {
     position: 'fixed', zIndex: 80,
-    top: 'auto', right: '24px', bottom: '96px', left: 'auto',
+    top: 'auto', right: 'auto', bottom: '96px', left: '24px',
     width: 'min(430px, calc(100vw - 32px))', height: 'min(660px,72vh)',
     maxWidth: 'none', margin: 0,
     transition: 'opacity .3s ease',
@@ -54,7 +63,24 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   const [sending, setSending] = useState(false);
   const [streaming, setStreaming] = useState('');
   const [error, setError] = useState('');
+  const [voiceMode, setVoiceMode] = useState(false);   // hands-free conversation loop
+  const [listening, setListening] = useState(false);   // mic is capturing right now
+  const [speaking, setSpeaking] = useState(false);     // JARVIS is talking right now
   const scroller = useRef<HTMLDivElement>(null);
+
+  /* Refs mirror the state the voice callbacks need — recognizer and speaker
+     callbacks fire long after the render that created them. */
+  const voiceModeRef = useRef(false);
+  const openRef = useRef(open);
+  const sendingRef = useRef(false);
+  const recognizerRef = useRef<Recognizer | null>(null);
+  const speakerRef = useRef<Speaker | null>(null);
+  const gotFinalRef = useRef(false);     // this listening session produced a transcript
+  const haltedRef = useRef(false);       // mic permission denied — stop retrying
+  const listenTimer = useRef<number | null>(null);
+  const sendRef = useRef<(text?: string, opts?: { spoken?: boolean }) => Promise<void>>(async () => {});
+
+  const voiceOk = sttSupported() && ttsSupported();
 
   useEffect(() => {
     if (!open || !maximised) return;
@@ -66,9 +92,39 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
   }, [messages, streaming, sending]);
 
-  const send = async (text?: string) => {
+  useEffect(() => { sendingRef.current = sending; }, [sending]);
+
+  const setVoiceModeBoth = (v: boolean) => { voiceModeRef.current = v; setVoiceMode(v); };
+
+  const stopVoiceActivity = () => {
+    if (listenTimer.current) { window.clearTimeout(listenTimer.current); listenTimer.current = null; }
+    recognizerRef.current?.abort();
+    recognizerRef.current = null;
+    speakerRef.current?.cancel();
+    speakerRef.current = null;
+    setListening(false);
+    setSpeaking(false);
+  };
+
+  /* Closing the panel pauses the conversation; reopening a voice-mode panel
+     resumes listening. Deferred a tick so the state resets do not run
+     synchronously inside the effect body (react-hooks/set-state-in-effect). */
+  useEffect(() => {
+    openRef.current = open;
+    const t = window.setTimeout(() => {
+      if (!open) stopVoiceActivity();
+      else if (voiceModeRef.current) queueListen(300);
+    }, 0);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => () => stopVoiceActivity(), []);
+
+  const send = async (text?: string, opts?: { spoken?: boolean }) => {
     const msg = (text ?? draft).trim();
     if (!msg || sending) return;
+    const spoken = opts?.spoken === true;
 
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
     setMessages((m) => [...m, { role: 'user', content: msg }]);
@@ -77,11 +133,29 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     setError('');
     setStreaming('');
 
+    // A new turn interrupts whatever JARVIS was saying.
+    speakerRef.current?.cancel();
+    setSpeaking(false);
+
+    /* Spoken turns are read aloud sentence-by-sentence as they stream in.
+       When the reply finishes, voice mode starts listening for the next turn. */
+    let speaker: Speaker | null = null;
+    if (spoken && ttsSupported()) {
+      speaker = createSpeaker({
+        onStart: () => setSpeaking(true),
+        onDone: () => {
+          setSpeaking(false);
+          if (voiceModeRef.current && openRef.current && !sendingRef.current) queueListen(350);
+        },
+      });
+      speakerRef.current = speaker;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, history }),
+        body: JSON.stringify({ message: msg, history, voice: spoken }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -105,12 +179,15 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
           let ev: { delta?: string; error?: string; done?: boolean };
           try { ev = JSON.parse(payload); } catch { continue; }
           if (ev.error) throw new Error(ev.error);
-          if (ev.delta) { acc += ev.delta; setStreaming(acc); }
+          if (ev.delta) { acc += ev.delta; setStreaming(acc); speaker?.push(ev.delta); }
         }
       }
       if (!acc) throw new Error('The assistant returned an empty response. Try rephrasing?');
+      speaker?.flush();
       setMessages((m) => [...m, { role: 'assistant', content: acc }]);
     } catch (err) {
+      speaker?.cancel();
+      setSpeaking(false);
       setError(
         err instanceof Error && err.message
           ? err.message
@@ -121,8 +198,74 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       setStreaming('');
     }
   };
+  sendRef.current = send;
+
+  const queueListen = (delay = 0) => {
+    if (listenTimer.current) window.clearTimeout(listenTimer.current);
+    listenTimer.current = window.setTimeout(() => { listenTimer.current = null; startListening(); }, delay);
+  };
+
+  const startListening = () => {
+    if (!sttSupported() || sendingRef.current) return;
+    // Barge-in: talking back cuts off any reply still being read out.
+    speakerRef.current?.cancel();
+    setSpeaking(false);
+    recognizerRef.current?.abort();
+    gotFinalRef.current = false;
+
+    const rec = createRecognizer({
+      onInterim: (t) => setDraft(t),
+      onFinal: (t) => {
+        gotFinalRef.current = true;
+        setDraft('');
+        void sendRef.current(t, { spoken: true });
+      },
+      onError: (e) => {
+        if (e === 'not-allowed' || e === 'service-not-allowed' || e === 'audio-capture') {
+          haltedRef.current = true;
+          setVoiceModeBoth(false);
+          setError('Microphone access was blocked. Allow the mic in your browser to talk to JARVIS.');
+        }
+      },
+      onEnd: () => {
+        setListening(false);
+        /* Voice mode: an utterance that ended with no transcript (silence,
+           a cough) should not kill the conversation — listen again. */
+        if (voiceModeRef.current && openRef.current && !gotFinalRef.current && !haltedRef.current) {
+          queueListen(400);
+        }
+      },
+    });
+    if (!rec) return;
+    recognizerRef.current = rec;
+    setListening(true);
+    rec.start();
+  };
+
+  const toggleVoiceMode = () => {
+    if (voiceModeRef.current) {
+      setVoiceModeBoth(false);
+      stopVoiceActivity();
+    } else {
+      haltedRef.current = false;
+      setVoiceModeBoth(true);
+      setError('');
+      speakerRef.current?.cancel();
+      setSpeaking(false);
+      startListening();
+    }
+  };
+
+  /* One-shot talkback: tap, speak, JARVIS answers aloud. Does not start the
+     hands-free loop — that is what the header toggle is for. */
+  const onMicClick = () => {
+    if (listening) { recognizerRef.current?.stop(); return; }
+    startListening();
+  };
 
   const clear = () => {
+    stopVoiceActivity();
+    setVoiceModeBoth(false);
     setMessages([{ role: 'assistant', content: GREETING }]);
     setError('');
     setStreaming('');
@@ -130,6 +273,9 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
 
   const showSuggestions = messages.length <= 1;
   const showTyping = sending && !streaming;
+
+  const statusDot = listening ? '#ef4444' : speaking ? 'var(--p)' : '#22c55e';
+  const statusText = listening ? 'Listening…' : speaking ? 'Speaking…' : 'Connected · self-hosted LLM';
 
   const jarvisAvatar = (
     <span
@@ -164,10 +310,29 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-[13.5px] font-semibold tracking-[.02em]">JARVIS</p>
                 <p className="mt-0.5 flex items-center gap-[7px] font-mono text-[10.5px] text-fg3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                  Connected · self-hosted LLM
+                  <span
+                    className={'h-1.5 w-1.5 rounded-full' + (listening ? ' animate-pulse' : '')}
+                    style={{ background: statusDot }}
+                  />
+                  {statusText}
                 </p>
               </div>
+              {voiceOk && (
+                <button
+                  type="button" onClick={toggleVoiceMode}
+                  title={voiceMode ? 'Voice mode on — click to end the conversation' : 'Start a hands-free voice conversation'}
+                  aria-label="Toggle voice conversation"
+                  aria-pressed={voiceMode}
+                  className="grid h-7 w-7 place-items-center rounded-[9px] transition-colors hover:bg-surf2"
+                  style={
+                    voiceMode
+                      ? { background: 'linear-gradient(135deg,var(--p),var(--s))' }
+                      : undefined
+                  }
+                >
+                  <AudioLines className={'h-3.5 w-3.5 ' + (voiceMode ? 'text-bg' : 'text-fg3')} />
+                </button>
+              )}
               <button
                 type="button" onClick={clear}
                 className="h-[26px] rounded-lg border border-line px-2.5 font-mono text-[11px] text-fg3 transition-colors hover:bg-surf2 hover:text-fg"
@@ -275,11 +440,33 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
                 }}
-                placeholder="Ask about Soham's work..."
+                placeholder={listening ? 'Listening — speak now…' : "Ask about Soham's work..."}
                 aria-label="Message JARVIS"
                 className="flex-1 rounded-full border border-line px-4 py-[11px] text-[13px] text-fg outline-none placeholder:text-fg3 focus:border-p"
                 style={{ background: 'color-mix(in oklab,var(--bg) 55%,transparent)' }}
               />
+              {voiceOk && (
+                <button
+                  type="button"
+                  onClick={onMicClick}
+                  disabled={sending && !listening}
+                  aria-label={listening ? 'Stop listening' : 'Talk to JARVIS'}
+                  title={listening ? 'Stop listening' : 'Talk to JARVIS — your words are sent and the reply is read aloud'}
+                  className={
+                    'grid h-[38px] w-[38px] flex-none place-items-center rounded-xl border transition-[filter,transform] hover:brightness-110 disabled:opacity-60 ' +
+                    (listening ? 'animate-pulse border-transparent' : 'border-line')
+                  }
+                  style={
+                    listening
+                      ? { background: 'linear-gradient(135deg,var(--p),var(--s))' }
+                      : { background: 'color-mix(in oklab,var(--bg) 55%,transparent)' }
+                  }
+                >
+                  {listening
+                    ? <MicOff className="h-[15px] w-[15px] text-bg" strokeWidth={2} />
+                    : <Mic className="h-[15px] w-[15px] text-fg2" strokeWidth={2} />}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => void send()}
@@ -299,7 +486,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-label="Open JARVIS"
-        className="fixed bottom-6 right-6 z-[80] grid h-14 w-14 place-items-center rounded-full border border-line transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-110"
+        className="fixed bottom-6 left-6 z-[80] grid h-14 w-14 place-items-center rounded-full border border-line transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-110"
         style={{
           background: 'linear-gradient(135deg,var(--p),var(--s))',
           boxShadow: '0 16px 36px -10px color-mix(in oklab,var(--p) 75%,transparent)',
