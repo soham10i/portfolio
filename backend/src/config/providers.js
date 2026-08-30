@@ -76,32 +76,18 @@ const PROVIDERS = {
          + 'Avoid gemini-2.5-flash (non-lite): measured 16.4s for one word because '
          + 'hidden reasoning consumes the token budget.',
   },
-    label: 'Google AI Studio',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    model: 'gemini-flash-lite-latest',
-    visionModel: 'gemini-flash-lite-latest',
-    keyEnv: 'GEMINI_API_KEY',
-    console: 'https://aistudio.google.com/app/apikey',
-    notes: 'The most generous request-per-day quota of the four. Note that the '
-         + 'model id is a rolling ALIAS, not a version: Google retires dated ids '
-         + 'without warning (gemini-2.0-flash-lite now answers 404) and the alias '
-         + 'is the only id that survives that. Avoid the reasoning "flash" tiers '
-         + 'for chat — measured Aug 2026, gemini-2.5-flash took 16.4s to return '
-         + 'one word and returns empty content outright when max_tokens is small, '
-         + 'because hidden thinking consumes the budget. flash-lite: 0.65s.',
-  },
 
   ollama: {
-    label: 'Ollama (local)',
-    baseUrl: 'http://127.0.0.1:11434/v1',
-    model: 'qwen2.5:7b-instruct',
-    visionModel: 'qwen2.5vl:7b',
-    keyEnv: null,
-    console: 'https://ollama.com',
-    notes: 'For development without burning a hosted quota. Needs `ollama serve` '
-         + 'running and the model pulled.',
-  },
-};
+      label: 'Ollama (local)',
+      baseUrl: 'http://127.0.0.1:11434/v1',
+      model: 'qwen2.5:7b-instruct',
+      visionModel: 'qwen2.5vl:7b',
+      keyEnv: null,
+      console: 'https://ollama.com',
+      notes: 'For development without burning a hosted quota. Needs `ollama serve` '
+          + 'running and the model pulled.',
+    },
+  };
 
 /* Resolve one role ("text" or "vision") into { baseUrl, model, apiKey }.
  *
