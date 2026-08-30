@@ -222,7 +222,7 @@ export const MATRIX: { skill: string; tier: Tier; where: string }[] = [
   { skill: 'Azure / ETL', tier: 'Production', where: 'HIPAA-aligned healthcare log pipelines — 30% latency reduction' },
   { skill: 'PyTorch / HuggingFace', tier: 'Strong', where: 'NLI benchmarking · diffusion research for Cor2Vox keynote' },
   { skill: 'MQTT / InfluxDB', tier: 'Strong', where: 'Smart Tabletop Factory telemetry at 10 Hz · Smart Home & City' },
-  { skill: 'YOLOv8 / OpenCV', tier: 'Strong', where: 'Real-time agentic scene understanding at 30 FPS' },
+  { skill: 'Computer Vision (YOLO/OpenCV)', tier: 'Strong', where: 'Real-time agentic scene understanding at 30 FPS' },
   { skill: 'C# / .NET', tier: 'Strong', where: 'Legacy backend refactor at Altera · ASP.NET Core at Promact' },
   { skill: 'Three.js / WebSockets', tier: 'Strong', where: 'Digital Twin 2.0 live 3D visualisation' },
   { skill: 'React / TypeScript', tier: 'Explored', where: 'This portfolio · factory dashboard front-end' },
