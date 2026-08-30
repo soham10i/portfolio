@@ -25,3 +25,15 @@ app/public/videos/_orig/
 # Local .env backups made when rotating tokens
 backend/.env.bak.*
 backend/.env.gemini.bak
+
+# ── Private project working files ────────────────────────────────────────────
+# Source material for the projects the portfolio *describes* lives here: CAD,
+# simulation scenes, extracted control logic, measurement sheets. The public
+# site links to write-ups and videos, never to this. Nothing in projects/ is
+# served — Express serves app/dist only — and it is untracked so a public
+# GitHub remote cannot expose it either.
+#
+# The cost of that choice: no version history. If this material becomes worth
+# versioning, the right fix is a separate PRIVATE repository (or a private
+# submodule), not un-ignoring this folder.
+projects/

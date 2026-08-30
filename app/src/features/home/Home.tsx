@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Mail, MapPin, Play, Send, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, FileText, Mail, MapPin, Play, Send, Sparkles } from 'lucide-react';
 import SiteBackground from '@/shared/components/SiteBackground';
 import SiteHeader from '@/shared/components/SiteHeader';
 import ProjectPreview from '@/features/projects/components/ProjectPreview';
@@ -350,7 +350,8 @@ export default function Home() {
                 Azure ETL, FastAPI and .NET services, CI/CD. Now in Bavaria, applying that to industrial
                 automation: a digital twin of a fischertechnik cell driven by its real PLC process image,
                 in-browser computer vision, and predictive maintenance on sensor time-series. Gold Medalist
-                M.Sc. (IT), Rank 1, with 45 ECTS of graduate AI coursework at OTH Amberg-Weiden.
+                M.Sc. (IT), Rank 1 of the cohort, currently completing graduate AI coursework at
+                OTH Amberg-Weiden.
               </p>
 
               <div className="flex animate-rise flex-wrap gap-3 [animation-delay:.32s]">
@@ -373,6 +374,20 @@ export default function Home() {
                   <Sparkles className="h-3.5 w-3.5 text-a" strokeWidth={1.8} />
                   Ask JARVIS about my work
                 </button>
+                {/* The CV opens in a new tab rather than downloading: a recruiter
+                    skimming twenty portfolios will look at a page, not manage a
+                    file. `rel` is set because target=_blank without noopener
+                    hands the opened page a handle on this one. */}
+                <a
+                  href="/Soham_Patel_CV.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 rounded-full border border-line bg-surf2 px-[22px] py-3 text-[13.5px] font-medium text-fg transition-colors hover:border-[color-mix(in_oklab,var(--p)_60%,transparent)]"
+                >
+                  <FileText className="h-3.5 w-3.5 text-p" strokeWidth={1.8} />
+                  View CV (PDF)
+                  <ArrowUpRight className="h-3.5 w-3.5 text-fg3" strokeWidth={2} />
+                </a>
               </div>
             </div>
 

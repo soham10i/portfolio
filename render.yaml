@@ -24,7 +24,7 @@ services:
     buildCommand: |
       set -e
       echo "=== Building frontend ==="
-      cd app && rm -rf node_modules && npm ci && npm run build
+      cd app && rm -rf node_modules && npm ci --include=dev && npm run build
       echo "=== Installing backend deps ==="
       cd ../backend && rm -rf node_modules && npm ci --omit=dev
       echo "=== Build complete ==="
