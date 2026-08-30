@@ -1,5 +1,13 @@
 # NVIDIA NIM API — Model Selection Guide
 
+> ⚠️ **Status: August 2026** — NVIDIA free tier has changed. `meta/llama-3.1-8b-instruct` and `meta/llama-3.1-70b-instruct` reached end-of-life on 2026-08-26. Most text models now return 404 for free-tier accounts.
+>
+> **What still works on NVIDIA free tier:** Vision models only (`llama-3.2-11b-vision`, `llama-3.2-90b-vision`)
+>
+> **For MedQA text generation:** Use [OpenRouter](https://openrouter.ai) (free tier includes 70B models) or [Groq](https://groq.com) (fastest). See `SWITCH_TO_OPENROUTER.md` for migration.
+
+---
+
 Available models on NVIDIA's free tier for portfolio use.
 
 ---
