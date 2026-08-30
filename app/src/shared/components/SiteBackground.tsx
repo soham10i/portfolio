@@ -397,11 +397,7 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
       raf = requestAnimationFrame(frame);
       t = now;
       if (!reduced) {
-        /* Occasional distant disturbance, so an idle page still has something
-           happening — the equivalent of a breeze on open water. */
-        if (Math.random() < 0.0035) {
-          touch(2 + Math.random() * (W - 4), 2 + Math.random() * (H - 4), AMBIENT_FORCE * (0.6 + Math.random()));
-        }
+        // Distant disturbance is now handled by the autoTapTimer below.
         step();
       }
       shade();
@@ -424,11 +420,20 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
     window.addEventListener('pointerleave', onLeave);
     window.addEventListener('pointerdown', onDown, { passive: true });
     const tokenTimer = window.setInterval(readTokens, 1000);
+    
+    // Showcase the animation with slow random drops (1 per second)
+    const autoTapTimer = window.setInterval(() => {
+      if (!reduced) {
+        touch(2 + Math.random() * (W - 4), 2 + Math.random() * (H - 4), TOUCH_FORCE * 0.7);
+      }
+    }, 1000);
+
     raf = requestAnimationFrame(frame);
 
     return () => {
       cancelAnimationFrame(raf);
       window.clearInterval(tokenTimer);
+      window.clearInterval(autoTapTimer);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('pointerleave', onLeave);

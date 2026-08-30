@@ -685,9 +685,9 @@ export default function SceneLab() {
           </p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-5">
           {/* ── viewer ────────────────────────────────────────────────── */}
-          <section className="glass-card overflow-hidden rounded-[18px]">
+          <section className="glass-card flex flex-col rounded-[18px] resize-y overflow-hidden min-h-[50vh]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={startWebcam}
@@ -719,7 +719,7 @@ export default function SceneLab() {
               </div>
             </div>
 
-            <div className="relative aspect-video w-full bg-canvas">
+            <div className="relative flex-grow w-full bg-canvas min-h-[300px]">
               <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-contain" />
               <canvas ref={overlay} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
 
@@ -802,7 +802,7 @@ export default function SceneLab() {
           </section>
 
           {/* ── keyframe narration rail ───────────────────────────────── */}
-          <aside className="glass-card flex max-h-[76vh] flex-col overflow-hidden rounded-[18px]">
+          <aside className="glass-card flex flex-col overflow-hidden rounded-[18px]">
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <p className="font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">Narrated keyframes</p>
               <span className="inline-flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.1em]"
