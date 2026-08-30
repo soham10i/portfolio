@@ -10,7 +10,7 @@ const express = require('express');
 const config = require('../config');
 const { createLimiter } = require('../middleware/rateLimit');
 const { caption, blipHealth } = require('../services/captioner');
-const { callLLM, extractText, reachable } = require('../services/llm');
+const { callLLM, extractText, reachable, reachableVision } = require('../services/llm');
 
 const router = express.Router();
 const limit = createLimiter({
@@ -19,6 +19,21 @@ const limit = createLimiter({
 });
 
 router.get('/status', async (req, res) => {
+  const vlm = await reachableVision();
+  const blip = await blipHealth();
+
+  if (blip.up) return res.json({ available: true, engine: 'blip', blip: true, vlm, upstream: blip.upstream });
+
+  const reason = config.scene.baseUrl
+    ? `BLIP service ${blip.reason}${vlm ? ' — falling back to the vision model' : ''}`
+    : vlm
+      ? 'BLIP service not configured — captioning with the self-hosted vision model'
+      : config.llm.visionReady
+        ? `no captioning engine reachable — nothing is answering at ${config.llm.visionBaseUrl}`
+        : 'no captioning engine configured';
+
+  res.json({ available: vlm, engine: vlm ? 'vlm' : null, blip: false, vlm, reason });
+});
   const vlm = await reachable();
   const blip = await blipHealth();
 

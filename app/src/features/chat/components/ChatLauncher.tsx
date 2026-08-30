@@ -39,7 +39,7 @@ export default function ChatLauncher() {
           type="button"
           onClick={() => { setOpen(true); setTouched(true); }}
           aria-label="Ask JARVIS"
-          className="fixed bottom-6 right-6 z-[75] inline-flex items-center gap-2 rounded-full border border-line px-4 py-3 text-[13px] font-medium text-fg shadow-lg transition-transform hover:scale-[1.03]"
+          className="fixed bottom-6 left-6 z-[75] inline-flex items-center gap-2 rounded-full border border-line px-4 py-3 text-[13px] font-medium text-fg shadow-lg transition-transform hover:scale-[1.03]"
           style={{
             background: 'var(--surf)',
             backdropFilter: 'blur(14px) saturate(160%)',

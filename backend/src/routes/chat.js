@@ -2,12 +2,17 @@
  *
  * Two endpoints for one job: /stream relays the model's SSE frames so tokens
  * appear as they generate (what the UI uses), and the plain POST returns a
- * whole answer (far easier to curl when something is wrong). */
+ * whole answer (far easier to curl when something is wrong).
+ *
+ * Both accept `voice: true` when the visitor is talking by voice — the system
+ * prompt then steers the model toward short, speakable prose. Model calls go
+ * through callLLMWithFallback: if the primary provider answers 429/5xx (free
+ * tiers rate-limit hard), the configured fallback provider takes over. */
 const express = require('express');
 const config = require('../config');
 const { createLimiter } = require('../middleware/rateLimit');
 const {
-  buildMessages, callLLM, extractText, extractDelta,
+  buildMessages, callLLMWithFallback, extractText, extractDelta,
   isUnreachable, friendlyError, budgetFor, UNREACHABLE_MSG,
 } = require('../services/llm');
 
@@ -20,7 +25,7 @@ const limit = createLimiter({
 const NOT_CONFIGURED = 'Chat is not configured — the backend has no LLM_API_BASE pointing at a model server.';
 
 function validate(req) {
-  const { message, history = [] } = req.body || {};
+  const { message, history = [], voice = false } = req.body || {};
   const { maxMessageChars, maxHistoryMessages } = config.limits;
   if (!message || typeof message !== 'string' || !message.trim()) {
     return { error: 'Message is required' };
@@ -32,7 +37,7 @@ function validate(req) {
     .filter((h) => h && typeof h.content === 'string' && (h.role === 'user' || h.role === 'assistant'))
     .slice(-maxHistoryMessages)
     .map((h) => ({ role: h.role, content: h.content.slice(0, maxMessageChars) }));
-  return { message: message.trim(), history: cleanHistory };
+  return { message: message.trim(), history: cleanHistory, voice: voice === true };
 }
 
 router.post('/', limit, async (req, res) => {
@@ -42,8 +47,8 @@ router.post('/', limit, async (req, res) => {
 
   try {
     const budget = budgetFor(parsed.message, parsed.history);
-    const messages = buildMessages(parsed.message, parsed.history);
-    let response = await callLLM({ messages, maxTokens: budget.responseTokens });
+    const messages = buildMessages(parsed.message, parsed.history, parsed.voice);
+    let response = await callLLMWithFallback({ messages, maxTokens: budget.responseTokens });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -56,7 +61,7 @@ router.post('/', limit, async (req, res) => {
     /* A reasoning model can spend the whole cap on its own preamble and return
        nothing usable. One retry with a much larger cap, rather than failing. */
     if (!text && finishReason === 'length') {
-      response = await callLLM({ messages, maxTokens: 4096 });
+      response = await callLLMWithFallback({ messages, maxTokens: 4096 });
       if (response.ok) ({ text } = extractText(await response.json()));
     }
 
@@ -79,8 +84,8 @@ router.post('/stream', limit, async (req, res) => {
 
   try {
     const budget = budgetFor(parsed.message, parsed.history);
-    const upstream = await callLLM({
-      messages: buildMessages(parsed.message, parsed.history),
+    const upstream = await callLLMWithFallback({
+      messages: buildMessages(parsed.message, parsed.history, parsed.voice),
       maxTokens: budget.responseTokens,
       stream: true,
     });

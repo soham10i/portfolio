@@ -40,8 +40,9 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     model: config.llm.ready ? config.llm.model : null,
-    visionModel: config.llm.ready ? config.llm.visionModel : null,
+    visionModel: config.llm.visionReady ? config.llm.visionModel : null,
     llm: config.llm.ready,
+    visionLlm: config.llm.visionReady,
     timestamp: new Date().toISOString(),
   });
 });
@@ -64,8 +65,10 @@ app.listen(config.port, async () => {
   console.log(`🚀 Portfolio backend on http://localhost:${config.port}`);
   console.log(`🤖 LLM endpoint: ${config.llm.baseUrl || 'MISSING — set LLM_API_BASE in .env'}`);
   console.log(`🧠 Text: ${config.llm.model}   Vision: ${config.llm.visionModel}`);
+  console.log(`👁️  Vision endpoint: ${config.llm.visionBaseUrl || 'same as text'}`);
   console.log(`🖼️  BLIP service: ${config.scene.baseUrl || 'not configured'}`);
   console.log(`📝 Notes editing: ${config.notes.adminToken ? 'enabled' : 'read-only (no ADMIN_TOKEN)'}`);
   console.log(`🌐 CORS: ${config.allowedOrigins === true ? 'any origin (dev)' : config.allowedOrigins === false ? 'same-origin only' : config.allowedOrigins.join(', ')}`);
-  if (config.llm.ready) console.log(`🔌 Model server reachable: ${await reachable()}`);
+  if (config.llm.ready) console.log(`🔌 Text LLM reachable: ${await reachable()}`);
+  if (config.llm.visionReady) console.log(`🔌 Vision LLM reachable: ${await reachableVision()}`);
 });

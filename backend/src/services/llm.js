@@ -9,23 +9,38 @@ const { SYSTEM_PROMPT } = require('../prompts/systemPrompt');
 
 const LLM = config.llm;
 
-function buildMessages(message, history) {
+/* Appended to the system prompt when the visitor is talking by voice: the
+   reply is read aloud, so markdown and long answers actively hurt. */
+const VOICE_SUFFIX = '\n\n[Voice mode] The visitor is speaking to you and will hear your reply read aloud by a speech synthesizer. Answer in plain, conversational sentences — no markdown, no bullet lists, no code blocks, no emojis — and keep it under about 60 words unless they explicitly ask for detail.';
+
+function buildMessages(message, history, voice = false) {
   return [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: voice ? SYSTEM_PROMPT + VOICE_SUFFIX : SYSTEM_PROMPT },
     ...history,
     { role: 'user', content: message },
   ];
 }
 
-async function callLLM({ messages, maxTokens = 1024, temperature = 0.7, stream = false, model = LLM.model, timeoutMs = LLM.timeoutMs }) {
+async function callLLM({ messages, maxTokens = 1024, temperature = 0.7, stream = false, model = LLM.model, timeoutMs = LLM.timeoutMs, baseUrl = LLM.baseUrl, apiKey = LLM.apiKey }) {
   const headers = { 'Content-Type': 'application/json' };
-  if (LLM.apiKey) headers.Authorization = `Bearer ${LLM.apiKey}`;
-  return fetch(`${LLM.baseUrl}/chat/completions`, {
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  return fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, stream }),
     signal: AbortSignal.timeout(timeoutMs),
   });
+}
+
+/* Retry the same request against the fallback provider when the primary is
+   rate-limited or down (429 / 5xx). Anything else — 400, 401 — is a caller
+   or config bug that the fallback would reproduce, so it is not retried. */
+async function callLLMWithFallback(opts) {
+  const primary = await callLLM(opts);
+  const fb = LLM.fallback;
+  if (primary.ok || !fb || (primary.status !== 429 && primary.status < 500)) return primary;
+  console.warn(`LLM primary answered ${primary.status} — retrying via fallback ${fb.baseUrl}`);
+  return callLLM({ ...opts, baseUrl: fb.baseUrl, apiKey: fb.apiKey, model: fb.model || opts.model || LLM.model });
 }
 
 function extractText(data) {
@@ -89,8 +104,22 @@ async function reachable() {
   return probe.up;
 }
 
+let visionProbe = { at: 0, up: false };
+async function reachableVision() {
+  if (!LLM.visionBaseUrl) return false;
+  if (Date.now() - visionProbe.at < 15_000) return visionProbe.up;
+  try {
+    const headers = LLM.visionApiKey ? { Authorization: `Bearer ${LLM.visionApiKey}` } : {};
+    const r = await fetch(`${LLM.visionBaseUrl}/models`, { headers, signal: AbortSignal.timeout(4000) });
+    visionProbe = { at: Date.now(), up: r.ok };
+  } catch {
+    visionProbe = { at: Date.now(), up: false };
+  }
+  return visionProbe.up;
+}
+
 module.exports = {
-  buildMessages, callLLM, extractText, extractDelta,
-  isUnreachable, friendlyError, budgetFor, reachable,
+  buildMessages, callLLM, callLLMWithFallback, extractText, extractDelta,
+  isUnreachable, friendlyError, budgetFor, reachable, reachableVision,
   UNREACHABLE_MSG,
 };
