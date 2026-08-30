@@ -24,7 +24,7 @@ const PROVIDERS = {
   groq: {
     label: 'Groq',
     baseUrl: 'https://api.groq.com/openai/v1',
-    model: 'llama-3.3-70b-versatile',
+    model: 'qwen/qwen3.8-27b',
     visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
     keyEnv: 'GROQ_API_KEY',
     console: 'https://console.groq.com/keys',
