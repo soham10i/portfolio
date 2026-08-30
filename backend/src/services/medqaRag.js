@@ -7,7 +7,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { pipeline } = require('@xenova/transformers');
+// const { pipeline } = require('@xenova/transformers'); // Replaced with dynamic import below
 const { callLLM, extractText } = require('./llm');
 const { augmentEvidence } = require('./medicalScraper');
 
@@ -35,6 +35,7 @@ async function loadIndex() {
   const raw = fs.readFileSync(INDEX_PATH, 'utf-8');
   index = JSON.parse(raw);
 
+  const { pipeline } = await import('@xenova/transformers');
   embedder = await pipeline('feature-extraction', index.meta.model, {
     quantized: true,
   });

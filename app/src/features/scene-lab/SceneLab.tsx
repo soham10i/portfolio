@@ -104,6 +104,7 @@ export default function SceneLab() {
   const [keyframes, setKeyframes] = useState<Keyframe[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const [lastFrame, setLastFrame] = useState<string | null>(null);
 
   /* Ask the backend whether the captioning service is awake, so the UI can be
      honest up front rather than failing on the first keyframe. */
@@ -314,9 +315,30 @@ export default function SceneLab() {
   const stopAll = useCallback(() => {
     cancelScan.current = true;
     setRunning(false);
+
+    if (stream.current && video.current && overlay.current) {
+      const sw = video.current.videoWidth;
+      const sh = video.current.videoHeight;
+      if (sw && sh) {
+        const c = document.createElement('canvas');
+        c.width = sw; c.height = sh;
+        const ctx = c.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video.current, 0, 0, sw, sh);
+          ctx.drawImage(overlay.current, 0, 0, sw, sh);
+          setLastFrame(c.toDataURL('image/jpeg', 0.8));
+        }
+      }
+    } else {
+      setLastFrame(null);
+    }
+
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
     if (video.current) { video.current.pause(); video.current.srcObject = null; video.current.removeAttribute('src'); }
+    if (overlay.current) {
+      overlay.current.getContext('2d')?.clearRect(0, 0, overlay.current.width, overlay.current.height);
+    }
     setSource('idle');
     setDetections([]);
   }, []);
@@ -325,6 +347,7 @@ export default function SceneLab() {
 
   const startWebcam = async () => {
     setNotice(null);
+    setLastFrame(null);
     const d = await ensureModel();
     if (!d) return;
     try {
@@ -457,6 +480,7 @@ export default function SceneLab() {
     e.target.value = '';                       // allow re-picking the same file
     if (!file) return;
     setNotice(null);
+    setLastFrame(null);
     cancelScan.current = false;
 
     /* Size first: it is free, and it is the only check that can reject a file
@@ -530,6 +554,7 @@ export default function SceneLab() {
     const item = session.get(id);
     if (!item || item.kind !== 'file') return;
     setNotice(null);
+    setLastFrame(null);
     cancelScan.current = false;
     setActiveVideo(id);
     setSource('video');
@@ -560,6 +585,7 @@ export default function SceneLab() {
       if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
       setActiveVideo(null);
       setSource('idle');
+      setLastFrame(null);
       setKeyframes([]);
       setSummary('');
       setQa([]);
@@ -574,6 +600,7 @@ export default function SceneLab() {
     session.clear();
     setActiveVideo(null);
     setSource('idle');
+    setLastFrame(null);
     setKeyframes([]);
     setSummary('');
     setQa([]);
@@ -696,7 +723,10 @@ export default function SceneLab() {
               <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-contain" />
               <canvas ref={overlay} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
 
-              {source === 'idle' && (
+              {source === 'idle' && lastFrame && (
+                <img src={lastFrame} alt="Last camera frame" className="absolute inset-0 h-full w-full object-contain" />
+              )}
+              {source === 'idle' && !lastFrame && (
                 <div className="absolute inset-0 grid place-items-center px-8 text-center">
                   <div>
                     {loadPct > 0 && loadPct < 1 ? (
@@ -844,7 +874,7 @@ export default function SceneLab() {
                   {qa.map((m, i) => (
                     <div key={i} className={m.role === 'user' ? 'text-right' : ''}>
                       <span
-                        className="inline-block max-w-[92%] rounded-[10px] px-2.5 py-1.5 text-left text-[12px] leading-snug"
+                        className="inline-block max-w-[92%] break-words whitespace-pre-wrap rounded-[10px] px-2.5 py-1.5 text-left text-[12px] leading-snug"
                         style={m.role === 'user'
                           ? { background: 'color-mix(in oklab,var(--p) 20%,transparent)', color: 'var(--fg)' }
                           : { background: 'var(--surf2)', color: 'var(--fg2)' }}

@@ -244,7 +244,7 @@ export const HIGHLIGHTS = [
   },
   {
     title: 'Depth, honestly reported',
-    desc: 'M.Sc. IT as Gold Medalist, Rank 1 (9.55/10), then 45 ECTS of graduate AI coursework at OTH Amberg-Weiden. Keynote speaker at AI Conference 2025 (grade 1.0). Where a result was negative — the unsupervised brain-MRI work reached DICE 0.076 — the site says so, because a portfolio that only reports wins tells you nothing about judgement.',
+    desc: 'M.Sc. IT as Gold Medalist, Rank 1 of the cohort (9.55/10), followed by graduate AI coursework at OTH Amberg-Weiden. Keynote speaker at the 2025 AI Research Conference on Brownian Bridge diffusion for 3D medical image synthesis, graded 1.0. Where a result was negative — the unsupervised brain-MRI work reached DICE 0.076 — the site says so, because a portfolio that only reports wins tells you nothing about judgement.',
   },
 ];
 
@@ -292,7 +292,7 @@ export const HERO_STATS = [
   { value: '2.5 yrs', label: 'Production experience' },
   { value: '8', label: 'Projects, end to end' },
   { value: 'Rank 1', label: 'M.Sc. — Gold Medalist' },
-  { value: '45', label: 'ECTS, graduate AI' },
+  { value: '1.0', label: 'Keynote grade, AI Conference' },
 ];
 
 export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azure', 'Three.js'];

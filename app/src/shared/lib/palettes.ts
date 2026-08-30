@@ -1,10 +1,15 @@
-/* Four colour palettes from the design handoff. Every token in the table lives
-   here and nowhere else — components reference them through the Tailwind names
-   (bg, surf, fg2, line, p, s, a …) declared in tailwind.config.js.
-   Aurora Navy is the default and matches the :root block in index.css, so the
-   first paint is correct before any JS runs. */
+/* Three palettes: one dark UI theme, one light UI theme, one reading theme.
+   Every token in the table lives here and nowhere else — components reference
+   them through the Tailwind names (bg, surf, fg2, line, p, s, a …) declared in
+   tailwind.config.js. Midnight Glass is the default.
 
-export type PaletteKey = 'midnight' | 'aurora' | 'amber' | 'terminal' | 'cobalt' | 'daylight' | 'paper';
+   Four further palettes (Aurora Navy, Graphite & Amber, Terminal Green,
+   Cobalt & Magenta) were removed on request: seven themes is a menu, not a
+   choice, and the four that went were variations on a hue rather than
+   distinct reading conditions. `readStoredPalette` falls back to the default
+   for anyone whose browser still holds one of the removed keys. */
+
+export type PaletteKey = 'midnight' | 'daylight' | 'paper';
 
 export interface Palette {
   name: string;
@@ -36,30 +41,6 @@ export const PALETTES: Record<PaletteKey, Palette> = {
     line: 'rgba(130,175,255,.15)',
     p: '#4d8dff', s: '#8b7bff', a: '#2fe0f0',
     canvas: '#03060e', depth: true,
-  },
-  aurora: {
-    name: 'Aurora Navy', note: 'Refined original',
-    bg: '#0a0f1e', bg2: '#0d1830', surf: 'rgba(20,27,46,.60)', surf2: 'rgba(255,255,255,.05)',
-    fg: '#e2e8f0', fg2: '#94a3b8', fg3: '#64748b', line: 'rgba(255,255,255,.11)',
-    p: '#5ea2ff', s: '#b18cff', a: '#22d3ee', canvas: '#05070d',
-  },
-  amber: {
-    name: 'Graphite & Amber', note: 'Industrial control room',
-    bg: '#121110', bg2: '#1c1917', surf: 'rgba(32,29,26,.62)', surf2: 'rgba(255,255,255,.05)',
-    fg: '#f2ede5', fg2: '#a8a29e', fg3: '#7b736c', line: 'rgba(255,220,170,.13)',
-    p: '#f5a623', s: '#ff7a45', a: '#ffd166', canvas: '#0b0a09',
-  },
-  terminal: {
-    name: 'Terminal Green', note: 'Engineering / CLI',
-    bg: '#050e0a', bg2: '#08170f', surf: 'rgba(13,30,20,.62)', surf2: 'rgba(140,255,190,.06)',
-    fg: '#dcf5e6', fg2: '#86b39a', fg3: '#5c8a72', line: 'rgba(120,255,180,.14)',
-    p: '#4ade80', s: '#22d3ee', a: '#a3e635', canvas: '#030a07',
-  },
-  cobalt: {
-    name: 'Cobalt & Magenta', note: 'High-contrast tech',
-    bg: '#070919', bg2: '#0d1030', surf: 'rgba(20,22,50,.62)', surf2: 'rgba(255,255,255,.055)',
-    fg: '#e9ebff', fg2: '#9ba0c9', fg3: '#6d72a2', line: 'rgba(180,190,255,.13)',
-    p: '#3b6eff', s: '#ff3ba7', a: '#00e5ff', canvas: '#04050f',
   },
   daylight: {
     name: 'Daylight Glass', note: 'Light, frosted surfaces',

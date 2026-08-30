@@ -1,0 +1,228 @@
+% Soham Patel — Lebenslauf (English text, German tabular layout)
+%
+% Why this shape: a German CV is a *tabellarischer Lebenslauf* — a two-column
+% table, date range on the left, content on the right, strictly reverse
+% chronological, no objective statement, no references section. It is read as
+% a record, not as a pitch. The only editorial freedom is a short profile at
+% the top, which German recruiters now expect for senior-track technical roles.
+%
+% Photo, date of birth, nationality and marital status are deliberately absent.
+% They remain common, but they are not required, and omitting them is legal and
+% increasingly normal at larger German employers.
+%
+% Build: xelatex soham-patel-cv.tex   (twice, for the page count)
+
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage[a4paper,top=12mm,bottom=12mm,left=15mm,right=15mm]{geometry}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+
+\setmainfont{TeX Gyre Pagella}
+\newfontfamily\sansfont{TeX Gyre Heros}
+
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{mid}{HTML}{4A4A4A}
+\definecolor{hairline}{HTML}{C8C8C8}
+\definecolor{accent}{HTML}{1D4E89}
+
+\color{ink}
+\setlength{\parindent}{0pt}
+\linespread{0.99}
+
+% ── section headings ────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\sansfont\bfseries\fontsize{10}{12}\selectfont\color{accent}}
+  {}{0pt}{\MakeUppercase}[\vspace{1.5pt}{\color{hairline}\hrule height 0.5pt}]
+\titlespacing*{\section}{0pt}{7.5pt}{4pt}
+
+% ── the two-column entry: dates left, content right ─────────────────────────
+% A row is two top-aligned boxes rather than a tabularx row: tabularx cannot
+% be wrapped in a user environment (it re-reads its own body), and a table
+% cell cannot break across a page. Two minipages give the same visual result
+% and let me place the page break where it belongs.
+\newlength{\cvleft}\setlength{\cvleft}{30mm}
+\newlength{\cvgap}\setlength{\cvgap}{5mm}
+\newcommand{\cvrow}[2]{%
+  \noindent\begin{minipage}[t]{\cvleft}\raggedright\strut #1\end{minipage}%
+  \hspace{\cvgap}%
+  \begin{minipage}[t]{\dimexpr\textwidth-\cvleft-\cvgap\relax}\strut #2\end{minipage}%
+  \par\vspace{4.5pt}}
+
+\newcommand{\dates}[1]{\sansfont\fontsize{9}{11}\selectfont\color{mid}#1}
+\newcommand{\role}[1]{\textbf{#1}}
+\newcommand{\org}[1]{{\color{mid}\fontsize{9.5}{12}\selectfont #1}}
+
+\newlist{pts}{itemize}{1}
+\setlist[pts]{leftmargin=3.4mm,itemsep=1pt,topsep=2pt,parsep=0pt,
+              label=\textcolor{hairline}{\rule[0.55ex]{1.6mm}{0.5pt}}}
+
+\newcommand{\stack}[1]{{\fontsize{9}{11}\selectfont\color{mid}\textit{#1}}}
+\newcommand{\gap}{\\[7pt]}
+
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\sansfont\fontsize{8}{10}\selectfont\color{mid}Soham Patel — Curriculum Vitae}
+\fancyfoot[R]{\sansfont\fontsize{8}{10}\selectfont\color{mid}\thepage\,/\,2}
+
+\begin{document}
+
+% ── header ──────────────────────────────────────────────────────────────────
+{\sansfont\fontsize{21}{24}\selectfont\bfseries Soham Patel}\\[3pt]
+{\sansfont\fontsize{10.5}{13}\selectfont\color{accent}Software Engineer — Industrial AI, Digital Twins \& Computer Vision}\\[6pt]
+{\fontsize{9.5}{13.5}\selectfont\color{mid}
+Malteserplatz 16, 92224 Amberg, Germany \\
++49 155 66477145 \quad\textbullet\quad \href{mailto:soham.patel.2201@gmail.com}{soham.patel.2201@gmail.com} \\
+\href{https://github.com/soham10i}{github.com/soham10i} \quad\textbullet\quad
+\href{https://linkedin.com/in/soham10i}{linkedin.com/in/soham10i} \quad\textbullet\quad
+\href{https://soham10i.github.io}{soham10i.github.io}
+}\\[3pt]
+{\color{hairline}\hrule height 0.5pt}
+\vspace{2pt}
+
+\section{Profile}
+Software engineer with 2.5 years of production experience in regulated healthcare data and payment
+systems, now specialising in industrial AI. I build backends that are tested, containerised and
+observable — FastAPI and .NET services, Azure ETL, CI/CD — and apply the same discipline to machine
+learning: a browser-native digital twin of a fischertechnik Industry~4.0 cell driven by its real PLC
+process image over MQTT and OPC-UA; YOLOv8 exported to ONNX for on-device inference; LIDAR SLAM with
+occupancy-grid mapping and pure-pursuit control; latent diffusion for medical image anomaly detection.
+M.Sc.\ Information Technology as Gold Medalist, Rank~1 (German equivalent 1.2); currently completing
+an M.Sc.\ in Artificial Intelligence for Industrial Applications at OTH Amberg-Weiden.
+
+\section{Professional Experience}
+
+\cvrow{\dates{03/2025 – 08/2025 \\ Part-time}}{%
+\role{Teaching Assistant — Decision Modelling \& Data Analysis}\\
+\org{OTH Amberg-Weiden · Weiden, Germany · Supervisor: Prof.\ Dr.\ Simon J.\ Preis}
+\begin{pts}
+\item Designed and delivered the applied data-analysis strand of a Master's module to a cohort of 30: SQL, statistical modelling, classification, regression and model evaluation.
+\item Built and maintained the KNIME reference workflows used across the module, covering data cleaning, feature engineering and evaluation on real industrial datasets.
+\end{pts}}
+
+
+\cvrow{\dates{02/2023 – 02/2024 \\ Full-time}}{%
+\role{Software Engineer — Data Systems}\\
+\org{Altera Digital Health (Allscripts India LLP) · Pune, India / Remote}
+\begin{pts}
+\item Architected high-throughput ETL pipelines on Microsoft Azure for healthcare audit-log data, reducing data-retrieval latency by 30\% on compliance-grade patient datasets.
+\item Brought the pipeline to full compliance with HIPAA-aligned data-handling standards — encryption in transit and at rest, access auditing, and retention rules enforced in code rather than by convention.
+\item Refactored legacy C\#/.NET services and introduced a pytest suite that gates every deployment, cutting technical debt by an estimated 25\% with zero production incidents over the period.
+\end{pts}
+\stack{C\# · .NET · Microsoft Azure · Blob Storage · T-SQL / MSSQL · Azure DevOps · pytest · Git}}
+
+
+\cvrow{\dates{08/2022 – 01/2023 \\ Full-time}}{%
+\role{Python Backend Engineer}\\
+\org{Electrum IT Solutions · Vadodara, India}
+\begin{pts}
+\item Designed and ran the REST API layer of a fintech platform processing 2{,}000+ transactions per day at 99.9\% uptime, in FastAPI and Django.
+\item Implemented JWT authentication and role-based access control across the service boundary, and multithreaded the settlement path to hold response times flat under load.
+\item Introduced centralised payment-failure logging and fault isolation, reducing mean time to diagnosis for production incidents by roughly 60\%.
+\end{pts}
+\stack{Python 3 · FastAPI · Django · PostgreSQL · JWT · REST · Linux}}
+
+
+\cvrow{\dates{12/2021 – 04/2022 \\ Internship}}{%
+\role{Full-Stack Engineering Intern}\\
+\org{Promact Infotech Pvt.\ Ltd.\ · Vadodara, India}
+\begin{pts}
+\item Delivered an expense-management product end to end: Angular~8 front end, ASP.NET Core~5 API, 9-table normalised MSSQL schema, JWT auth with role-based access, WebSocket live balances.
+\item Designed a graph-theory debt-simplification algorithm reducing the transfers needed to settle a group by up to 33\%.
+\end{pts}
+\stack{Angular 8 · ASP.NET Core · MSSQL · WebSocket · JWT · Agile}
+
+
+\newpage}
+
+\section{Education}
+\cvrow{\dates{10/2024 – present}}{%
+\role{M.Sc.\ Artificial Intelligence for Industrial Applications}\\
+\org{Ostbayerische Technische Hochschule Amberg-Weiden · Amberg, Germany}
+\begin{pts}
+\item Current average 2.0 · 45 ECTS completed. Focus: digital twins and Industry~4.0, computer vision, deep learning, NLP, autonomous robotics, modern databases (Embedded Intelligence graded 1.3).
+\item Thesis direction: physics-informed latent world models as adaptive digital twins for sample-efficient robot skill transfer in contact-rich industrial assembly. Start August 2026.
+\end{pts}}
+
+
+\cvrow{\dates{08/2020 – 05/2022}}{%
+\role{M.Sc.\ Information Technology}\\
+\org{Charutar Vidya Mandal University · Gujarat, India}
+\begin{pts}
+\item CGPA 9.55/10 — German equivalent 1.2. \textbf{Gold Medalist, Rank 1} of a graduating class of approximately 120.
+\item Software engineering, databases and distributed systems; thesis in applied machine learning.
+\end{pts}}
+
+
+\cvrow{\dates{06/2017 – 05/2020}}{%
+\role{B.Sc.\ Computer Science}\\
+\org{Sardar Patel University · Gujarat, India}
+\begin{pts}
+\item CGPA 8.5/10 — German equivalent 1.5. Algorithms and data structures, operating systems, networks.
+\end{pts}}
+
+\section{Selected Projects}
+\cvrow{\dates{2025 – 2026}}{%
+\role{Industry 4.0 Digital Twin — fischertechnik Training Factory}\\
+\begin{pts}
+\item Browser-native 3D twin modelled on the real 15\,mm fischertechnik construction grid and driven by the actual PLC process image — 9 digital inputs and 14 digital outputs taken from the Belegungsplan — over MQTT and OPC-UA, with a predictive-maintenance dashboard on live sensor streams.
+\end{pts}
+\stack{Python · FastAPI · MQTT · OPC-UA · InfluxDB · Three.js · Docker Compose}}
+
+
+\cvrow{\dates{2025 – 2026}}{%
+\role{Unsupervised Brain-MRI Anomaly Detection via Latent Diffusion}\\
+\begin{pts}
+\item BraTS 2021 FLAIR slices → frozen MONAI AutoencoderKL ($32\times32\times4$ latent) → DiffusionModelUNet trained only on healthy anatomy → DDIM inference with partial noising at an SNR-selected $T_{\mathrm{int}}$, with an ablation over $T_{\mathrm{int}}$ and the ELBO derived from first principles.
+\item \textbf{Result: DICE 0.076} — well below target. Reported as a negative result: reconstruction-error anomaly detection does not separate diffuse FLAIR hyperintensity from normal anatomical variation at this latent resolution.
+\end{pts}
+\stack{PyTorch · MONAI Generative · HuggingFace · CUDA 12 · Docker}}
+
+
+\cvrow{\dates{2025}}{%
+\role{Autonomous Maze Navigation — LIDAR SLAM}\\
+\begin{pts}
+\item Log-odds occupancy-grid mapping, frontier exploration, A* planning on an inflated obstacle radius, pure-pursuit steering; ported from a Python Webots controller into the browser.
+\end{pts}
+\stack{Python · Webots · NumPy · Three.js · TypeScript}}
+
+
+\cvrow{\dates{2025}}{%
+\role{Real-Time Scene Understanding}\\
+\begin{pts}
+\item YOLOv8n-seg exported to ONNX and run under ONNX Runtime Web, so camera frames never leave the visitor's device; paired with a self-hosted vision-language model for narration, with a detector-only fallback when none is reachable.
+\end{pts}
+\stack{YOLOv8 · ONNX Runtime Web · TypeScript · FastAPI · Docker}}
+
+
+\section{Technical Skills}
+\cvrow{\dates{Languages}}{%
+Python 3 · C\# / .NET · TypeScript · SQL (T-SQL, MSSQL, PostgreSQL, MySQL) · C++ }
+\cvrow{\dates{Backend \& Cloud}}{%
+FastAPI · Django · ASP.NET Core · REST · JWT · Microsoft Azure · Docker · CI/CD · Git · Linux · pytest }
+\cvrow{\dates{ML \& Vision}}{%
+PyTorch · Scikit-Learn · XGBoost · MONAI · HuggingFace · YOLOv8 · ONNX Runtime · Diffusion models (DDPM/DDIM) · Anomaly detection · Explainability }
+\cvrow{\dates{Industrial \& Data}}{%
+Digital twins · MQTT · OPC-UA · PLC process images · InfluxDB · ETL pipelines · SCADA time-series · KNIME · Power BI }
+\cvrow{\dates{Robotics \& 3D}}{%
+Webots · SLAM (occupancy grids) · A* / pure pursuit · MuJoCo · robosuite · Three.js }
+
+\section{Awards, Languages \& Additional}
+\cvrow{\dates{2025}}{%
+\textbf{Grade 1.0 (highest distinction)} — keynote, OTH AI Research Conference: \textit{Brownian Bridge Diffusion Models for 3D Shape-to-Image Medical Image Synthesis}. }
+\cvrow{\dates{2022}}{%
+\textbf{Gold Medal \& University Rank 1} — M.Sc.\ IT, CVM University (CGPA 9.55/10). }
+\cvrow{\dates{Languages}}{%
+English C1 (IELTS 6.5) · German A2, in active study toward B1 · Gujarati native · Hindi fluent. }
+\cvrow{\dates{Work authorisation}}{%
+Valid German residence permit · EU Blue Card eligible via a recognised M.Sc. · no sponsorship required · available from September 2026. }
+\cvrow{\dates{Other}}{%
+Department student representative (two years) · Football: university team captain.}
+
+\end{document}

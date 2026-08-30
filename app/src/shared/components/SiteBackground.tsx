@@ -59,6 +59,18 @@ const TOUCH_RADIUS = 4;      // cells — a thicker fluid displaces a wider area
 const TOUCH_FORCE = 11;
 const AMBIENT_FORCE = 1.6;
 
+/* A falling drop is not a finger press. A finger displaces a shallow bowl and
+   holds it; a drop arrives with momentum, punches a narrow crater, and throws
+   the displaced liquid up into a ring around the impact — the "crown". The
+   crown is what makes the eye read it as something landing rather than
+   something pressing, so it is modelled explicitly rather than left to the
+   solver. Radii are in cells. */
+const DROP_RADIUS = 3;       // crater — narrow and deep
+const DROP_FORCE = 34;       // ~3× a drag press; a drop carries kinetic energy
+const CROWN_INNER = 3.2;     // where the crater ends
+const CROWN_OUTER = 8.5;     // where the thrown-up ring fades out
+const CROWN_FORCE = 13;      // upward, hence the sign flip below
+
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.trim().replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
@@ -175,6 +187,52 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
       px = gx; py = gy; hasLast = true;
     };
     const onLeave = () => { hasLast = false; };
+
+    /* Crater plus crown. The crater uses cos² falloff like `touch`, so the two
+       are continuous with each other; the crown is a raised annulus whose
+       profile is a single sine lobe between the inner and outer radii, which
+       goes to zero smoothly at both ends and therefore does not inject a
+       discontinuity the solver would turn into a square ringing artefact. */
+    const drop = (gx: number, gy: number, scale = 1) => {
+      const R = Math.ceil(CROWN_OUTER) + 1;
+      const x0 = Math.max(1, Math.round(gx) - R);
+      const x1 = Math.min(W - 2, Math.round(gx) + R);
+      const y0 = Math.max(1, Math.round(gy) - R);
+      const y1 = Math.min(H - 2, Math.round(gy) + R);
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const dx = x - gx, dy = y - gy;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d <= DROP_RADIUS) {
+            const f = Math.cos((d / DROP_RADIUS) * Math.PI * 0.5);
+            cur[y * W + x] -= DROP_FORCE * scale * f * f;
+          } else if (d < CROWN_OUTER) {
+            const u = (d - CROWN_INNER) / (CROWN_OUTER - CROWN_INNER);
+            if (u < 0 || u > 1) continue;
+            cur[y * W + x] += CROWN_FORCE * scale * Math.sin(u * Math.PI);
+          }
+        }
+      }
+    };
+
+    /* Only fire on genuinely empty background. Anything the visitor could be
+       aiming at — a link, a card, a control, a media surface — swallows the
+       click, because a ripple under a button they just pressed reads as a
+       glitch rather than as an effect. */
+    const INTERACTIVE = 'a,button,input,textarea,select,label,summary,video,canvas,'
+      + '[role="button"],[role="link"],[role="tab"],[contenteditable],.project-card,.glass,.glass-strong';
+    const onDown = (e: PointerEvent) => {
+      if (reduced || e.button !== 0) return;
+      const t = e.target as Element | null;
+      if (t && typeof t.closest === 'function' && t.closest(INTERACTIVE)) return;
+      const gx = (e.clientX / (cv.clientWidth || 1)) * W;
+      const gy = (e.clientY / (cv.clientHeight || 1)) * H;
+      drop(gx, gy);
+      /* The secondary droplet: a real drop ejects a smaller one that falls back
+         a moment later. Two ripple fronts at slightly different times is most
+         of why the effect reads as liquid and not as a shockwave. */
+      window.setTimeout(() => drop(gx, gy, 0.32), 190);
+    };
 
     /* One step of a *damped* wave equation.
      *
@@ -363,6 +421,7 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
     window.addEventListener('resize', resize);
     window.addEventListener('pointermove', onPointer, { passive: true });
     window.addEventListener('pointerleave', onLeave);
+    window.addEventListener('pointerdown', onDown, { passive: true });
     const tokenTimer = window.setInterval(readTokens, 1000);
     raf = requestAnimationFrame(frame);
 
@@ -372,6 +431,7 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('pointerleave', onLeave);
+      window.removeEventListener('pointerdown', onDown);
     };
   }, [paletteKey]);
 

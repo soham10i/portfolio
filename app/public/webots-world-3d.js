@@ -721,9 +721,10 @@
       pose.th = wrapPi(pose.th + this._w * dt);
       const step = this._v * dt;
       const nx = pose.x + Math.cos(pose.th) * step, ny = pose.y + Math.sin(pose.th) * step;
-      /* Reversing during recovery must not be blocked by the forward-clearance
-         gate — that was what made a wedged robot unable to free itself. */
-      if (step < 0 || this._frontClear() > 0.13) { pose.x = nx; pose.y = ny; this._dist += Math.abs(step); }
+      /* Reversing during recovery must not be blocked by the collision gate.
+         In Webots, the physics engine prevents clipping through walls; here,
+         we use _willCollide to ensure we don't pass through corners. */
+      if (step < 0 || !this._willCollide(nx, ny)) { pose.x = nx; pose.y = ny; this._dist += Math.abs(step); }
 
       /* Stuck detector. Anything that is supposed to be driving but has moved
          less than 6 cm in 2.5 s is wedged; hand it to the recovery state. */
@@ -753,6 +754,21 @@
         if (d < min) min = d;
       }
       return min;
+    }
+
+    _willCollide(nx, ny) {
+      const N = P.LIDAR_RAYS;
+      const r2 = Math.pow(P.ROBOT_RADIUS + 0.005, 2);
+      for (let i = 0; i < N; i++) {
+        const d = this._scan[i];
+        if (d >= P.LIDAR_MAX - 0.1) continue;
+        const a = this._pose.th + (i / N) * Math.PI * 2;
+        const wx = this._pose.x + Math.cos(a) * d;
+        const wy = this._pose.y + Math.sin(a) * d;
+        const dist2 = (wx - nx) * (wx - nx) + (wy - ny) * (wy - ny);
+        if (dist2 < r2) return true;
+      }
+      return false;
     }
 
     /** Clearance to one side (+1 left, -1 right); picks the escape direction. */
