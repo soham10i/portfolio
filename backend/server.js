@@ -17,7 +17,7 @@ const path = require('path');
 
 const config = require('./src/config');
 const { securityHeaders } = require('./src/middleware/security');
-const { reachable } = require('./src/services/llm');
+const { reachable, reachableVision } = require('./src/services/llm');
 
 const app = express();
 
@@ -36,13 +36,22 @@ const smallJson = express.json({ limit: '64kb' });
 const notesJson = express.json({ limit: '1mb' });
 const sceneJson = express.json({ limit: '3mb' });
 
+/* Health is a deploy-debugging tool, so it reports which provider answered as
+   well as whether one is configured. It deliberately names no keys or URLs —
+   this endpoint is public. */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     model: config.llm.ready ? config.llm.model : null,
+    provider: config.llm.provider,
     visionModel: config.llm.visionReady ? config.llm.visionModel : null,
+    visionProvider: config.llm.visionProvider,
     llm: config.llm.ready,
     visionLlm: config.llm.visionReady,
+    fallback: !!config.llm.fallback,
+    medqa: config.medqa.enabled,
+    scene: !!config.scene.baseUrl,
+    uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
 });
@@ -61,14 +70,42 @@ const dist = path.join(__dirname, '../app/dist');
 app.use(express.static(dist));
 app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
 
-app.listen(config.port, async () => {
-  console.log(`🚀 Portfolio backend on http://localhost:${config.port}`);
-  console.log(`🤖 LLM endpoint: ${config.llm.baseUrl || 'MISSING — set LLM_API_BASE in .env'}`);
-  console.log(`🧠 Text: ${config.llm.model}   Vision: ${config.llm.visionModel}`);
-  console.log(`👁️  Vision endpoint: ${config.llm.visionBaseUrl || 'same as text'}`);
-  console.log(`🖼️  BLIP service: ${config.scene.baseUrl || 'not configured'}`);
-  console.log(`📝 Notes editing: ${config.notes.adminToken ? 'enabled' : 'read-only (no ADMIN_TOKEN)'}`);
-  console.log(`🌐 CORS: ${config.allowedOrigins === true ? 'any origin (dev)' : config.allowedOrigins === false ? 'same-origin only' : config.allowedOrigins.join(', ')}`);
-  if (config.llm.ready) console.log(`🔌 Text LLM reachable: ${await reachable()}`);
-  if (config.llm.visionReady) console.log(`🔌 Vision LLM reachable: ${await reachableVision()}`);
+/* One boot banner that answers "why is the chat not working" without a second
+   deploy. Reachability is probed after the listener is up so a slow or dead
+   provider delays nothing that serves the site itself. */
+const cors_ = config.allowedOrigins;
+const server = app.listen(config.port, () => {
+  const line = (k, v) => console.log(`  ${k.padEnd(16)} ${v}`);
+  console.log(`\nPortfolio backend listening on :${config.port}  (${config.isProd ? 'production' : 'development'})`);
+  line('text', config.llm.ready
+    ? `${config.llm.model} via ${config.llm.provider || config.llm.baseUrl}`
+    : 'NOT CONFIGURED — set LLM_PROVIDER or LLM_API_BASE; /api/chat will answer 503');
+  line('vision', config.llm.visionReady
+    ? `${config.llm.visionModel} via ${config.llm.visionProvider || config.llm.visionBaseUrl}`
+    : 'not configured');
+  line('fallback', config.llm.fallback ? config.llm.fallback.baseUrl : 'none — a 429 from the primary is fatal');
+  line('blip', config.scene.baseUrl || 'not configured (SceneLab falls back to the vision model)');
+  line('medqa', config.medqa.enabled ? 'enabled (index loads on first request)' : 'disabled');
+  line('notes', config.notes.adminToken ? 'editable' : 'read-only (no ADMIN_TOKEN)');
+  line('cors', cors_ === true ? 'any origin (development)' : cors_ === false ? 'same-origin only' : cors_.join(', '));
+
+  Promise.all([
+    config.llm.ready ? reachable() : null,
+    config.llm.visionReady ? reachableVision() : null,
+  ]).then(([t, v]) => {
+    if (t !== null) line('text reachable', t ? 'yes' : 'NO — the endpoint is not answering');
+    if (v !== null) line('vision reachable', v ? 'yes' : 'NO — the endpoint is not answering');
+    console.log('');
+  }).catch(() => {});
 });
+
+/* Render sends SIGTERM on every deploy and when a free instance spins down.
+   Closing the listener lets in-flight answers finish instead of being cut
+   mid-stream, which a visitor sees as a truncated reply. */
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    console.log(`\n${signal} received — draining connections`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 10_000).unref();
+  });
+}

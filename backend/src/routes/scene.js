@@ -10,7 +10,7 @@ const express = require('express');
 const config = require('../config');
 const { createLimiter } = require('../middleware/rateLimit');
 const { caption, blipHealth } = require('../services/captioner');
-const { callLLM, extractText, reachable, reachableVision } = require('../services/llm');
+const { callLLMWithFallback, extractText, reachableVision } = require('../services/llm');
 
 const router = express.Router();
 const limit = createLimiter({
@@ -30,21 +30,6 @@ router.get('/status', async (req, res) => {
       ? 'BLIP service not configured — captioning with the self-hosted vision model'
       : config.llm.visionReady
         ? `no captioning engine reachable — nothing is answering at ${config.llm.visionBaseUrl}`
-        : 'no captioning engine configured';
-
-  res.json({ available: vlm, engine: vlm ? 'vlm' : null, blip: false, vlm, reason });
-});
-  const vlm = await reachable();
-  const blip = await blipHealth();
-
-  if (blip.up) return res.json({ available: true, engine: 'blip', blip: true, vlm, upstream: blip.upstream });
-
-  const reason = config.scene.baseUrl
-    ? `BLIP service ${blip.reason}${vlm ? ' — falling back to the vision model' : ''}`
-    : vlm
-      ? 'BLIP service not configured — captioning with the self-hosted vision model'
-      : config.llm.ready
-        ? `no captioning engine reachable — nothing is answering at ${config.llm.baseUrl}`
         : 'no captioning engine configured';
 
   res.json({ available: vlm, engine: vlm ? 'vlm' : null, blip: false, vlm, reason });
@@ -121,7 +106,7 @@ router.post('/summarise', limit, async (req, res) => {
   ];
 
   try {
-    const r = await callLLM({ messages, maxTokens: 700, temperature: 0.3, timeoutMs: config.scene.timeoutMs });
+    const r = await callLLMWithFallback({ messages, maxTokens: 700, temperature: 0.3, timeoutMs: config.scene.timeoutMs });
     if (!r.ok) {
       const detail = await r.text().catch(() => '');
       return res.status(502).json({ error: `Summariser returned ${r.status}`, detail: detail.slice(0, 200) });
@@ -171,7 +156,7 @@ router.post('/ask', limit, async (req, res) => {
     'cannot see everything.';
 
   try {
-    const r = await callLLM({
+    const r = await callLLMWithFallback({
       messages: [{ role: 'system', content: system }, ...turns, { role: 'user', content: question.slice(0, 600) }],
       maxTokens: 500,
       temperature: 0.3,
