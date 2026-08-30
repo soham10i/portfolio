@@ -65,6 +65,19 @@ const PROVIDERS = {
   gemini: {
     label: 'Google AI Studio',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    model: 'gemini-2.5-flash-lite',
+    visionModel: 'gemini-2.5-flash-lite',
+    keyEnv: 'GEMINI_API_KEY',
+    console: 'https://aistudio.google.com/app/apikey',
+    notes: 'The most generous request-per-day quota of the four. Google retires '
+         + 'model aliases without warning (gemini-flash-lite-latest and '
+         + 'gemini-2.0-flash-lite now answer 404 as of Aug 2026). Use the dated id '
+         + 'gemini-2.5-flash-lite — it is stable, free-tier, and responds in ~0.6s. '
+         + 'Avoid gemini-2.5-flash (non-lite): measured 16.4s for one word because '
+         + 'hidden reasoning consumes the token budget.',
+  },
+    label: 'Google AI Studio',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     model: 'gemini-flash-lite-latest',
     visionModel: 'gemini-flash-lite-latest',
     keyEnv: 'GEMINI_API_KEY',
