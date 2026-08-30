@@ -62,8 +62,8 @@ services:
       # which supplies the base URL and a default model id. Only the key is a
       # secret. Explicit LLM_API_BASE / LLM_MODEL override the preset.
       - key: LLM_PROVIDER
-        value: groq
-      - key: GROQ_API_KEY
+        value: gemini
+      - key: GEMINI_API_KEY
         sync: false
 
       # A different vendor, tried once when the primary answers 429 or 5xx.
@@ -76,9 +76,7 @@ services:
       # Vision is resolved independently of text — as of Aug 2026 NVIDIA's free
       # text models are EOL while its vision models still answer.
       - key: LLM_VISION_PROVIDER
-        value: nvidia
-      - key: NVIDIA_API_KEY
-        sync: false
+        value: gemini
 
       # ── MedQA ──
       # The retrieval index loads a quantised embedding model, the largest
