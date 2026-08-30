@@ -37,7 +37,7 @@ interface Message { role: 'user' | 'assistant'; content: string }
 const GEOM: Record<'docked' | 'max', CSSProperties> = {
   docked: {
     position: 'fixed', zIndex: 80,
-    top: 'auto', right: 'auto', bottom: '96px', left: '24px',
+    top: 'auto', right: '24px', bottom: '96px', left: 'auto',
     width: 'min(430px, calc(100vw - 32px))', height: 'min(660px,72vh)',
     maxWidth: 'none', margin: 0,
     transition: 'opacity .3s ease',
@@ -486,7 +486,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-label="Open JARVIS"
-        className="fixed bottom-6 left-6 z-[80] grid h-14 w-14 place-items-center rounded-full border border-line transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-110"
+        className="fixed bottom-6 right-6 z-[80] grid h-14 w-14 place-items-center rounded-full border border-line transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-110"
         style={{
           background: 'linear-gradient(135deg,var(--p),var(--s))',
           boxShadow: '0 16px 36px -10px color-mix(in oklab,var(--p) 75%,transparent)',
