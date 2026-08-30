@@ -2,43 +2,74 @@
  *
  * Nothing else in the codebase reads process.env, so what the service needs in
  * order to run is answerable by reading this file — and a missing variable
- * produces one clear warning at boot rather than a confusing 500 later. */
+ * produces one clear warning at boot rather than a confusing 500 later.
+ *
+ * Model endpoints are resolved through ./providers, which lets a deploy say
+ * LLM_PROVIDER=groq instead of spelling out a base URL and a model id. The
+ * explicit LLM_API_BASE / LLM_MODEL variables still take precedence, so every
+ * configuration that worked before this file gained a registry still works. */
 const path = require('path');
+const { resolve } = require('./providers');
 
 const isProd = process.env.NODE_ENV === 'production';
+
+/* Text and vision are resolved independently because they are routinely on
+   different vendors — the free tiers are not good at the same things. When the
+   vision role resolves to nothing it inherits the text role, which is the
+   common single-provider case. */
+const text = resolve({
+  providerEnv: 'LLM_PROVIDER',
+  baseEnv: 'LLM_API_BASE',
+  modelEnv: 'LLM_MODEL',
+  keyEnv: 'LLM_API_KEY',
+});
+
+const visionRaw = resolve({
+  providerEnv: 'LLM_VISION_PROVIDER',
+  baseEnv: 'LLM_VISION_API_BASE',
+  modelEnv: 'LLM_VISION_MODEL',
+  keyEnv: 'LLM_VISION_API_KEY',
+  role: 'vision',
+});
+const vision = {
+  baseUrl: visionRaw.baseUrl || text.baseUrl,
+  model: visionRaw.model || text.model,
+  apiKey: visionRaw.apiKey || (visionRaw.baseUrl ? '' : text.apiKey),
+};
+
+/* The fallback is tried when the primary answers 429 or 5xx. Free tiers
+   rate-limit hard, and the whole value of a fallback is that it is a DIFFERENT
+   vendor — pointing it at the same one buys nothing. */
+const fallbackRaw = resolve({
+  providerEnv: 'LLM_FALLBACK_PROVIDER',
+  baseEnv: 'LLM_FALLBACK_API_BASE',
+  modelEnv: 'LLM_FALLBACK_MODEL',
+  keyEnv: 'LLM_FALLBACK_API_KEY',
+});
 
 const config = {
   isProd,
   port: Number(process.env.PORT) || 3001,
 
-  /* Language model: any OpenAI-compatible /chat/completions endpoint —
-     vLLM, llama.cpp --server, Ollama (/v1), LM Studio, HF Inference Endpoints.
+  /* Language model: any OpenAI-compatible /chat/completions endpoint — Groq,
+     OpenRouter, NVIDIA NIM, Gemini's compat layer, vLLM, Ollama, LM Studio.
      Deliberately not tied to one vendor. */
   llm: {
-    baseUrl: (process.env.LLM_API_BASE || '').replace(/\/$/, ''),
-    model: process.env.LLM_MODEL || 'qwen2.5:7b-instruct',
-    apiKey: process.env.LLM_API_KEY || '',
+    provider: text.provider,
+    baseUrl: text.baseUrl,
+    model: text.model || 'qwen2.5:7b-instruct',
+    apiKey: text.apiKey,
     timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 120_000,
     get ready() { return !!this.baseUrl; },
 
-    /* Vision can be hosted on a different provider (e.g. NVIDIA NIM for vision
-       while OpenRouter handles text). When the vision-specific env vars are
-       absent they fall back to the primary text provider. */
-    visionModel: process.env.LLM_VISION_MODEL || process.env.LLM_MODEL || 'qwen2.5vl:7b',
-    visionBaseUrl: (process.env.LLM_VISION_API_BASE || process.env.LLM_API_BASE || '').replace(/\/$/, ''),
-    visionApiKey: process.env.LLM_VISION_API_KEY || process.env.LLM_API_KEY || '',
+    visionProvider: visionRaw.provider,
+    visionBaseUrl: vision.baseUrl,
+    visionModel: vision.model || 'qwen2.5vl:7b',
+    visionApiKey: vision.apiKey,
     get visionReady() { return !!this.visionBaseUrl; },
 
-    /* Optional second OpenAI-compatible provider, tried when the primary is
-       rate-limited or down (429 / 5xx). Free tiers rate-limit hard — pointing the fallback
-       at a different vendor (e.g. primary Gemini, fallback OpenRouter or
-       NVIDIA NIM) keeps JARVIS answering through a quota wall. */
-    fallback: process.env.LLM_FALLBACK_API_BASE
-      ? {
-          baseUrl: process.env.LLM_FALLBACK_API_BASE.replace(/\/$/, ''),
-          model: process.env.LLM_FALLBACK_MODEL || '',
-          apiKey: process.env.LLM_FALLBACK_API_KEY || '',
-        }
+    fallback: fallbackRaw.baseUrl
+      ? { baseUrl: fallbackRaw.baseUrl, model: fallbackRaw.model, apiKey: fallbackRaw.apiKey }
       : null,
   },
 
@@ -60,6 +91,15 @@ const config = {
     /* Hard ceiling on the mailbox file. Without it a rate-limited attacker can
        still append ~8,600 messages a day and eventually fill the disk. */
     maxFileBytes: 5_000_000,
+  },
+
+  /* MedQA's retrieval index loads a quantised embedding model into memory on
+     first use. On a 512 MB free instance that is the single largest allocation
+     in the process, so it is opt-out: set MEDQA_ENABLED=false to keep the rest
+     of the site alive on a constrained host. */
+  medqa: {
+    enabled: process.env.MEDQA_ENABLED !== 'false',
+    indexPath: path.join(__dirname, '..', '..', 'data', 'medqa-index.json'),
   },
 
   limits: {
