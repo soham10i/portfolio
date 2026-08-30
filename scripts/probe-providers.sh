@@ -66,7 +66,7 @@ echo
 echo "Provider probe — $(date -u '+%Y-%m-%d %H:%M UTC')"
 echo "───────────────────────────────────────────────────────────────────────────────"
 echo "TEXT"
-probe "groq"        "$GROQ_BASE" "${GROQ_API_KEY:-}"       "${GROQ_MODEL:-llama-3.3-70b-versatile}"
+probe "groq"        "$GROQ_BASE" "${GROQ_API_KEY:-}"       "${GROQ_MODEL:-qwen/qwen3.8-27b}"
 probe "openrouter"  "$OR_BASE"   "${OPENROUTER_API_KEY:-}" "${OPENROUTER_MODEL:-openrouter/free}"
 echo "VISION"
 probe "nvidia"      "$NV_BASE"   "${NVIDIA_API_KEY:-}"     "${NVIDIA_VISION_MODEL:-meta/llama-3.2-90b-vision-instruct}"
