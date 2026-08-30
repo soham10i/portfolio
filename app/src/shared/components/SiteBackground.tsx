@@ -59,18 +59,6 @@ const TOUCH_RADIUS = 7;      // cells — a thicker fluid displaces a wider area
 const TOUCH_FORCE = 18;
 const AMBIENT_FORCE = 3.5;
 
-/* A falling drop is not a finger press. A finger displaces a shallow bowl and
-   holds it; a drop arrives with momentum, punches a narrow crater, and throws
-   the displaced liquid up into a ring around the impact — the "crown". The
-   crown is what makes the eye read it as something landing rather than
-   something pressing, so it is modelled explicitly rather than left to the
-   solver. Radii are in cells. */
-const DROP_RADIUS = 5;       // crater — narrow and deep
-const DROP_FORCE = 50;       // ~3× a drag press; a drop carries kinetic energy
-const CROWN_INNER = 5.3;     // where the crater ends
-const CROWN_OUTER = 14.0;     // where the thrown-up ring fades out
-const CROWN_FORCE = 20;      // upward, hence the sign flip below
-
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.trim().replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
@@ -188,33 +176,6 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
     };
     const onLeave = () => { hasLast = false; };
 
-    /* Crater plus crown. The crater uses cos² falloff like `touch`, so the two
-       are continuous with each other; the crown is a raised annulus whose
-       profile is a single sine lobe between the inner and outer radii, which
-       goes to zero smoothly at both ends and therefore does not inject a
-       discontinuity the solver would turn into a square ringing artefact. */
-    const drop = (gx: number, gy: number, scale = 1) => {
-      const R = Math.ceil(CROWN_OUTER) + 1;
-      const x0 = Math.max(1, Math.round(gx) - R);
-      const x1 = Math.min(W - 2, Math.round(gx) + R);
-      const y0 = Math.max(1, Math.round(gy) - R);
-      const y1 = Math.min(H - 2, Math.round(gy) + R);
-      for (let y = y0; y <= y1; y++) {
-        for (let x = x0; x <= x1; x++) {
-          const dx = x - gx, dy = y - gy;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d <= DROP_RADIUS) {
-            const f = Math.cos((d / DROP_RADIUS) * Math.PI * 0.5);
-            cur[y * W + x] -= DROP_FORCE * scale * f * f;
-          } else if (d < CROWN_OUTER) {
-            const u = (d - CROWN_INNER) / (CROWN_OUTER - CROWN_INNER);
-            if (u < 0 || u > 1) continue;
-            cur[y * W + x] += CROWN_FORCE * scale * Math.sin(u * Math.PI);
-          }
-        }
-      }
-    };
-
     /* Only fire on genuinely empty background. Anything the visitor could be
        aiming at — a link, a card, a control, a media surface — swallows the
        click, because a ripple under a button they just pressed reads as a
@@ -227,10 +188,9 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
       if (t && typeof t.closest === 'function' && t.closest(INTERACTIVE)) return;
       const gx = (e.clientX / (cv.clientWidth || 1)) * W;
       const gy = (e.clientY / (cv.clientHeight || 1)) * H;
-      
+
       /* A finger tap: a single deep, forceful displacement.
-         We don't need to fake a "crown" or secondary droplets; 
-         the wave equation naturally expands this crater into 
+         The wave equation naturally expands this crater into
          realistic outward-propagating rings. */
       touch(gx, gy, 65);
     };
@@ -420,7 +380,7 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
     window.addEventListener('pointerleave', onLeave);
     window.addEventListener('pointerdown', onDown, { passive: true });
     const tokenTimer = window.setInterval(readTokens, 1000);
-    
+
     // Showcase the animation with slow random drops (1 per second)
     const autoTapTimer = window.setInterval(() => {
       if (!reduced) {

@@ -343,7 +343,7 @@ export default function Home() {
   const [palette, setPalette] = useState<PaletteKey>(readStoredPalette);
   const [category, setCategory] = useState('All');
   const [notes, setNotes] = useState<NoteMeta[]>([]);
-  const [notesStatus, setNotesStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [, setNotesStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const typedRole = useTypedRole();
   const notesRef = useDraggableScroll();
 
