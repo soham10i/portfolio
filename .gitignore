@@ -50,6 +50,7 @@ projects/
 __pycache__/
 *.py[cod]
 .venv/
+scene-api/.venv/
 
 # ── Archives ─────────────────────────────────────────────────────────────────
 # Source drops land here by hand; they are inputs, not deliverables, and a
