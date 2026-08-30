@@ -9,7 +9,7 @@ const NAV = [
   ['Skills', '#skills'],
   ['Research', '#research'],
   ['Projects', '#projects'],
-  ['Notes', '/notes'],
+  ['Notes', '/#notes'],
   ['Contact', '#contact'],
 ] as const;
 
