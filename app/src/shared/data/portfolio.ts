@@ -138,11 +138,11 @@ export const EXPERIENCES: Experience[] = [
     period: 'Mar 2025 – Aug 2025', type: 'Part-time', role: 'Teaching Assistant — Decision Modelling & Data Analysis',
     company: 'OTH Amberg-Weiden', location: 'Weiden, Germany',
     description:
-      'Taught the applied data-analysis strand of a Master\u2019s module to a cohort of 30, alongside my own graduate coursework.',
+      'Facilitated the applied data analysis curriculum for a graduate cohort of 30 students, concurrently managing personal Master\u2019s coursework.',
     highlights: [
-      'Designed and delivered lab sessions on SQL, statistical modelling and supervised learning, translating lecture theory into exercises students could run on real industrial datasets.',
-      'Built and maintained KNIME workflows used as the module\u2019s reference implementations, covering data cleaning, feature engineering and model evaluation.',
-      'Held weekly office hours and reviewed submitted work, which meant explaining the same idea several different ways until it landed — the single most useful thing I have done for my own clarity as an engineer.',
+      'Architected and led comprehensive laboratory sessions on advanced SQL, statistical modelling, and supervised machine learning, bridging theoretical concepts with practical application on complex industrial datasets.',
+      'Engineered and maintained robust KNIME workflows serving as reference implementations for the module, demonstrating best practices in data preprocessing, feature engineering, and model validation.',
+      'Conducted academic mentoring and rigorous evaluation of student submissions, fostering analytical problem-solving skills and refining the communication of complex technical concepts.',
     ],
     technologies: ['SQL', 'Machine Learning', 'KNIME', 'Python', 'Statistics', 'Data Visualisation'],
   },
@@ -302,6 +302,6 @@ export const ROLES = ['Software Engineer', 'Industrial AI Engineer', 'Digital Tw
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',
   github: 'https://github.com/soham10i',
-  location: 'Amberg, Bavaria — open to relocation across Germany and the EU',
+  location: 'Germany — open to relocation across the EU',
   availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
 };

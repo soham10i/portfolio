@@ -4,11 +4,11 @@ import PaletteMenu from '@/shared/components/PaletteMenu';
 import { CONTACT } from '@/shared/data/portfolio';
 
 const NAV = [
-  ['Projects', '#projects'],
+  ['About', '#about'],
   ['Experience', '#experience'],
   ['Skills', '#skills'],
-  ['About', '#about'],
   ['Research', '#research'],
+  ['Projects', '#projects'],
   ['Notes', '/notes'],
   ['Contact', '#contact'],
 ] as const;

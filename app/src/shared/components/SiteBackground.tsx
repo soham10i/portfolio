@@ -43,21 +43,21 @@ interface SiteBackgroundProps {
   paletteKey?: string;
 }
 
-const CELL = 5;              // CSS pixels per simulation cell
-const MAX_W = 300;           // hard cap on grid width, for very wide monitors
+const CELL = 3;              // CSS pixels per simulation cell
+const MAX_W = 500;           // hard cap on grid width, for very wide monitors
 /* The three dials that set how thick the liquid is. Together these describe
    something closer to glycerine than to water: slow to move, quick to settle,
    and still when nothing is touching it. */
-const C2 = 0.16;             // wave speed² — low, so disturbances crawl
-const VISCOSITY = 0.955;     // velocity retained per step; 1 = inviscid
-const DAMPING = 0.986;       // residual height decay, so it truly comes to rest
+const C2 = 0.09;             // wave speed² — low, so disturbances crawl
+const VISCOSITY = 0.91;     // velocity retained per step; 1 = inviscid
+const DAMPING = 0.99;       // residual height decay, so it truly comes to rest
 
-const TOUCH_RADIUS = 4;      // cells — a thicker fluid displaces a wider area
+const TOUCH_RADIUS = 7;      // cells — a thicker fluid displaces a wider area
 /* Deliberately gentle. An early version used 42 and produced a black trough
    that swallowed the hero text — a disturbance you can see is not the same as
    a disturbance you can read through. */
-const TOUCH_FORCE = 11;
-const AMBIENT_FORCE = 1.6;
+const TOUCH_FORCE = 18;
+const AMBIENT_FORCE = 3.5;
 
 /* A falling drop is not a finger press. A finger displaces a shallow bowl and
    holds it; a drop arrives with momentum, punches a narrow crater, and throws
@@ -65,11 +65,11 @@ const AMBIENT_FORCE = 1.6;
    crown is what makes the eye read it as something landing rather than
    something pressing, so it is modelled explicitly rather than left to the
    solver. Radii are in cells. */
-const DROP_RADIUS = 3;       // crater — narrow and deep
-const DROP_FORCE = 34;       // ~3× a drag press; a drop carries kinetic energy
-const CROWN_INNER = 3.2;     // where the crater ends
-const CROWN_OUTER = 8.5;     // where the thrown-up ring fades out
-const CROWN_FORCE = 13;      // upward, hence the sign flip below
+const DROP_RADIUS = 5;       // crater — narrow and deep
+const DROP_FORCE = 50;       // ~3× a drag press; a drop carries kinetic energy
+const CROWN_INNER = 5.3;     // where the crater ends
+const CROWN_OUTER = 14.0;     // where the thrown-up ring fades out
+const CROWN_FORCE = 20;      // upward, hence the sign flip below
 
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.trim().replace('#', '');
@@ -227,11 +227,12 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
       if (t && typeof t.closest === 'function' && t.closest(INTERACTIVE)) return;
       const gx = (e.clientX / (cv.clientWidth || 1)) * W;
       const gy = (e.clientY / (cv.clientHeight || 1)) * H;
-      drop(gx, gy);
-      /* The secondary droplet: a real drop ejects a smaller one that falls back
-         a moment later. Two ripple fronts at slightly different times is most
-         of why the effect reads as liquid and not as a shockwave. */
-      window.setTimeout(() => drop(gx, gy, 0.32), 190);
+      
+      /* A finger tap: a single deep, forceful displacement.
+         We don't need to fake a "crown" or secondary droplets; 
+         the wave equation naturally expands this crater into 
+         realistic outward-propagating rings. */
+      touch(gx, gy, 65);
     };
 
     /* One step of a *damped* wave equation.
@@ -352,9 +353,9 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
              rather than a surface. The floor is deliberately above zero: real
              water in shadow is still water-coloured. */
           const h = cur[i] + sw[i];
-          let lift = h * 0.0055;
-          if (lift > 0.09) lift = 0.09;
-          else if (lift < -0.045) lift = -0.045;
+          let lift = h * 0.012;
+          if (lift > 0.18) lift = 0.18;
+          else if (lift < -0.09) lift = -0.09;
 
           const o = i << 2;
 
@@ -368,14 +369,14 @@ export default function SiteBackground({ paletteKey }: SiteBackgroundProps) {
              * refraction where the surface is steep, not as glints. So the
              * same shading term drives a blend TOWARDS the accent instead of
              * an addition of it. */
-            const k = (sp * 0.16 + sp2 * 0.20) - lift * 0.7;
-            const a = k > 0.30 ? 0.30 : k < 0 ? 0 : k;
+            const k = (sp * 0.28 + sp2 * 0.35) - lift * 0.7;
+            const a = k > 0.45 ? 0.45 : k < 0 ? 0 : k;
             buf[o] = deep[0] + (spec[0] - deep[0]) * a;
             buf[o + 1] = deep[1] + (spec[1] - deep[1]) * a;
             buf[o + 2] = deep[2] + (spec[2] - deep[2]) * a;
           } else {
             const base = 0.13 + lift;
-            const hi = sp * 0.10 + sp2 * 0.20;
+            const hi = sp * 0.20 + sp2 * 0.35;
             buf[o] = deep[0] + glow[0] * base + spec[0] * hi;
             buf[o + 1] = deep[1] + glow[1] * base + spec[1] * hi;
             buf[o + 2] = deep[2] + glow[2] * base + spec[2] * hi;
