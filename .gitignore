@@ -37,3 +37,28 @@ backend/.env.gemini.bak
 # versioning, the right fix is a separate PRIVATE repository (or a private
 # submodule), not un-ignoring this folder.
 projects/
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# Every real value lives in the host's environment (the Render dashboard) or in
+# an untracked local .env. Only the *.example templates are ever committed.
+.env
+.env.*
+!.env.example
+!*/.env.example
+
+# ── Python (scene-api) ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+
+# ── Archives ─────────────────────────────────────────────────────────────────
+# Source drops land here by hand; they are inputs, not deliverables, and a
+# tracked 11 MB tarball is paid for by every clone and every Render build.
+*.tgz
+*.tar.gz
+*.zip
+
+# ── Editor / agent state ─────────────────────────────────────────────────────
+.claude/
+.idea/
+.vscode/
