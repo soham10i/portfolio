@@ -9,7 +9,7 @@
 # `docker history`. That line is gone and must not come back.
 
 # ── build ────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /build/app
 COPY app/package*.json ./
@@ -22,7 +22,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 # ── runtime ──────────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:22-alpine
 
 ENV NODE_ENV=production
 WORKDIR /app

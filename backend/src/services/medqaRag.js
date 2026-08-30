@@ -6,12 +6,15 @@
  *   7. Attach medical disclaimer
  */
 const fs = require('fs');
-const path = require('path');
-// const { pipeline } = require('@xenova/transformers'); // Replaced with dynamic import below
+const config = require('../config');
 const { callLLM, extractText } = require('./llm');
 const { augmentEvidence } = require('./medicalScraper');
 
-const INDEX_PATH = path.join(__dirname, '..', '..', 'data', 'medqa-index.json');
+/* @xenova/transformers is ESM-only and pulls ~100 MB of ONNX runtime into
+   memory when it loads. It is imported dynamically inside loadIndex() so that
+   cost is paid on the first MedQA request and never on a deploy that has the
+   demo switched off. */
+const INDEX_PATH = config.medqa.indexPath;
 
 const MEDICAL_DISCLAIMER =
   'This system provides educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. ' +
@@ -436,4 +439,10 @@ JSON:`;
   };
 }
 
-module.exports = { loadIndex, getStatus, ask, followUp, getConversation };
+function randomRecord() {
+  const rs = index?.records;
+  return Array.isArray(rs) && rs.length ? rs[Math.floor(Math.random() * rs.length)] : null;
+}
+
+module.exports = {
+  randomRecord, loadIndex, getStatus, ask, followUp, getConversation };

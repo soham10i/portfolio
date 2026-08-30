@@ -1,18 +1,11 @@
-# Render Blueprint — Portfolio (Frontend + Backend)
+# Render Blueprint — one web service serving the built SPA and the Express API
+# from a single process, which is why there is no CORS to configure: the page
+# and its API share an origin.
 #
-# This file is read by Render when you create a new Blueprint from this repo.
-# It defines the web service that serves both the built React frontend and
-# the Express API from a single process.
+#   Render Dashboard → Blueprints → New Blueprint → connect this repo.
 #
-# To create from this Blueprint:
-#   1. Push this file to your repo root
-#   2. Render Dashboard → Blueprints → New Blueprint
-#   3. Connect your GitHub repo
-#   4. Render auto-detects this file and provisions the service
-#
-# If you already have a service and want to switch to Blueprint:
-#   - Delete the old service and recreate via Blueprint, OR
-#   - Update the service settings manually to match below
+# Secrets are NOT in this file. Every `sync: false` value is entered once in the
+# Render dashboard and never reaches the repository.
 
 services:
   - type: web
@@ -21,50 +14,91 @@ services:
     plan: free
     region: frankfurt
     autoDeploy: true
-    buildCommand: |
-      set -e
-      echo "=== Building frontend ==="
-      cd app && rm -rf node_modules && npm ci --include=dev && npm run build
-      echo "=== Installing backend deps ==="
-      cd ../backend && rm -rf node_modules && npm ci --omit=dev
-      echo "=== Build complete ==="
-    startCommand: cd backend && node server.js
     healthCheckPath: /api/health
+
+    # Two installs because the two halves have opposite needs: the frontend
+    # needs devDependencies (vite, tsc) to build and is then thrown away; the
+    # backend ships without them. `npm ci` is used over `npm install` so the
+    # lockfile decides the tree — a build that resolves differently from local
+    # is a debugging session nobody enjoys.
+    buildCommand: |
+      set -euo pipefail
+
+      echo "── frontend ──"
+      cd app
+      npm ci --include=dev
+      npm run build
+
+      echo "── backend ──"
+      cd ../backend
+      npm ci --omit=dev
+
+      echo "── verifying build output ──"
+      cd ..
+      test -f app/dist/index.html || { echo "FATAL: app/dist/index.html missing"; exit 1; }
+      # Git LFS objects that were not fetched arrive as ~130-byte text pointers
+      # and are served as broken video. Catching it here fails the deploy
+      # instead of shipping a portfolio whose demos do not play.
+      for v in app/public/videos/*.mp4; do
+        if head -c 40 "$v" | grep -q 'git-lfs.github.com'; then
+          echo "FATAL: $v is an unfetched Git LFS pointer, not video."
+          echo "       Enable Git LFS for this service, or run: git lfs pull"
+          exit 1
+        fi
+      done
+      echo "build ok"
+
+    startCommand: node backend/server.js
+
     envVars:
       # ── Core ──
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: NODE_VERSION
-        value: "20.11.0"
+        value: "22.11.0"
 
-      # ── Language Model (REQUIRED for chat, MedQA, SceneLab summarisation) ──
-      # Any OpenAI-compatible endpoint: vLLM, Ollama (/v1), TGI, LM Studio,
-      # HuggingFace Inference Endpoints, OpenRouter, etc.
-      # Omit to launch without a model (chat returns 503, detection still works).
-      - key: LLM_API_BASE
-        sync: false
-      - key: LLM_MODEL
-        sync: false
-      - key: LLM_VISION_MODEL
-        sync: false
-      - key: LLM_API_KEY
+      # ── Language model ──
+      # LLM_PROVIDER selects an entry from backend/src/config/providers.js,
+      # which supplies the base URL and a default model id. Only the key is a
+      # secret. Explicit LLM_API_BASE / LLM_MODEL override the preset.
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
         sync: false
 
-      # ── SceneLab BLIP Service (OPTIONAL) ──
-      # Set this after you deploy the separate scene-api FastAPI service.
-      # Without it, SceneLab falls back to VLM (vision-language model).
+      # A different vendor, tried once when the primary answers 429 or 5xx.
+      # Free tiers rate-limit hard; without this a quota wall takes chat down.
+      - key: LLM_FALLBACK_PROVIDER
+        value: openrouter
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+      # Vision is resolved independently of text — as of Aug 2026 NVIDIA's free
+      # text models are EOL while its vision models still answer.
+      - key: LLM_VISION_PROVIDER
+        value: nvidia
+      - key: NVIDIA_API_KEY
+        sync: false
+
+      # ── MedQA ──
+      # The retrieval index loads a quantised embedding model, the largest
+      # allocation in this process. 512 MB is tight; flip to "false" if the
+      # instance starts OOM-restarting under load.
+      - key: MEDQA_ENABLED
+        value: "true"
+
+      # ── Optional ──
+      # The project's own BLIP captioning service, once it is hosted. Unset
+      # means SceneLab captions with the vision model instead.
       - key: SCENE_API_BASE
         sync: false
 
-      # ── Notes Editing (OPTIONAL) ──
-      # A long random string. If omitted, the notes section is read-only.
+      # Omit and the notes section is read-only, which is correct for a public
+      # deployment. Render generates and stores this if left as-is.
       - key: ADMIN_TOKEN
         generateValue: true
 
-      # ── CORS ──
-      # Leave unset for same-origin only (recommended for single-service deploy).
-      # Only set if you split frontend and backend to separate domains.
+      # Same-origin only when unset. Set only if the API is called from another
+      # domain — it is not, in this single-service topology.
       - key: ALLOWED_ORIGINS
         sync: false
