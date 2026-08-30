@@ -1,0 +1,58 @@
+# Build the deployable artefact and prove it serves, on every push.
+#
+# This is the same sequence Render runs, plus the smoke test — so a build that
+# is going to fail on deploy fails here first, in ~2 minutes, against a PR
+# rather than against production.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true          # without this the video assets are 130-byte pointers
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # ── the backend must at minimum parse; a syntax error here has already
+      #    taken this service down once, and it is free to catch ──
+      - name: Backend syntax check
+        run: |
+          cd backend
+          for f in server.js $(find src scripts -name '*.js'); do node --check "$f"; done
+
+      - name: Install
+        run: |
+          cd app && npm ci
+          cd ../backend && npm ci --omit=dev
+
+      - name: Type-check and build frontend
+        run: cd app && npm run build
+
+      - name: Lint frontend
+        run: cd app && npm run lint
+        continue-on-error: true
+
+      - name: Verify LFS objects resolved
+        run: |
+          for v in app/public/videos/*.mp4; do
+            if head -c 40 "$v" | grep -q 'git-lfs.github.com'; then
+              echo "::error file=$v::unfetched Git LFS pointer, not video"; exit 1
+            fi
+          done
+
+      - name: Boot and smoke test
+        run: |
+          cd backend && NODE_ENV=production node server.js &
+          sleep 6
+          node scripts/smoke.js http://localhost:3001
