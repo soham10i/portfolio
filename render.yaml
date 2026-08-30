@@ -1,33 +1,70 @@
+# Render Blueprint — Portfolio (Frontend + Backend)
+#
+# This file is read by Render when you create a new Blueprint from this repo.
+# It defines the web service that serves both the built React frontend and
+# the Express API from a single process.
+#
+# To create from this Blueprint:
+#   1. Push this file to your repo root
+#   2. Render Dashboard → Blueprints → New Blueprint
+#   3. Connect your GitHub repo
+#   4. Render auto-detects this file and provisions the service
+#
+# If you already have a service and want to switch to Blueprint:
+#   - Delete the old service and recreate via Blueprint, OR
+#   - Update the service settings manually to match below
+
 services:
   - type: web
     name: soham-portfolio
     runtime: node
     plan: free
-    buildCommand: cd app && npm ci && npm run build && cd ../backend && npm ci
+    region: frankfurt
+    autoDeploy: true
+    buildCommand: |
+      set -e
+      echo "=== Building frontend ==="
+      cd app && rm -rf node_modules && npm ci && npm run build
+      echo "=== Installing backend deps ==="
+      cd ../backend && rm -rf node_modules && npm ci --omit=dev
+      echo "=== Build complete ==="
     startCommand: cd backend && node server.js
+    healthCheckPath: /api/health
     envVars:
+      # ── Core ──
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      # OpenAI-compatible model endpoint (vLLM / TGI / Ollama / gateway).
-      # Must be reachable from Render — a laptop Ollama is not.
+      - key: NODE_VERSION
+        value: "20.11.0"
+
+      # ── Language Model (REQUIRED for chat, MedQA, SceneLab summarisation) ──
+      # Any OpenAI-compatible endpoint: vLLM, Ollama (/v1), TGI, LM Studio,
+      # HuggingFace Inference Endpoints, OpenRouter, etc.
+      # Omit to launch without a model (chat returns 503, detection still works).
       - key: LLM_API_BASE
-        sync: false  # Set this manually in Render dashboard
+        sync: false
       - key: LLM_MODEL
         sync: false
       - key: LLM_VISION_MODEL
         sync: false
       - key: LLM_API_KEY
         sync: false
-      # Optional: your FastAPI + BLIP captioning service
+
+      # ── SceneLab BLIP Service (OPTIONAL) ──
+      # Set this after you deploy the separate scene-api FastAPI service.
+      # Without it, SceneLab falls back to VLM (vision-language model).
       - key: SCENE_API_BASE
         sync: false
-      # Notes editing. Leave unset to make the notes section read-only.
+
+      # ── Notes Editing (OPTIONAL) ──
+      # A long random string. If omitted, the notes section is read-only.
       - key: ADMIN_TOKEN
-        sync: false
-      # Comma-separated origins allowed to call the API from a browser.
-      # Unset in production means same-origin only, which is what a
-      # single-service deploy wants.
+        generateValue: true
+
+      # ── CORS ──
+      # Leave unset for same-origin only (recommended for single-service deploy).
+      # Only set if you split frontend and backend to separate domains.
       - key: ALLOWED_ORIGINS
         sync: false
