@@ -11,7 +11,9 @@ const config = require('../config');
 const { createLimiter } = require('../middleware/rateLimit');
 const { caption, blipHealth } = require('../services/captioner');
 const { callLLMWithFallback, extractText, reachableVision } = require('../services/llm');
+const multer = require('multer');
 
+const upload = multer({ dest: '/tmp/' });
 const router = express.Router();
 const limit = createLimiter({
   ...config.limits.scene,
@@ -171,6 +173,47 @@ router.post('/ask', limit, async (req, res) => {
     res.json({ answer });
   } catch {
     res.status(504).json({ error: 'Q&A timed out.' });
+  }
+});
+
+router.post('/interpolate', upload.single('file'), async (req, res) => {
+  if (!config.scene.baseUrl) {
+    return res.status(503).json({ error: 'Backend API is not configured (missing SCENE_API_BASE)' });
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: 'No video file provided' });
+  }
+
+  try {
+    const fs = require('fs');
+    const form = new FormData();
+    // Wrap file in a Blob for fetch
+    const fileBytes = fs.readFileSync(req.file.path);
+    form.append('file', new Blob([fileBytes], { type: req.file.mimetype }), req.file.originalname);
+    
+    // Clean up tmp file
+    fs.unlinkSync(req.file.path);
+
+    const r = await fetch(`${config.scene.baseUrl}/interpolate`, {
+      method: 'POST',
+      body: form,
+    });
+    
+    if (!r.ok) {
+      const errText = await r.text();
+      return res.status(r.status).json({ error: `Interpolation failed: ${errText}` });
+    }
+
+    res.set('Content-Type', r.headers.get('content-type') || 'video/mp4');
+    // Pipe the response stream back to the client
+    const Readable = require('stream').Readable;
+    if (r.body) {
+      Readable.fromWeb(r.body).pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (error) {
+    res.status(500).json({ error: `Interpolation proxy error: ${error.message}` });
   }
 });
 

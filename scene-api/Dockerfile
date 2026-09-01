@@ -20,10 +20,10 @@ RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
 # Pre-download model weights during build so container starts fast
 # This adds ~1.5GB to the image but avoids cold-start downloads
 RUN python3.11 -c "
-from transformers import BlipProcessor, BlipForConditionalGeneration
-m = 'Salesforce/blip-image-captioning-base'
-BlipProcessor.from_pretrained(m)
-BlipForConditionalGeneration.from_pretrained(m)
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+m = 'Qwen/Qwen2-VL-7B-Instruct'
+AutoProcessor.from_pretrained(m)
+Qwen2VLForConditionalGeneration.from_pretrained(m)
 print('Model cached')
 "
 
@@ -33,7 +33,7 @@ FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEVICE=cuda
-ENV MODEL_NAME=Salesforce/blip-image-captioning-base
+ENV MODEL_NAME=Qwen/Qwen2-VL-7B-Instruct
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 libgl1 libglib2.0-0 \

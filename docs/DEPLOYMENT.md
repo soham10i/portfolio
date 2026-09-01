@@ -1,42 +1,195 @@
-# Deployment
+# Deployment — complete setup
 
-One Render free web service runs the whole site: a single Node process serving
-the built SPA and the API from the same origin. The optional BLIP captioning
-service (`scene-api/`) is separate and needs a GPU — see
-[SCENE_API.md](SCENE_API.md).
+One Render **Web Service** runs the whole site: a single Node process serving
+the built SPA and the API from the same origin.
 
-## First deploy
+> **Not a Static Site.** A Render Static Site serves files from a CDN with no
+> process behind it. Deployed that way, `/api/chat`, `/api/scene`,
+> `/api/medqa`, `/api/notes` and `/api/contact` all return 404 — chat, MedQA
+> and SceneLab captioning stop working, and only the browser-side demos
+> survive. The service type is `web`, `runtime: node`.
 
-1. **Push the repo to GitHub** with LFS objects intact. Confirm before pushing:
+---
 
-   ```bash
-   git lfs ls-files          # six .mp4 files, each with a *
-   ```
+## Step 0 — repair git (one time)
 
-2. **Render Dashboard → Blueprints → New Blueprint** → connect the repo.
-   `render.yaml` at the root is detected automatically; it defines the service,
-   the build, the health check and every environment variable.
+`git status` currently fails with:
 
-3. **Fill in the three secrets** Render prompts for (they are `sync: false` in
-   the blueprint, so they are never in the repository):
+```
+git-lfs filter-process: 1: git-lfs: not found
+fatal: the remote end hung up unexpectedly
+```
 
-   | Variable | Where to get it |
-   |---|---|
-   | `GROQ_API_KEY` | https://console.groq.com/keys |
-   | `OPENROUTER_API_KEY` | https://openrouter.ai/keys |
-   | `NVIDIA_API_KEY` | https://build.nvidia.com |
+The repository is configured for Git LFS — the demo videos are stored there —
+but `git-lfs` is not installed on this machine, so every git command that
+touches the working tree dies. Fix it:
 
-   `SCENE_API_BASE` and `ALLOWED_ORIGINS` are left blank on purpose. See
-   [PROVIDERS.md](PROVIDERS.md) for why these three vendors.
+```bash
+brew install git-lfs
+git lfs install
+cd ~/workspace/Porfolio
+git lfs pull
+git status          # should work now, and the six .mp4 files stop showing as modified
+```
 
-4. **Verify**, rather than clicking around:
+If you would rather not install it, the escape hatch is to strip the filter
+config — but then a fresh clone gets 130-byte pointers instead of video and
+the Render build will fail its own LFS check:
 
-   ```bash
-   node scripts/smoke.js https://<your-service>.onrender.com
-   ```
+```bash
+git config --unset filter.lfs.process
+git config --unset filter.lfs.clean
+git config --unset filter.lfs.smudge
+git config --unset filter.lfs.required
+```
 
-   Twelve checks, exit code is the failure count. Optional services report
-   `skip`, not `fail`.
+Installing it is the correct answer.
+
+---
+
+## Step 1 — API keys
+
+Three providers, three keys. All three were verified working against this
+project on 2026-08-30.
+
+| Variable | Provider | Get it from | Used for |
+|---|---|---|---|
+| `GEMINI_API_KEY` | Google AI Studio | https://aistudio.google.com/app/apikey | chat, MedQA generation, SceneLab summaries |
+| `NVIDIA_API_KEY` | NVIDIA NIM | https://build.nvidia.com | SceneLab keyframe captioning (vision) |
+| `GROQ_API_KEY` | Groq | https://console.groq.com/keys | fallback when Gemini rate-limits |
+
+None is billable. Google's free tier is metered per request per day, Groq's per
+token per day, NVIDIA's per minute on the developer tier.
+
+**`OPENROUTER_API_KEY` is not needed.** The key currently in `backend/.env`
+returns `401 "User not found"` for every model including `/credits` — it
+worked earlier the same day, so it was revoked or the account lapsed. Groq
+replaces it as the fallback. Only get a new OpenRouter key if you decide to pay
+for Qwen-VL (see `PROVIDERS.md`).
+
+To read the keys you already hold, for pasting into Render:
+
+```bash
+grep -E '^(GEMINI|NVIDIA|GROQ)_API_KEY|^LLM_API_KEY' backend/.env
+```
+
+`LLM_API_KEY` in that file is the Gemini key under its old generic name.
+
+---
+
+## Step 2 — local `.env`
+
+`backend/.env` is gitignored and never leaves your machine. It should read:
+
+```bash
+PORT=3001
+
+# chat — 815ms verified
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-3.5-flash-lite
+GEMINI_API_KEY=AIza…
+
+# vision — 1463ms on a 19KB JPEG
+LLM_VISION_PROVIDER=nvidia
+LLM_VISION_MODEL=meta/llama-3.2-11b-vision-instruct
+NVIDIA_API_KEY=nvapi-…
+
+# fallback, tried on 429/5xx — 611ms
+LLM_FALLBACK_PROVIDER=groq
+LLM_FALLBACK_MODEL=openai/gpt-oss-120b
+GROQ_API_KEY=gsk_…
+```
+
+Delete the old `LLM_API_BASE`, `LLM_API_KEY`, `LLM_VISION_API_BASE`,
+`LLM_VISION_API_KEY`, `LLM_FALLBACK_API_BASE` and `LLM_FALLBACK_API_KEY` lines
+— the provider presets supply those, and a leftover explicit value silently
+overrides the preset. Also delete the stray line containing only `ß`.
+
+`backend/.env.example` is the annotated version of this.
+
+Verify:
+
+```bash
+scripts/probe-providers.sh
+```
+
+Expect `ok` on all three configured rows. A row reading `empty` means the model
+returned HTTP 200 with no content — a reasoning model that spent its whole
+token budget thinking. Treat that as a failure and change the model.
+
+---
+
+## Step 3 — verify locally
+
+```bash
+(cd app && npm ci) && (cd backend && npm ci)
+scripts/preview.sh          # builds, serves the production topology on :3001
+node scripts/smoke.js       # 12 checks
+```
+
+`preview.sh` is what to use rather than `npm run dev` before a deploy: it
+builds the SPA and serves it from Express on one origin, which is where
+deployment-only bugs (SPA fallback routes, asset paths, same-origin `/api`)
+actually appear.
+
+Expect 12 passed. Anything else, fix before pushing.
+
+---
+
+## Step 4 — commit and push
+
+```bash
+git add render.yaml backend/src/config/providers.js backend/.env.example docs/
+git commit -m "fix(config): verified model ids; single web service blueprint"
+git push origin main
+```
+
+---
+
+## Step 5 — create the Render service
+
+1. Render Dashboard → **Blueprints** → **New Blueprint Instance**
+2. Connect the GitHub repo `soham10i/portfolio`, branch `main`
+3. Render reads `render.yaml` and shows one service, `soham-portfolio`
+4. It prompts for the three `sync: false` values. Paste:
+   - `GEMINI_API_KEY`
+   - `NVIDIA_API_KEY`
+   - `GROQ_API_KEY`
+   Leave `SCENE_API_BASE` and `ALLOWED_ORIGINS` **blank**. `ADMIN_TOKEN` is
+   generated by Render — do not type one.
+5. Apply. First build takes 3–6 minutes.
+
+Everything else — provider names, model ids, `MEDQA_ENABLED`, Node version —
+is in `render.yaml` and needs no dashboard editing.
+
+### If you already created a service by hand
+
+Do not create a second one. Either delete it and use the Blueprint, or open
+Settings → Environment and set each variable from `render.yaml` yourself,
+making sure the service type is **Web Service**, not Static Site. A Static Site
+cannot be converted; it has to be recreated.
+
+---
+
+## Step 6 — verify the deployment
+
+```bash
+node scripts/smoke.js https://<your-service>.onrender.com
+```
+
+Twelve checks. Optional services (BLIP, MedQA) report `skip`, not `fail`.
+Exit code is the failure count.
+
+Also open `/api/health` in a browser — it names which provider answered, so a
+misconfigured model shows up immediately:
+
+```json
+{"status":"ok","model":"gemini-3.5-flash-lite","provider":"gemini",
+ "visionModel":"meta/llama-3.2-11b-vision-instruct","visionProvider":"nvidia",
+ "fallback":true,"medqa":true}
+```
+
+---
 
 ## What the build does
 
@@ -48,70 +201,61 @@ verify:   app/dist/index.html exists
 start:    node backend/server.js
 ```
 
-The LFS check is there because the failure it catches is invisible: an
-unfetched pointer is a valid 130-byte file that Express serves happily with a
-`video/mp4` content type, and the visitor sees a dead player. Better a failed
-deploy than a portfolio whose demos do not play.
+The LFS assertion exists because that failure is invisible: an unfetched
+pointer is a valid 130-byte file that Express serves with a `video/mp4`
+content type, and the visitor just sees a dead player. Better a failed deploy.
 
-## Environment
-
-Everything the process reads is in `backend/src/config/index.js`, and nothing
-else in the codebase touches `process.env`. `backend/.env.example` is the
-annotated template.
-
-The site runs with **no** model configured — `/api/chat` answers 503 with an
-honest message and every other route works. That is intentional: a missing key
-must never take the portfolio down.
-
-| Variable | Default | Effect if unset |
-|---|---|---|
-| `LLM_PROVIDER` + its key | — | chat, SceneLab summaries and MedQA generation return 503 |
-| `LLM_FALLBACK_PROVIDER` + its key | — | a 429 from the primary is fatal for that request |
-| `LLM_VISION_PROVIDER` + its key | inherits text | keyframe captioning falls back to the text provider |
-| `MEDQA_ENABLED` | `true` | — |
-| `SCENE_API_BASE` | — | SceneLab captions with the vision model; detection unaffected |
-| `ADMIN_TOKEN` | generated | notes are read-only |
-| `ALLOWED_ORIGINS` | — | same-origin only in production, which is correct here |
+---
 
 ## Free-tier realities
 
 **Cold starts.** A free instance spins down after ~15 minutes idle and takes
-30–60 s to answer the first request. An evaluator opening the link cold sees a
-blank page for most of a minute. Mitigations, in order of honesty: warm it with
-an external uptime pinger before you send the link; or accept it and say so.
-`server.js` handles `SIGTERM` by draining connections, so a spin-down mid-answer
-does not truncate a reply.
+30–60 s to answer the first request. Someone opening your link cold sees a
+blank page for most of a minute. Warm it with an external uptime pinger before
+you send the link to anyone evaluating the work. `server.js` drains
+connections on `SIGTERM`, so a spin-down mid-answer does not truncate a reply.
 
-**512 MB of RAM.** The largest allocation in the process is the MedQA
-embedder, loaded lazily on the first `/api/medqa/*` request and held after. If
-the instance starts OOM-restarting under load, set `MEDQA_ENABLED=false` — the
-rest of the site keeps working and that route returns a clear 503.
+**512 MB of RAM.** The MedQA embedder is the largest allocation, loaded lazily
+on the first `/api/medqa/*` request and held after. If the instance starts
+OOM-restarting, set `MEDQA_ENABLED=false`; the rest of the site stays healthy
+and that route returns an honest 503.
 
-**Ephemeral disk.** `backend/notes/` and `backend/messages.jsonl` are written
-to a filesystem that is discarded on every deploy and every spin-down. Contact
-messages submitted through the site do not survive. If they need to, they must
-go somewhere off-box — a database or a webhook — and that is not built.
+**Ephemeral disk.** `backend/notes/` and `backend/messages.jsonl` are discarded
+on every deploy and every spin-down. Contact-form messages do not survive. If
+they need to, they must go off-box — a database or a webhook — and that is not
+built.
 
-**No LFS quota concern.** ~25 MB of video against GitHub's 1 GB free LFS
-bandwidth per month is roughly 40 builds. Not a limit worth engineering around.
+**scene-api is not in this blueprint.** Its image is `nvidia/cuda:12.1.1` plus
+torch, torchvision, transformers and pre-downloaded BLIP weights — several GB.
+Render's free plan has neither the build disk for that image nor a GPU to run
+it on. Host it on a GPU box and paste the URL into `SCENE_API_BASE`. Until
+then SceneLab captions with the NVIDIA vision model, and in-browser detection
+is unaffected. See `SCENE_API.md`.
+
+---
 
 ## Failure triage
 
-Read the boot banner first; it prints exactly what is and is not configured.
+Read the boot banner in the Render log first; it prints exactly what is and is
+not configured.
 
 | Symptom | Cause |
 |---|---|
-| every route 404s, including `/api/health` | the service is not running — check the build log |
-| the SPA loads, `/api/chat` returns 503 | no `LLM_PROVIDER`/`LLM_API_BASE`, or the key is empty |
-| `/api/chat` returns 502 | the provider answered an error; the log line carries its message |
-| chat is fine, then dies for the rest of the day | free-tier quota exhausted; the fallback vendor is not configured |
-| video players are blank | LFS pointers were served — the build check should have caught this |
-| `/scene` says no captioning engine | no vision provider and no `SCENE_API_BASE` |
-| instance restarts under load | MedQA embedder plus traffic exceeding 512 MB; set `MEDQA_ENABLED=false` |
+| every route 404s including `/api/health` | service not running, or it is a Static Site — check the build log and the service type |
+| SPA loads, `/api/chat` returns 503 | no `LLM_PROVIDER`, or the key env var is empty |
+| `/api/chat` returns 502 | provider answered an error; the log line carries its message |
+| chat answers but takes 15+ seconds | a reasoning model is configured — check `LLM_MODEL` against `PROVIDERS.md` |
+| chat returns "empty response" | same cause: hidden reasoning consumed the whole token budget |
+| chat works, then dies for the rest of the day | daily quota exhausted and the fallback vendor is missing or misconfigured |
+| video players blank | LFS pointers served — the build check should have caught this |
+| `/scene` says no captioning engine | `NVIDIA_API_KEY` missing, or the vision model id is wrong |
+| instance restarts under load | MedQA embedder plus traffic over 512 MB — set `MEDQA_ENABLED=false` |
+
+---
 
 ## Deploying elsewhere
 
 Nothing here is Render-specific except `render.yaml`. The process needs Node 22,
 `PORT` from the environment, and `app/dist` built next to `backend/`.
-`backend/Dockerfile` and `docker-compose.yml` cover the container path, and the
+`backend/Dockerfile` and `docker-compose.yml` cover the container path; the
 compose file also brings up `scene-api` locally for the full stack.

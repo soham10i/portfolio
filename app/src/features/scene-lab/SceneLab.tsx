@@ -105,6 +105,8 @@ export default function SceneLab() {
   const [notice, setNotice] = useState<string | null>(null);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [lastFrame, setLastFrame] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'live' | 'context'>('live');
+  const [interpolating, setInterpolating] = useState(false);
 
   /* Ask the backend whether the captioning service is awake, so the UI can be
      honest up front rather than failing on the first keyframe. */
@@ -475,27 +477,7 @@ export default function SceneLab() {
     return collected;
   }, [threshold, narrate, serviceUp, describeOne]);
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';                       // allow re-picking the same file
-    if (!file) return;
-    setNotice(null);
-    setLastFrame(null);
-    cancelScan.current = false;
-
-    /* Size first: it is free, and it is the only check that can reject a file
-       before the browser tries to hold 300+ MB of it in memory. */
-    if (file.size > MAX_VIDEO_BYTES) {
-      setNotice(`That file is ${session.formatBytes(file.size)} — the limit is 300 MB. Compress it or trim it first.`);
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-
-    /* Then probe. This is where the old version failed silently: it read
-       `duration` once and treated Infinity as "undecodable", which rejected
-       every screen recording, and it awaited `loadeddata` with no timeout, so
-       a stalled decode hung with no message at all. See lib/videoProbe. */
+  const processVideoUrl = async (url: string, filename: string, size: number) => {
     const info = await probeVideo(url);
     if (!info.ok) {
       URL.revokeObjectURL(url);
@@ -509,8 +491,8 @@ export default function SceneLab() {
     }
 
     const entry = session.add({
-      name: file.name,
-      bytes: file.size,
+      name: filename,
+      bytes: size,
       durationSec: info.duration,
       width: info.width,
       height: info.height,
@@ -519,10 +501,8 @@ export default function SceneLab() {
     });
     setActiveVideo(entry.id);
     setSource('video');
-    setRunning(false);                         // the scan drives frames itself
+    setRunning(false);
 
-    /* Load the detector BEFORE touching playback: the model is 13 MB, and a
-       short clip used to finish before a single frame had been analysed. */
     const d = await ensureModel();
     if (!d) { setSource('idle'); return; }
 
@@ -547,6 +527,64 @@ export default function SceneLab() {
     }
     await summarise([...collected].reverse());
     session.update(entry.id, { summarised: true });
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNotice(null);
+    setLastFrame(null);
+    cancelScan.current = false;
+
+    if (file.size > MAX_VIDEO_BYTES) {
+      setNotice(`That file is ${Math.round(file.size / 1048576)} MB — the limit is ${MAX_VIDEO_BYTES / 1048576} MB.`);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    await processVideoUrl(url, file.name, file.size);
+  };
+
+  const onUpscaleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNotice(null);
+    setLastFrame(null);
+    cancelScan.current = false;
+
+    if (file.size > MAX_VIDEO_BYTES) {
+      setNotice(`That file is ${Math.round(file.size / 1048576)} MB — the limit is ${MAX_VIDEO_BYTES / 1048576} MB.`);
+      return;
+    }
+
+    setSource('idle');
+    setInterpolating(true);
+    setNotice('Upscaling video to 60fps using Optical Flow AI... This can take minutes depending on video length.');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const r = await fetch(`${API_BASE}/scene/interpolate`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!r.ok) {
+        const errText = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+        throw new Error(errText.error || `HTTP ${r.status}`);
+      }
+      
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      
+      setInterpolating(false);
+      setNotice(null);
+      await processVideoUrl(url, file.name + ' (60fps)', blob.size);
+    } catch (err) {
+      setInterpolating(false);
+      setNotice('Interpolation failed: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   /* Re-analyse a clip already in this session, without re-picking the file. */
@@ -696,7 +734,11 @@ export default function SceneLab() {
                 </button>
                 <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] border border-line px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
                   <Upload className="h-3 w-3" />Video ≤4 min
-                  <input type="file" accept="video/*" className="sr-only" onChange={onFile} />
+                  <input type="file" accept="video/*" className="sr-only" onChange={onFile} disabled={interpolating} />
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] border border-[color-mix(in_oklab,var(--a)_45%,transparent)] bg-[color-mix(in_oklab,var(--a)_15%,transparent)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_25%,transparent)]">
+                  <Sparkles className="h-3 w-3" />AI 60fps
+                  <input type="file" accept="video/*" className="sr-only" onChange={onUpscaleFile} disabled={interpolating} />
                 </label>
                 {source !== 'idle' && (
                   <>
@@ -736,6 +778,14 @@ export default function SceneLab() {
                           Loading detector · {Math.round(loadPct * 100)}%
                         </p>
                         <p className="mt-1 text-[11.5px] text-fg3">13 MB, cached after the first run</p>
+                      </>
+                    ) : interpolating ? (
+                      <>
+                        <div className="mx-auto h-[34px] w-[34px] animate-pulse rounded-full border-2 border-line bg-a/20" />
+                        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-fg2">
+                          Upscaling to 60fps
+                        </p>
+                        <p className="mt-1 text-[11.5px] text-fg3">Processing video on the backend...</p>
                       </>
                     ) : loadError ? (
                       <>
@@ -801,11 +851,29 @@ export default function SceneLab() {
             </div>
           </section>
 
-          {/* ── keyframe narration rail ───────────────────────────────── */}
           <aside className="glass-card flex flex-col overflow-hidden rounded-[18px]">
-            <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">Narrated keyframes</p>
-              <span className="inline-flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.1em]"
+            <div className="flex items-center justify-between border-b border-line px-2 py-2">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('live')}
+                  className={`rounded-[10px] px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors ${
+                    activeTab === 'live' ? 'bg-[color-mix(in_oklab,var(--a)_15%,transparent)] text-fg' : 'text-fg3 hover:text-fg2'
+                  }`}
+                >
+                  Live Analysis
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('context')}
+                  className={`rounded-[10px] px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors ${
+                    activeTab === 'context' ? 'bg-[color-mix(in_oklab,var(--a)_15%,transparent)] text-fg' : 'text-fg3 hover:text-fg2'
+                  }`}
+                >
+                  Context & QKV
+                </button>
+              </div>
+              <span className="inline-flex items-center gap-1.5 pr-2 font-mono text-[9.5px] uppercase tracking-[0.1em]"
                 style={{ color: serviceUp === false ? 'var(--fg3)' : accent }}>
                 <span className="h-1.5 w-1.5 rounded-full"
                   style={{ background: serviceUp === null ? 'var(--fg3)' : serviceUp ? '#4ade80' : '#f87171' }} />
@@ -817,6 +885,52 @@ export default function SceneLab() {
               </span>
             </div>
 
+            {activeTab === 'context' ? (
+              <div className="flex-1 overflow-y-auto p-5">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">What Context is Used?</h3>
+                    <p className="mt-2 text-[12.5px] leading-relaxed text-fg2">
+                      When you ask a question about the video, the LLM cannot actually "see" the video directly. Instead, it reads a <strong className="font-semibold text-fg">keyframe log</strong>. 
+                      Every time the scene changes significantly, the image is passed to a Vision-Language Model (VLM) which generates a detailed caption. 
+                      These captions, along with their timestamps, are compiled into a chronological story of the video.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">How is it Stored?</h3>
+                    <p className="mt-2 text-[12.5px] leading-relaxed text-fg2">
+                      The context is completely <strong className="font-semibold text-fg">ephemeral</strong>. It exists only in the memory of this browser tab (React state). 
+                      When you ask a question, the entire keyframe log is serialized into a JSON array and sent to the backend. It is never persisted to a database, ensuring complete privacy.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">How QKV (Attention) Generates Answers</h3>
+                    <div className="mt-3 rounded-[12px] border border-line bg-surf2 p-4">
+                      <p className="text-[12.5px] leading-relaxed text-fg2 mb-3">
+                        When the language model receives your question and the keyframe log, it uses the <strong>Self-Attention mechanism</strong> (Query-Key-Value):
+                      </p>
+                      <ul className="space-y-3 text-[12.5px] leading-relaxed text-fg2">
+                        <li>
+                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--p)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Query (Q)</span>
+                          <br />Represents what the model is looking for right now. In this case, your question (e.g., <em>"What color was the car?"</em>).
+                        </li>
+                        <li>
+                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--a)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Key (K)</span>
+                          <br />Represents the "labels" on all the information it holds. Each keyframe caption acts as a Key (e.g., <em>"t+2.5s: A red car drives past."</em>).
+                        </li>
+                        <li>
+                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--s)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Value (V)</span>
+                          <br />The actual content to be extracted. If a Key strongly matches the Query (high attention score), the model pulls the corresponding Value to construct your answer.
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
             {serviceUp === false && (
               <p className="border-b border-line px-4 py-3 text-[12px] leading-relaxed text-fg3">
                 <span className="text-fg2">No language model is reachable</span>
@@ -942,6 +1056,8 @@ export default function SceneLab() {
                 </div>
               ))}
             </div>
+            </>
+            )}
           </aside>
         </div>
 
