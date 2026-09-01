@@ -16,19 +16,7 @@
  * the project's own test images before being ported here.
  */
 
-export const COCO_CLASSES = [
-  'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
-  'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat',
-  'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
-  'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-  'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-  'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-  'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-  'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
-  'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
-  'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier',
-  'toothbrush',
-] as const;
+import { OIV7_CLASSES } from './oiv7_classes';
 
 export interface Detection {
   /** Pixel box in source-image coordinates: [x1, y1, x2, y2]. */
@@ -44,7 +32,7 @@ export interface DetectorStats {
   modelBytes: number;
 }
 
-const MODEL_URL = '/models/yolov8n-seg.onnx';
+const MODEL_URL = '/models/yolov8n-oiv7.onnx';
 /* ONNX Runtime Web is vendored under public/vendor/ort rather than pulled from
    a CDN: no third-party dependency at runtime, works behind a strict CSP or
    offline, and cannot break because a CDN did. This is the WASM build — the
@@ -54,7 +42,7 @@ const MODEL_URL = '/models/yolov8n-seg.onnx';
 const ORT_JS = '/vendor/ort/ort.wasm.min.js';
 const ORT_WASM_DIR = '/vendor/ort/';
 const INPUT = 640;
-const NUM_CLASSES = 80;
+const NUM_CLASSES = 601;
 const ROWS = 8400;
 
 /* ONNX Runtime Web ships its WASM/WebGPU binaries as sibling files. Loading it
@@ -239,7 +227,7 @@ export class SceneDetector {
         ] as [number, number, number, number],
         score: scores[i],
         classId: ids[i],
-        label: COCO_CLASSES[ids[i]] ?? String(ids[i]),
+        label: OIV7_CLASSES[ids[i]] ?? String(ids[i]),
       };
     });
   }

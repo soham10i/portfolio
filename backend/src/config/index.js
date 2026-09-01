@@ -103,8 +103,8 @@ const config = {
   },
 
   limits: {
-    chat: { windowMs: 5 * 60 * 1000, max: 30 },
-    scene: { windowMs: 5 * 60 * 1000, max: 60 },
+    chat: { windowMs: 5 * 60 * 1000, max: 3000 },
+    scene: { windowMs: 5 * 60 * 1000, max: 6000 },
     maxHistoryMessages: 20,
     maxMessageChars: 4000,
   },

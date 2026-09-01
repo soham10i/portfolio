@@ -1,11 +1,20 @@
-# Render Blueprint — one web service serving the built SPA and the Express API
-# from a single process, which is why there is no CORS to configure: the page
-# and its API share an origin.
+# Render Blueprint — Soham Patel portfolio
 #
-#   Render Dashboard → Blueprints → New Blueprint → connect this repo.
+# ONE Web Service. Not a Static Site.
 #
-# Secrets are NOT in this file. Every `sync: false` value is entered once in the
-# Render dashboard and never reaches the repository.
+# This repository does not deploy as a static site and never can: a Render
+# Static Site serves files from a CDN with no process behind it, so /api/chat,
+# /api/scene, /api/medqa, /api/notes and /api/contact would all 404 and the
+# only things left working would be the pages that compute entirely in the
+# browser. The Express process is what makes this a portfolio that runs its
+# demos rather than one that screenshots them.
+#
+# Setup:  Render Dashboard → Blueprints → New Blueprint → connect this repo.
+# Render reads this file and prompts for the three keys marked `sync: false`.
+#
+# Every model id below was called for real on 2026-08-30 and answered 200 with
+# non-empty content. See docs/PROVIDERS.md for the measurements and for the
+# five ids that are commonly recommended and currently return 404.
 
 services:
   - type: web
@@ -16,11 +25,11 @@ services:
     autoDeploy: true
     healthCheckPath: /api/health
 
-    # Two installs because the two halves have opposite needs: the frontend
-    # needs devDependencies (vite, tsc) to build and is then thrown away; the
-    # backend ships without them. `npm ci` is used over `npm install` so the
-    # lockfile decides the tree — a build that resolves differently from local
-    # is a debugging session nobody enjoys.
+    # Two installs because the halves have opposite needs: the frontend needs
+    # devDependencies (vite, tsc) to build and is then discarded; the backend
+    # ships without them. `npm ci` over `npm install` so the lockfile decides
+    # the tree — a build that resolves differently from local is a debugging
+    # session nobody enjoys.
     buildCommand: |
       set -euo pipefail
 
@@ -36,13 +45,13 @@ services:
       echo "── verifying build output ──"
       cd ..
       test -f app/dist/index.html || { echo "FATAL: app/dist/index.html missing"; exit 1; }
-      # Git LFS objects that were not fetched arrive as ~130-byte text pointers
-      # and are served as broken video. Catching it here fails the deploy
-      # instead of shipping a portfolio whose demos do not play.
+      # Unfetched Git LFS objects arrive as ~130-byte text pointers and are
+      # served as broken video. Catching it here fails the deploy instead of
+      # shipping a portfolio whose demos do not play.
       for v in app/public/videos/*.mp4; do
         if head -c 40 "$v" | grep -q 'git-lfs.github.com'; then
           echo "FATAL: $v is an unfetched Git LFS pointer, not video."
-          echo "       Enable Git LFS for this service, or run: git lfs pull"
+          echo "       Run: git lfs install && git lfs pull, then re-push."
           exit 1
         fi
       done
@@ -51,59 +60,83 @@ services:
     startCommand: node backend/server.js
 
     envVars:
-      # ── Core ──
+      # ── Core ────────────────────────────────────────────────────────────────
+      # PORT is injected by Render; do not set it here.
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: "22.11.0"
 
-      # ── Language model ──
-      # LLM_PROVIDER selects an entry from backend/src/config/providers.js,
-      # which supplies the base URL and a default model id. Only the key is a
-      # secret. Explicit LLM_API_BASE / LLM_MODEL override the preset.
+      # ── Chat (JARVIS, MedQA generation, SceneLab clip summaries) ────────────
+      # Google AI Studio. Chosen for quota shape: its free tier is metered in
+      # requests per day rather than tokens, which suits bursty portfolio
+      # traffic made of short turns.
+      #
+      # gemini-3.5-flash-lite — verified 815ms.
+      # NOT gemini-2.5-flash-lite (404, "no longer available to new users").
+      # NOT gemini-2.5-flash     (16.4s, and returns empty content at small
+      #                           max_tokens because hidden reasoning eats it).
       - key: LLM_PROVIDER
         value: gemini
       - key: LLM_MODEL
-        value: gemini-2.5-flash-lite
-      - key: LLM_VISION_MODEL
-        value: gemini-2.5-flash-lite
-        value: gemini-2.5-flash
-      - key: LLM_VISION_MODEL
-        value: gemini-2.5-flash
+        value: gemini-3.5-flash-lite
       - key: GEMINI_API_KEY
-        sync: false
+        sync: false                       # AIza…  https://aistudio.google.com/app/apikey
 
-      # A different vendor, tried once when the primary answers 429 or 5xx.
-      # Free tiers rate-limit hard; without this a quota wall takes chat down.
-      - key: LLM_FALLBACK_PROVIDER
-        value: openrouter
-      - key: OPENROUTER_API_KEY
-        sync: false
-
-      # Vision is resolved independently of text — as of Aug 2026 NVIDIA's free
-      # text models are EOL while its vision models still answer.
+      # ── Vision (SceneLab keyframe captioning) ───────────────────────────────
+      # NVIDIA NIM. llama-3.2-11b-vision-instruct captioned a 19KB JPEG in
+      # 1463ms — the fastest working free vision model measured.
+      #
+      # NOT the 90B sibling: it timed out at 90s.
+      # NOT Groq: it serves no vision model at all.
+      # Qwen-VL would need OpenRouter credit — every Qwen vision model there is
+      # paid. See docs/PROVIDERS.md if you decide to fund that.
       - key: LLM_VISION_PROVIDER
-        value: gemini
+        value: nvidia
+      - key: LLM_VISION_MODEL
+        value: meta/llama-3.2-11b-vision-instruct
+      - key: NVIDIA_API_KEY
+        sync: false                       # nvapi-…  https://build.nvidia.com
 
-      # ── MedQA ──
-      # The retrieval index loads a quantised embedding model, the largest
-      # allocation in this process. 512 MB is tight; flip to "false" if the
-      # instance starts OOM-restarting under load.
+      # ── Fallback ────────────────────────────────────────────────────────────
+      # Tried once when the primary answers 429 or 5xx. It must be a DIFFERENT
+      # vendor — that is its entire job.
+      #
+      # Groq rather than OpenRouter: gpt-oss-120b answered in 611ms, Groq's
+      # quota is token-metered rather than capped near 50 requests/day, and the
+      # OpenRouter key on file was returning 401 at the time of writing.
+      - key: LLM_FALLBACK_PROVIDER
+        value: groq
+      - key: LLM_FALLBACK_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_API_KEY
+        sync: false                       # gsk_…  https://console.groq.com/keys
+
+      # ── MedQA ───────────────────────────────────────────────────────────────
+      # The retrieval index loads a quantised embedding model — the largest
+      # allocation in this process. 512 MB is tight. Flip to "false" if the
+      # instance starts OOM-restarting; the rest of the site stays healthy and
+      # that route returns an honest 503.
       - key: MEDQA_ENABLED
         value: "true"
 
-      # ── Optional ──
-      # The project's own BLIP captioning service, once it is hosted. Unset
-      # means SceneLab captions with the vision model instead.
+      # ── Optional ────────────────────────────────────────────────────────────
+      # The project's own BLIP captioning service, IF you host it somewhere with
+      # a GPU. It is deliberately not a service in this blueprint: its image is
+      # built on nvidia/cuda + torch + pre-downloaded weights, several GB, and
+      # Render's free plan has neither the disk for that build nor a GPU to run
+      # it on. Deploy it on a GPU host and paste the URL here. Unset means
+      # SceneLab captions with the vision model above; browser-side detection is
+      # unaffected either way. See docs/SCENE_API.md.
       - key: SCENE_API_BASE
         sync: false
 
       # Omit and the notes section is read-only, which is correct for a public
-      # deployment. Render generates and stores this if left as-is.
+      # deployment. Render generates and stores this value.
       - key: ADMIN_TOKEN
         generateValue: true
 
-      # Same-origin only when unset. Set only if the API is called from another
-      # domain — it is not, in this single-service topology.
+      # Same-origin only when unset — correct for this single-service topology.
+      # Set only if the API is ever called from another domain.
       - key: ALLOWED_ORIGINS
         sync: false
