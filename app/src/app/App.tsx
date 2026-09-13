@@ -9,6 +9,7 @@ import ChatLauncher from '@/features/chat/components/ChatLauncher';
    pull KaTeX and a Markdown parser. Neither belongs in the first paint, so
    every route below the first three is loaded on demand. */
 const FactoryTwin3D = lazy(() => import('@/features/factory-twin/FactoryTwin3D'));
+const StfLayout3D = lazy(() => import('@/features/stf-layout/StfLayout3D'));
 const AutonomousRobot = lazy(() => import('@/features/robot/AutonomousRobot'));
 const SceneLab = lazy(() => import('@/features/scene-lab/SceneLab'));
 const Notes = lazy(() => import('@/features/notes/Notes'));
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/project/:id" element={<ProjectDetail />} />
           <Route path="/factory" element={<FactoryDemo />} />
           <Route path="/factory-twin" element={<FactoryTwin3D />} />
+          <Route path="/stf-layout" element={<StfLayout3D />} />
           <Route path="/robot" element={<AutonomousRobot />} />
           <Route path="/scene" element={<SceneLab />} />
           <Route path="/notes" element={<Notes />} />

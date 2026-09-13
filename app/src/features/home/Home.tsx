@@ -749,7 +749,7 @@ export default function Home() {
                 </h2>
               </div>
               <p className="max-w-[330px] text-[13.5px] leading-[1.6] text-fg2">
-                Eight builds across industrial AI, computer vision and embedded systems. Filter by domain.
+                Five builds across industrial AI, computer vision and embedded systems. Filter by domain.
               </p>
             </div>
 

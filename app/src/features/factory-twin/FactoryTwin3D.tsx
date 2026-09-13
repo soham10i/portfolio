@@ -147,7 +147,7 @@ export default function FactoryTwin3D() {
       {/* Header */}
       <header className="flex min-h-[60px] shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 sm:h-[60px] sm:flex-nowrap sm:px-[22px] sm:py-0">
         <div className="flex items-center gap-4">
-          <Link to="/project/digital-twin-smart-factory-2" className="inline-flex items-center gap-1.5 text-[13px] text-fg2 transition-colors hover:text-fg">
+          <Link to="/project/digital-twin" className="inline-flex items-center gap-1.5 text-[13px] text-fg2 transition-colors hover:text-fg">
             <ArrowLeft className="h-3.5 w-3.5" />
             Project
           </Link>
@@ -171,6 +171,11 @@ export default function FactoryTwin3D() {
             Stream live
           </span>
           <span className="rounded-full border border-line px-2.5 py-1 font-mono text-[10px] text-fg2">10 Hz</span>
+          {/* This page is a schematic of the process flow, drawn on a straight
+              line on purpose. /stf-layout shows where the stations actually stand. */}
+          <Link to="/stf-layout" className="rounded-full border border-line px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
+            Cell layout
+          </Link>
         </div>
       </header>
 

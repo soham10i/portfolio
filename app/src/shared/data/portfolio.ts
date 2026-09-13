@@ -31,12 +31,21 @@ export const CATEGORIES = ['All', 'AI/ML', 'Computer Vision', 'NLP', 'Robotics',
 export const PROJECTS: Project[] = [
   {
     id: 'digital-twin',
-    title: 'Smart Tabletop Factory — Digital Twin',
+    title: 'Smart Tabletop Factory — Physics Digital Twin',
     category: 'AI/ML',
     timeline: 'Oct 2025 – Mar 2026',
-    demoUrl: '/factory-twin',
+    demoUrl: '/stf-layout',
     githubUrl: 'https://github.com/soham10i/stf-hw',
+    description: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays. Includes a predictive-maintenance dashboard for warehouse automation subsystems driven by MQTT sensor pipelines at 10 Hz, time-series storage in InfluxDB, and interactive Streamlit dashboards.',
+    impact: '56/56 checks passed · 85% failure-prediction accuracy',
+    tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MQTT', 'InfluxDB', 'Streamlit'],
     versions: [
+      {
+        key: 'v3', label: 'v3.0',
+        desc: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays.',
+        impact: '56/56 checks passed · 1.2 mm RMS prediction',
+        tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MJCF', 'NumPy'],
+      },
       {
         key: 'v2', label: 'v2.0',
         desc: 'Browser-native 3D twin of the fischertechnik 536634 cell, modelled on the real 15 mm construction grid with material colours sampled from the hardware. Drives the full 8-phase production cycle and mirrors the controller: all 9 digital inputs and 14 digital outputs from the Belegungsplan update live beside the geometry, with real drive ratings (encoder motor 214 min⁻¹, 25:1, 75 pulses per output revolution).',
@@ -52,29 +61,16 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    id: 'scene', title: 'Real-Time Multimodal Agentic Scene Understanding',
-    category: 'Computer Vision', timeline: 'Oct 2024 – Apr 2025', hasVideo: true,
+    id: 'scene',
+    title: 'Real-Time Multimodal Agentic Scene Understanding',
+    category: 'Computer Vision',
+    timeline: 'Oct 2024 – Apr 2025',
+    hasVideo: true,
     description: 'YOLOv8 detection fused with a vision-language model for scene narration. The live demo runs the same YOLOv8n weights in the browser through ONNX Runtime — camera frames never leave your device — and sends only scene-change keyframes to the FastAPI captioning service.',
     impact: 'Try it live — detection runs in your browser',
     tech: ['YOLOv8', 'ONNX Runtime Web', 'BLIP', 'FastAPI', 'WebGPU', 'Docker'],
     demoUrl: '/scene',
     githubUrl: 'https://github.com/soham10i/Real-Time-Scene-Understanding',
-  },
-  {
-    id: 'medqa', title: 'MedQA RAG Pipeline & NLI Benchmarking',
-    category: 'NLP', timeline: 'Mar 2025 – Aug 2025',
-    description: 'Modular Python interfaces for a RAG pipeline comparing 5+ NLI models across 3 retrieval strategies on medical QA, deployed as a FastAPI container.',
-    impact: '60% accuracy on unseen MedQA test data',
-    tech: ['HuggingFace', 'LangChain', 'FastAPI', 'Pytest', 'Docker'],
-    githubUrl: 'https://github.com/soham10i/natural-language-processing-RAG-project',
-  },
-  {
-    id: 'wind', title: 'Predictive Maintenance for Wind Turbines — Sensor Time-Series',
-    category: 'AI/ML', timeline: 'Nov 2024 – Apr 2025',
-    description: 'Condition monitoring on wind-turbine SCADA time-series: multi-channel sensor histories (vibration, gearbox temperature, power output) drive a fused health index, so degradation is flagged from the data before a scheduled inspection would catch it. Multi-output regression with the CARE framework predicts fault state and energy output from the same feature set, benchmarked across 8 algorithms.',
-    impact: 'Condition-based fault flagging from sensor histories',
-    tech: ['Time-series', 'Scikit-learn', 'CARE', 'Feature engineering', 'Pandas', 'NumPy'],
-    githubUrl: 'https://github.com/soham10i/machine-learning-sem01-oth-aw',
   },
   {
     id: 'slam', title: 'Autonomous Robots — SLAM Navigation',
@@ -113,14 +109,6 @@ export const PROJECTS: Project[] = [
       },
     ],
   },
-  {
-    id: 'smart-home', title: 'Smart Home & City Project',
-    category: 'Fullstack', timeline: 'Oct 2024 – Mar 2025',
-    description: 'IoT automation across home and city sensors with an MQTT backbone, InfluxDB time-series storage and ML-driven energy optimisation.',
-    impact: '20% energy reduction via AI optimisation',
-    tech: ['MQTT', 'InfluxDB', 'Machine Learning', 'Arduino'],
-    githubUrl: 'https://github.com/soham10i/oth_ai_sem_01_mdne',
-  },
 ];
 
 export interface Experience {
@@ -138,11 +126,11 @@ export const EXPERIENCES: Experience[] = [
     period: 'Mar 2025 – Aug 2025', type: 'Part-time', role: 'Teaching Assistant — Decision Modelling & Data Analysis',
     company: 'OTH Amberg-Weiden', location: 'Weiden, Germany',
     description:
-      'Facilitated the applied data analysis curriculum for a graduate cohort of 30 students, concurrently managing personal Master\u2019s coursework.',
+      'Taught the applied data-analysis strand of a Master\u2019s module to a cohort of 30, alongside my own graduate coursework.',
     highlights: [
-      'Architected and led comprehensive laboratory sessions on advanced SQL, statistical modelling, and supervised machine learning, bridging theoretical concepts with practical application on complex industrial datasets.',
-      'Engineered and maintained robust KNIME workflows serving as reference implementations for the module, demonstrating best practices in data preprocessing, feature engineering, and model validation.',
-      'Conducted academic mentoring and rigorous evaluation of student submissions, fostering analytical problem-solving skills and refining the communication of complex technical concepts.',
+      'Designed and delivered lab sessions on SQL, statistical modelling and supervised learning, translating lecture theory into exercises students could run on real industrial datasets.',
+      'Built and maintained KNIME workflows used as the module\u2019s reference implementations, covering data cleaning, feature engineering and model evaluation.',
+      'Held weekly office hours and reviewed submitted work, which meant explaining the same idea several different ways until it landed — the single most useful thing I have done for my own clarity as an engineer.',
     ],
     technologies: ['SQL', 'Machine Learning', 'KNIME', 'Python', 'Statistics', 'Data Visualisation'],
   },
@@ -190,21 +178,21 @@ export interface Domain { no: string; title: string; claim: string; items: strin
 export const DOMAINS: Domain[] = [
   {
     no: '01', title: 'Industrial AI & Digital Twins',
-    claim: 'Built a live 3D twin of a tabletop factory with telemetry, motor-health monitoring and order orchestration over MQTT/OPC-UA, plus condition-based maintenance models on turbine sensor time-series.',
-    items: ['MQTT', 'OPC-UA', 'InfluxDB', 'Three.js', 'WebSockets', 'Streamlit'],
-    proof: ['Smart Tabletop Factory v1 & v2', 'Wind Turbine PdM', 'Smart Home & City'],
+    claim: 'A rigid-body twin of a four-station factory cell derived from its own PLC sources \u2014 step tables, timer literals, I/O map and per-axis PWM \u2014 verified against 56 checks, on top of a live browser twin and an MQTT/OPC-UA telemetry stack.',
+    items: ['MuJoCo', 'Siemens SCL', 'MQTT', 'OPC-UA', 'Three.js', 'InfluxDB'],
+    proof: ['Smart Tabletop Factory v1, v2 & v3'],
   },
   {
     no: '02', title: 'Computer Vision & Perception',
-    claim: 'Real-time detection and narration at 30 FPS, plus SLAM navigation with LIDAR and odometry fusion.',
-    items: ['YOLOv8', 'OpenCV', 'VLM', 'SLAM', 'Kalman / Particle filters'],
-    proof: ['Scene Understanding', 'SLAM Navigation', 'Indoor BLE Localization'],
+    claim: 'Real-time YOLOv8 detection and multimodal agentic scene understanding, unsupervised lesion segmentation by patch diffusion on brain MRI, and SLAM navigation with LIDAR and odometry fusion.',
+    items: ['PyTorch', 'YOLOv8', 'VLM', 'DDPM / DDIM', 'SLAM', 'LIDAR'],
+    proof: ['Scene Understanding', 'Brain-MRI UAD', 'SLAM Navigation', 'Indoor BLE Localization'],
   },
   {
-    no: '03', title: 'NLP & Retrieval Systems',
-    claim: 'Modular RAG pipeline benchmarking 5+ NLI models and 3 retrieval strategies for medical question answering.',
-    items: ['HuggingFace', 'LangChain', 'RAG', 'Diffusion models'],
-    proof: ['MedQA RAG Pipeline', 'Cor2Vox keynote'],
+    no: '03', title: 'Embedded & Sensor Fusion',
+    claim: 'IMU and BLE beacon fusion with Kalman and Particle filters running at 50 Hz on an Arduino Nano BLE Sense, to sub-metre accuracy.',
+    items: ['Arduino', 'Kalman Filter', 'Particle Filter', 'IMU', 'BLE'],
+    proof: ['Indoor BLE Localization', 'Cor2Vox keynote'],
   },
   {
     no: '04', title: 'Backend & Production Delivery',
@@ -216,13 +204,13 @@ export const DOMAINS: Domain[] = [
 
 export const MATRIX: { skill: string; tier: Tier; where: string }[] = [
   { skill: 'Python', tier: 'Production', where: 'ETL pipelines at Altera · fintech APIs at Electrum · every AI project' },
-  { skill: 'FastAPI', tier: 'Production', where: 'Fintech API layer (2,000+ daily txns) · MedQA & Scene Understanding services' },
+  { skill: 'FastAPI', tier: 'Production', where: 'Fintech API layer (2,000+ daily txns) \u00b7 twin telemetry and inference services' },
   { skill: 'Docker / CI/CD', tier: 'Production', where: 'Azure DevOps at Altera · multi-cloud deploys (fly.io, Railway, Render)' },
   { skill: 'SQL', tier: 'Production', where: 'Healthcare data migration · taught to 30 M.Sc. students at OTH' },
   { skill: 'Azure / ETL', tier: 'Production', where: 'HIPAA-aligned healthcare log pipelines — 30% latency reduction' },
   { skill: 'PyTorch / HuggingFace', tier: 'Strong', where: 'NLI benchmarking · diffusion research for Cor2Vox keynote' },
   { skill: 'MQTT / InfluxDB', tier: 'Strong', where: 'Smart Tabletop Factory telemetry at 10 Hz · Smart Home & City' },
-  { skill: 'Computer Vision (YOLO/OpenCV)', tier: 'Strong', where: 'Real-time agentic scene understanding at 30 FPS' },
+  { skill: 'YOLOv8 / OpenCV', tier: 'Strong', where: 'Real-time agentic scene understanding at 30 FPS' },
   { skill: 'C# / .NET', tier: 'Strong', where: 'Legacy backend refactor at Altera · ASP.NET Core at Promact' },
   { skill: 'Three.js / WebSockets', tier: 'Strong', where: 'Digital Twin 2.0 live 3D visualisation' },
   { skill: 'React / TypeScript', tier: 'Explored', where: 'This portfolio · factory dashboard front-end' },
@@ -290,7 +278,7 @@ export const LANGUAGES = [
 
 export const HERO_STATS = [
   { value: '2.5 yrs', label: 'Production experience' },
-  { value: '8', label: 'Projects, end to end' },
+  { value: '5', label: 'Projects, end to end' },
   { value: 'Rank 1', label: 'M.Sc. — Gold Medalist' },
   { value: '1.0', label: 'Keynote grade, AI Conference' },
 ];
@@ -302,6 +290,6 @@ export const ROLES = ['Software Engineer', 'Industrial AI Engineer', 'Digital Tw
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',
   github: 'https://github.com/soham10i',
-  location: 'Germany — open to relocation across the EU',
+  location: 'Amberg, Bavaria — open to relocation across Germany and the EU',
   availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
 };
