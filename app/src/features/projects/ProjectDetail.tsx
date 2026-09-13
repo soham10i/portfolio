@@ -68,7 +68,6 @@ function ThemeButton({ palette, onPalette }: { palette: PaletteKey; onPalette: (
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [palette, setPalette] = useState<PaletteKey>(readStoredPalette);
-  const [version, setVersion] = useState<'v2' | 'v1'>('v2');
 
   useEffect(() => { applyPalette(palette); }, [palette]);
 
@@ -76,6 +75,7 @@ export default function ProjectDetail() {
 
   const project = PROJECTS.find((p) => p.id === id);
   const isTwin = project?.id === 'digital-twin';
+  const [version, setVersion] = useState<'v3' | 'v2' | 'v1'>('v3');
   const V = TWIN_VERSIONS[version];
   const detail = id ? PROJECT_DETAILS[id] : undefined;
 
@@ -94,9 +94,12 @@ export default function ProjectDetail() {
     );
   }
 
-  const activeVersion = project.versions?.[0];
+  const activeVersion = project.versions?.find((v) => v.key === version) ?? project.versions?.[0];
   const highlights = isTwin ? V.highlights : [project.impact].filter(Boolean) as string[];
   const stack = isTwin ? V.stack : project.tech ?? activeVersion?.tech ?? [];
+  const demoUrl = isTwin
+    ? (version === 'v2' ? '/factory-twin' : '/stf-layout')
+    : project.demoUrl;
 
   return (
     <div className="relative min-h-screen bg-bg text-fg">
@@ -148,14 +151,14 @@ export default function ProjectDetail() {
 
         <p className="mb-[34px] max-w-[700px] animate-rise text-[16.5px] leading-[1.6] text-fg2 [text-wrap:pretty] [animation-delay:.12s]">
           {isTwin
-            ? 'A live digital twin of an automated warehouse cell: sensor telemetry in, 3D state and maintenance forecasts out. Built in two versions — a dashboard first, then a real-time 3D twin.'
+            ? (activeVersion?.desc ?? project.description)
             : project.description}
         </p>
 
         <div className="mb-11 flex animate-rise flex-wrap gap-3 [animation-delay:.18s]">
-          {project.demoUrl && (
+          {demoUrl && (
             <Link
-              to={project.demoUrl}
+              to={demoUrl}
               className="inline-flex items-center gap-2.5 rounded-full px-[22px] py-[11px] text-[13.5px] font-semibold text-bg transition-[filter] hover:brightness-110"
               style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
             >
@@ -175,7 +178,7 @@ export default function ProjectDetail() {
         {isTwin && (
           <>
             <div className="mb-[26px] inline-flex animate-rise gap-1.5 rounded-[14px] border border-line bg-surf p-[5px] [animation-delay:.24s]">
-              {(['v2', 'v1'] as const).map((k) => {
+              {(['v3', 'v2', 'v1'] as const).map((k) => {
                 const on = k === version;
                 return (
                   <button
@@ -204,40 +207,76 @@ export default function ProjectDetail() {
                   <span className="font-mono text-[11px] uppercase tracking-[.12em] text-fg3">{V.demoLabel}</span>
                 </div>
                 <div className="flex gap-3.5 font-mono text-[10.5px] text-fg3">
-                  <span>ws://stf-gateway · live</span>
-                  <span>10 Hz</span>
+                  <span>{version === 'v3' ? 'MuJoCo physics · 30 FPS' : 'ws://stf-gateway · live'}</span>
+                  <span>{version === 'v3' ? '56/56 checks passed' : '10 Hz telemetry'}</span>
                 </div>
               </div>
 
-              <div
-                className="relative aspect-[16/8]"
-                style={{ background: 'linear-gradient(160deg,color-mix(in oklab,var(--p) 12%,transparent),color-mix(in oklab,var(--s) 8%,transparent))' }}
-              >
-                <CellDiagram />
-                <div className="absolute inset-x-4 bottom-3.5 flex flex-wrap items-center justify-between gap-3">
-                  <span
-                    className="rounded-lg border border-line px-[11px] py-[5px] font-mono text-[10.5px] text-fg3"
-                    style={{ background: 'color-mix(in oklab,var(--bg) 70%,transparent)' }}
-                  >
-                    2D layout view — full cell renders in 3D
-                  </span>
-                  <Link
-                    to="/factory-twin"
-                    className="inline-flex items-center gap-2 rounded-full px-[15px] py-2 text-[12px] font-medium text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_18%,transparent)]"
-                    style={{
-                      background: 'color-mix(in oklab,var(--bg) 78%,transparent)',
-                      border: '1px solid color-mix(in oklab,var(--a) 50%,transparent)',
-                    }}
-                  >
-                    Open 3D twin viewer
-                    <ArrowUpRight className="h-3 w-3" strokeWidth={2.4} />
-                  </Link>
+              {version === 'v2' && (
+                <div
+                  className="relative aspect-[16/8]"
+                  style={{ background: 'linear-gradient(160deg,color-mix(in oklab,var(--p) 12%,transparent),color-mix(in oklab,var(--s) 8%,transparent))' }}
+                >
+                  <CellDiagram />
+                  <div className="absolute inset-x-4 bottom-3.5 flex flex-wrap items-center justify-between gap-3">
+                    <span
+                      className="rounded-lg border border-line px-[11px] py-[5px] font-mono text-[10.5px] text-fg3"
+                      style={{ background: 'color-mix(in oklab,var(--bg) 70%,transparent)' }}
+                    >
+                      2D layout view — full cell renders in 3D
+                    </span>
+                    <Link
+                      to="/factory-twin"
+                      className="inline-flex items-center gap-2 rounded-full px-[15px] py-2 text-[12px] font-medium text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_18%,transparent)]"
+                      style={{
+                        background: 'color-mix(in oklab,var(--bg) 78%,transparent)',
+                        border: '1px solid color-mix(in oklab,var(--a) 50%,transparent)',
+                      }}
+                    >
+                      Open 3D twin viewer
+                      <ArrowUpRight className="h-3 w-3" strokeWidth={2.4} />
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {version === 'v3' && (
+                <div
+                  className="relative flex flex-col justify-between p-6 sm:p-8"
+                  style={{ background: 'linear-gradient(160deg,color-mix(in oklab,var(--p) 12%,transparent),color-mix(in oklab,var(--s) 8%,transparent))' }}
+                >
+                  <div className="max-w-[640px]">
+                    <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-line bg-surf px-3 py-1 font-mono text-[11px] text-a">
+                      Level 3 / Physics Twin · Solver-resampled trajectory
+                    </div>
+                    <h3 className="mb-2 text-[18px] font-bold text-fg sm:text-[21px]">Rigid-body MuJoCo simulation of all four factory stations</h3>
+                    <p className="text-[14px] leading-[1.6] text-fg2">
+                      Exported from fischertechnik's own S7-1500 PLC step tables, timer literals, and 89 addressed I/O points.
+                      Run the simulation directly in the browser with interactive station toggles, timeline scrubber, and step tape.
+                    </p>
+                  </div>
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                    <span
+                      className="rounded-lg border border-line px-[11px] py-[5px] font-mono text-[10.5px] text-fg3"
+                      style={{ background: 'color-mix(in oklab,var(--bg) 70%,transparent)' }}
+                    >
+                      50,466 solver frames · 17 joints · 4 stations
+                    </span>
+                    <Link
+                      to="/stf-layout"
+                      className="inline-flex items-center gap-2 rounded-full px-[18px] py-2.5 text-[12.5px] font-semibold text-bg transition-[filter] hover:brightness-110"
+                      style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
+                    >
+                      Launch simulation viewer
+                      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               <div className="grid [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
                 {V.telemetry.map((t) => (
-                  <div key={t.label} className="border-r border-t border-line px-[18px] py-4">
+                  <div key={t.label} className="border-r border-t border-line px-[18px] py-4 first:border-l-0">
                     <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[.16em] text-fg3">{t.label}</p>
                     <p className="text-[19px] font-semibold tracking-[-.01em]" style={{ color: t.color }}>{t.value}</p>
                   </div>

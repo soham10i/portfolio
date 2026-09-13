@@ -7,6 +7,10 @@ import { SceneDetector, frameDelta, type Detection } from '@/features/scene-lab/
 import { probeVideo, seekTo, waitForFrame } from '@/features/scene-lab/lib/videoProbe';
 import * as session from '@/features/scene-lab/lib/videoSession';
 import SessionLibrary from '@/features/scene-lab/components/SessionLibrary';
+import ScenarioPanel from '@/features/scene-lab/components/ScenarioPanel';
+import VlmInspector from '@/features/scene-lab/components/VlmInspector';
+import { buildContactSheet, MAX_SHEET_FRAMES, type ContactSheet } from '@/features/scene-lab/lib/contactSheet';
+import * as sceneApi from '@/features/scene-lab/lib/sceneApi';
 import { describeFrame, summariseLog } from '@/features/scene-lab/lib/localNarrator';
 import { PALETTES, applyPalette, readStoredPalette, type PaletteKey } from '@/shared/lib/palettes';
 
@@ -107,6 +111,71 @@ export default function SceneLab() {
   const [lastFrame, setLastFrame] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'live' | 'context'>('live');
   const [interpolating, setInterpolating] = useState(false);
+
+  /* ── Scenario + VLM transparency ──────────────────────────────────────────
+     `scenario` is the visitor's stated goal; it is mirrored to the server so
+     every downstream call sees it without the client re-attaching it. `sheet`
+     is the composite image that will go to the vision model, rebuilt whenever
+     the keyframes change — it is both the payload and the thing the inspector
+     displays, which is what makes the panel honest. */
+  const [sessionId, setSessionId] = useState<string | undefined>(sceneApi.storedSessionId);
+  const [scenario, setScenario] = useState('');
+  const [sessionNote, setSessionNote] = useState('');
+  const [sheet, setSheet] = useState<ContactSheet | null>(null);
+  const [sheetBusy, setSheetBusy] = useState(false);
+  const [inspection, setInspection] = useState<sceneApi.Inspection | null>(null);
+  const askAbort = useRef<AbortController | null>(null);
+
+  /* Adopt or mint a scenario session. The id is remembered in localStorage so
+     a reload keeps the same scenario, and the server may hand back a different
+     one if the old session expired — hence taking the id from the response
+     rather than assuming ours survived. */
+  useEffect(() => {
+    let dead = false;
+    sceneApi.fetchSession(sceneApi.storedSessionId())
+      .then((s) => {
+        if (dead) return;
+        setSessionId(s.sessionId);
+        if (s.scenario) setScenario(s.scenario);
+        setSessionNote(
+          s.ephemeral
+            ? 'Held in server memory for 30 minutes of inactivity, and lost on any redeploy. Nothing here is written to a database, and no frame is ever stored — only this text and the detector log.'
+            : '',
+        );
+      })
+      .catch(() => { if (!dead) setSessionNote('Scenario could not reach the server — it will still be sent with each question.'); });
+    return () => { dead = true; };
+  }, []);
+
+  const commitScenario = useCallback(async (text: string) => {
+    const s = await sceneApi.saveSession({ sessionId, scenario: text });
+    setSessionId(s.sessionId);
+  }, [sessionId]);
+
+  /* Rebuild the composite whenever the captioned keyframes change. Debounced,
+     because a clip scan appends frames rapidly and compositing on every one
+     would burn the main thread for images nobody has asked about yet. */
+  useEffect(() => {
+    const captioned = keyframes.filter((k) => k.thumb);
+    if (captioned.length === 0) { setSheet(null); return; }
+    let dead = false;
+    setSheetBusy(true);
+    const t = window.setTimeout(async () => {
+      /* Oldest first, newest last: the sheet reads left-to-right as time. The
+         component's own keyframe list is newest-first. */
+      const ordered = [...captioned].reverse().slice(-MAX_SHEET_FRAMES)
+        .map((k) => ({ at: k.at, thumb: k.thumb, labels: k.labels }));
+      try {
+        const built = await buildContactSheet(ordered);
+        if (!dead) setSheet(built);
+      } catch {
+        if (!dead) setSheet(null);
+      } finally {
+        if (!dead) setSheetBusy(false);
+      }
+    }, 400);
+    return () => { dead = true; window.clearTimeout(t); setSheetBusy(false); window.clearTimeout(t); };
+  }, [keyframes]);
 
   /* Ask the backend whether the captioning service is awake, so the UI can be
      honest up front rather than failing on the first keyframe. */
@@ -645,46 +714,89 @@ export default function SceneLab() {
     setDetections([]);
   }, []);
 
+  /* Ask a follow-up about the scene.
+   *
+   * Three things are combined into ONE request, which is the whole point of
+   * this feature: the composite image of recent frames (what the model can
+   * see), the detector-plus-caption log (text the pipeline already extracted),
+   * and the visitor's scenario plus their question (what they want to know).
+   * The answer streams, because a contact-sheet question takes ~4s on the 11B
+   * vision model and a spinner for four seconds reads as broken.
+   *
+   * The inspection payload arrives as the first SSE frame, so the "sent to the
+   * model" panel fills in while the answer is still generating. */
   const askQuestion = async () => {
     const q = question.trim();
     const captioned = keyframes.filter((k) => k.caption);
-    if (!q || asking || captioned.length === 0) return;
+    if (!q || asking) return;
+    if (keyframes.length === 0) return;
+
+    askAbort.current?.abort();
+    const ctrl = new AbortController();
+    askAbort.current = ctrl;
+
     setQuestion('');
-    setQa((h) => [...h, { role: 'user', content: q }]);
+    setQa((h) => [...h, { role: 'user', content: q }, { role: 'assistant', content: '' }]);
     setAsking(true);
-    try {
-      const r = await fetch(`${API_BASE}/scene/ask`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: q,
-          summary,
-          history: qa.slice(-8),
-          frames: [...captioned].reverse().map((k) => ({ t: k.at, caption: k.caption, labels: k.labels })),
-        }),
+
+    const frames = [...(captioned.length ? captioned : keyframes)].reverse()
+      .map((k) => ({ t: k.at, labels: k.labels, caption: k.caption }));
+
+    const payload: sceneApi.AskPayload = {
+      question: q,
+      sessionId,
+      scenario,
+      summary,
+      frames,
+      history: qa.slice(-8),
+      contactSheet: sheet
+        ? {
+            dataUrl: sheet.dataUrl, cols: sheet.cols, rows: sheet.rows,
+            count: sheet.count, width: sheet.width, height: sheet.height,
+            timestamps: sheet.timestamps,
+          }
+        : null,
+    };
+
+    /* Append into the trailing assistant bubble that was pushed above, rather
+       than adding a message per delta. */
+    const appendToLast = (text: string) =>
+      setQa((h) => {
+        const next = [...h];
+        const i = next.length - 1;
+        if (i >= 0 && next[i].role === 'assistant') next[i] = { ...next[i], content: next[i].content + text };
+        return next;
       });
-      const d = await r.json().catch(() => ({}));
-      setQa((h) => [...h, {
-        role: 'assistant',
-        content: r.ok && d.answer ? d.answer : (d.error || `HTTP ${r.status}`),
-      }]);
-    } catch {
-      setQa((h) => [...h, { role: 'assistant', content: 'Network error.' }]);
-    } finally {
-      setAsking(false);
-    }
+    const replaceLast = (text: string) =>
+      setQa((h) => {
+        const next = [...h];
+        const i = next.length - 1;
+        if (i >= 0 && next[i].role === 'assistant') next[i] = { ...next[i], content: text };
+        return next;
+      });
+
+    await sceneApi.askStream(payload, {
+      signal: ctrl.signal,
+      onInspect: setInspection,
+      onDelta: appendToLast,
+      onError: (msg) => replaceLast(msg),
+    });
+
+    setAsking(false);
   };
+
+  /* Cancel an in-flight answer when the component goes away, so a slow model
+     call cannot call setState on an unmounted tree. */
+  useEffect(() => () => askAbort.current?.abort(), []);
 
   /* Q&A genuinely needs a language model — the keyframe log is the context,
      but something has to read it. Rather than a dead input labelled "analyse
      something first" (which was a lie once you had analysed something), the
      control says which of the two preconditions is missing. */
-  const canAsk = keyframes.length > 0 && serviceUp === true;
+  const canAsk = keyframes.length > 0;
   const askBlockedReason = keyframes.length === 0
     ? 'Analyse a clip or camera session first'
-    : serviceUp !== true
-      ? 'Needs a language model — none is reachable right now'
-      : '';
+    : '';
 
   const objectCounts = detections.reduce<Record<string, number>>((acc, d) => {
     acc[d.label] = (acc[d.label] ?? 0) + 1;
@@ -1059,6 +1171,26 @@ export default function SceneLab() {
             </>
             )}
           </aside>
+        </div>
+
+        {/* Scenario in, and the exact request out. Side by side on purpose:
+            the left panel is the input that changes the answer, the right is
+            proof of what that input turned into. */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <ScenarioPanel
+            value={scenario}
+            onChange={setScenario}
+            onCommit={commitScenario}
+            maxChars={600}
+            ephemeralNote={sessionNote}
+            accent={accent}
+          />
+          <VlmInspector
+            sheet={sheet}
+            inspection={inspection}
+            loading={sheetBusy}
+            accent={accent}
+          />
         </div>
 
         {/* What this tab is holding, and how to let go of it. */}

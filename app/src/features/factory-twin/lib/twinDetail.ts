@@ -12,7 +12,31 @@ export interface TwinVersion {
   arch: { tier: string; parts: string[] }[];
 }
 
-export const TWIN_VERSIONS: Record<'v2' | 'v1', TwinVersion> = {
+export const TWIN_VERSIONS: Record<'v3' | 'v2' | 'v1', TwinVersion> = {
+  v3: {
+    label: 'v3.0', sub: 'MuJoCo simulation',
+    demoLabel: 'Digital Twin 3.0 — physics simulation',
+    note: 'v3.0 simulates the physical cell entirely using MuJoCo and the PLC sources, independently verifying physical behaviour prior to deployment.',
+    telemetry: [
+      { label: 'Checks passed', value: '56 / 56', color: '#22c55e' },
+      { label: 'Crane err (max)', value: '0.303 mm', color: 'var(--fg)' },
+      { label: 'Prediction', value: '1.2 mm RMS', color: 'var(--a)' },
+      { label: 'Engine', value: 'MuJoCo', color: 'var(--fg)' },
+    ],
+    highlights: [
+      'Rigid-body simulation of all four stations built from the manufacturer\'s own PLC step tables.',
+      'Suction gripper pulse-to-metre scales solved from sorting line dimensions to predict delivery station positions.',
+      'Worst crane move error 0.303 mm (inside the PLC\'s own 15-pulse window).',
+      'All 56 verification checks passing on physics-level validation.',
+    ],
+    stack: ['MuJoCo', 'Python', 'MJCF', 'Siemens SCL', 'OpenSCAD', 'NumPy'],
+    arch: [
+      { tier: 'Modelling', parts: ['OpenSCAD', 'MJCF XML'] },
+      { tier: 'Simulation', parts: ['MuJoCo Physics', 'Rigid-body kinematics'] },
+      { tier: 'Control', parts: ['Siemens SCL logic', 'Timer literals', 'PWM'] },
+      { tier: 'Analysis', parts: ['Python', 'NumPy', 'Error bounds'] },
+    ],
+  },
   v2: {
     label: 'v2.0', sub: 'Live 3D twin',
     demoLabel: 'Digital Twin 2.0 — live cell view',
@@ -68,6 +92,10 @@ export const TWIN_VERSIONS: Record<'v2' | 'v1', TwinVersion> = {
 };
 
 export const TWIN_TIMELINE = [
+  {
+    ver: 'v3.0', title: 'MuJoCo rigid-body simulation',
+    desc: 'Simulated all four stations in MuJoCo using the original PLC code to predict mechanical positioning accuracy before deployment. Achieved 1.2 mm RMS accuracy across 120 mm without prior measurement data.',
+  },
   {
     ver: 'v2.0', title: 'Live 3D twin with order orchestration',
     desc: 'Rebuilt the front end in Three.js and moved state transport to WebSockets. Added the MQTT/OPC-UA adapter layer so the same twin can sit on different controllers.',

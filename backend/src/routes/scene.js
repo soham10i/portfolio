@@ -10,10 +10,15 @@ const express = require('express');
 const config = require('../config');
 const { createLimiter } = require('../middleware/rateLimit');
 const { caption, blipHealth } = require('../services/captioner');
-const { callLLMWithFallback, extractText, reachableVision } = require('../services/llm');
+const { callLLMWithFallback, extractText, extractDelta, reachableVision } = require('../services/llm');
+const sessions = require('../services/sceneSession');
+const prompt = require('../services/scenePrompt');
 const multer = require('multer');
 
-const upload = multer({ dest: '/tmp/' });
+/* Bounded on purpose: the previous config accepted a file of any size into
+   /tmp on an instance with an ephemeral disk and no cleanup on the error
+   path, which is a slow disk-fill waiting to happen. */
+const upload = multer({ dest: '/tmp/', limits: { fileSize: 80 * 1024 * 1024, files: 1 } });
 const router = express.Router();
 const limit = createLimiter({
   ...config.limits.scene,
@@ -121,58 +126,219 @@ router.post('/summarise', limit, async (req, res) => {
   }
 });
 
-/* Ask a question about a session's video.
+/* ── Scenario session ───────────────────────────────────────────────────────
  *
- * The "memory" is deliberately client-held and session-scoped: the browser
- * keeps the keyframe log and prior turns and sends them with each question.
- * Nothing about a visitor's camera or clip is stored on the server — which is
- * the same privacy claim the rest of the page makes, and it means no cleanup
- * job, no retention policy and no per-user state to leak. */
-router.post('/ask', limit, async (req, res) => {
-  if (!config.llm.ready) {
-    return res.status(503).json({ error: 'Q&A needs a language model configured on the backend (LLM_API_BASE).' });
+ * GET  /api/scene/session?id=…   read (or mint) the scenario state
+ * PUT  /api/scene/session        set the scenario text and the keyframe log
+ *
+ * TEXT ONLY. The store never receives an image; `sanitiseFrames` in
+ * sceneSession.js strips the client's `thumb` data URIs rather than trusting
+ * them not to arrive. The page's privacy claim — camera pixels do not leave
+ * the device except as transient captioning requests — has to survive this
+ * endpoint existing, so the boundary is enforced in code, not in a comment.
+ *
+ * State is in-memory with a 30-minute idle TTL. A deploy or a free-instance
+ * spin-down loses it. That is reported to the client as `ephemeral: true`
+ * rather than left to be discovered. */
+router.get('/session', (req, res) => {
+  const { id, session } = sessions.resolve(req.query.id);
+  res.json(sessions.toPublic(id, session));
+});
+
+router.put('/session', (req, res) => {
+  const { sessionId, scenario, frames, summary } = req.body || {};
+  if (scenario !== undefined && typeof scenario !== 'string') {
+    return res.status(400).json({ error: 'scenario must be a string' });
   }
-  const { question, frames, summary, history } = req.body || {};
+  if (typeof scenario === 'string' && scenario.length > sessions.MAX_SCENARIO_CHARS) {
+    return res.status(400).json({ error: `scenario is too long (max ${sessions.MAX_SCENARIO_CHARS} characters)` });
+  }
+  const { id, session } = sessions.update(sessionId, { scenario, frames, summary });
+  res.json(sessions.toPublic(id, session));
+});
+
+
+/* Assemble the request for a scene question.
+ *
+ * Shared by /inspect, /ask and /ask/stream so that what the inspector shows a
+ * visitor IS what the model receives. Reconstructing the prompt separately for
+ * display would drift from the real one and quietly become a lie. */
+function assemble(req) {
+  const { question, frames, summary, history, contactSheet, sessionId, scenario } = req.body || {};
+
   if (typeof question !== 'string' || !question.trim()) {
-    return res.status(400).json({ error: 'Expected { question }' });
-  }
-  if (!Array.isArray(frames) || frames.length === 0) {
-    return res.status(400).json({ error: 'No scene context — analyse a clip or camera session first.' });
+    return { error: 'Expected { question }', status: 400 };
   }
 
-  const log = renderLog(frames, 60, 220).slice(0, 9000);
-  const turns = (Array.isArray(history) ? history : []).slice(-8).map((h) => ({
-    role: h?.role === 'assistant' ? 'assistant' : 'user',
-    content: String(h?.content ?? '').slice(0, 1200),
-  }));
+  /* Server-held session state is the default source of truth; the explicit
+     body fields override it, so the endpoint still works statelessly for a
+     client that never called /session. */
+  const stored = sessions.get(sessionId);
+  const useFrames = Array.isArray(frames) && frames.length ? frames : (stored?.frames || []);
+  const useScenario = typeof scenario === 'string' ? scenario : (stored?.scenario || '');
+  const useSummary = typeof summary === 'string' ? summary : (stored?.summary || '');
+  const useHistory = Array.isArray(history) && history.length ? history : (stored?.turns || []);
 
-  const system =
-    'You answer questions about ONE video, using only the keyframe log below. ' +
-    'The log is the complete record: timestamp, objects a detector found, and a ' +
-    'caption for that moment.\n\n' +
-    (summary ? `Overall summary:\n${String(summary).slice(0, 2000)}\n\n` : '') +
-    `Keyframe log:\n${log}\n\n` +
-    'Rules: answer in two or three sentences. Cite timestamps when they help. ' +
-    'If the log does not contain the answer, say so plainly rather than guessing — ' +
-    'the detector only recognises 80 common object classes, so it genuinely ' +
-    'cannot see everything.';
+  if (!useFrames.length) {
+    return { error: 'No scene context — analyse a clip or camera session first.', status: 400 };
+  }
+
+  const { sheet, error } = prompt.parseSheet(contactSheet);
+  if (error) return { error, status: 400 };
+
+  const built = prompt.build({
+    question, scenario: useScenario, frames: useFrames,
+    summary: useSummary, history: useHistory, sheet,
+  });
+
+  return { ...built, question, sessionId, hasSheet: !!sheet };
+}
+
+
+/* Exactly what would be sent to the model, without spending a call on it.
+ *
+ * This is what powers the "what the VLM sees" panel. It is a real endpoint and
+ * not a client-side approximation precisely so it cannot disagree with the
+ * answer path. */
+router.post('/inspect', limit, (req, res) => {
+  const a = assemble(req);
+  if (a.error) return res.status(a.status).json({ error: a.error });
+  res.json({
+    ...a.inspect,
+    model: config.llm.visionReady && a.hasSheet ? config.llm.visionModel : config.llm.model,
+    provider: config.llm.visionReady && a.hasSheet ? config.llm.visionProvider : config.llm.provider,
+    /* Stated rather than implied: no hosted VLM behind an OpenAI-compatible
+       endpoint returns attention maps, so the honest transparency story is
+       "here is the exact input", not a heatmap that would be invented. */
+    attentionAvailable: false,
+    note: 'This is the literal request payload. Hosted vision models expose no attention weights over the OpenAI-compatible API, so grounding is shown as the exact frames, detector labels and prompt text that were sent.',
+  });
+});
+
+
+/* Ask a question about the clip.
+ *
+ * A contact sheet, when supplied, routes this to the VISION model — one image
+ * containing many frames, because meta/llama-3.2-11b-vision-instruct returns
+ * 400 "At most 1 image(s) may be provided in one prompt". Without a sheet the
+ * question goes to the text model against the keyframe log alone, which is
+ * cheaper and still useful. */
+function targetModel(hasSheet) {
+  return hasSheet && config.llm.visionReady
+    ? { model: config.llm.visionModel, baseUrl: config.llm.visionBaseUrl, apiKey: config.llm.visionApiKey }
+    : { model: config.llm.model, baseUrl: config.llm.baseUrl, apiKey: config.llm.apiKey };
+}
+
+router.post('/ask', limit, async (req, res) => {
+  if (!config.llm.ready && !config.llm.visionReady) {
+    return res.status(503).json({ error: 'Q&A needs a model configured on the backend (LLM_PROVIDER or LLM_API_BASE).' });
+  }
+  const a = assemble(req);
+  if (a.error) return res.status(a.status).json({ error: a.error });
 
   try {
     const r = await callLLMWithFallback({
-      messages: [{ role: 'system', content: system }, ...turns, { role: 'user', content: question.slice(0, 600) }],
-      maxTokens: 500,
+      messages: a.messages,
+      maxTokens: 700,
       temperature: 0.3,
       timeoutMs: config.scene.timeoutMs,
+      ...targetModel(a.hasSheet),
     });
     if (!r.ok) {
       const detail = await r.text().catch(() => '');
-      return res.status(502).json({ error: `Q&A returned ${r.status}`, detail: detail.slice(0, 200) });
+      return res.status(502).json({ error: `Q&A returned ${r.status}`, detail: detail.slice(0, 300) });
     }
     const { text: answer } = extractText(await r.json());
-    if (!answer) return res.status(502).json({ error: 'Empty answer.' });
-    res.json({ answer });
-  } catch {
-    res.status(504).json({ error: 'Q&A timed out.' });
+    if (!answer) return res.status(502).json({ error: 'The model returned an empty answer. Try rephrasing?' });
+
+    if (a.sessionId) {
+      sessions.addTurn(a.sessionId, 'user', a.question);
+      sessions.addTurn(a.sessionId, 'assistant', answer);
+    }
+    res.json({ answer, inspect: a.inspect });
+  } catch (err) {
+    const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
+    res.status(timedOut ? 504 : 500).json({
+      error: timedOut ? 'The model took too long — try a smaller contact sheet.' : 'Q&A failed.',
+    });
+  }
+});
+
+
+/* Streaming variant. A contact-sheet question takes about four seconds on the
+   11B vision model; streaming turns that from a spinner into visible progress,
+   which is the difference between "slow" and "broken" to someone watching. */
+router.post('/ask/stream', limit, async (req, res) => {
+  if (!config.llm.ready && !config.llm.visionReady) {
+    return res.status(503).json({ error: 'Q&A needs a model configured on the backend.' });
+  }
+  const a = assemble(req);
+  if (a.error) return res.status(a.status).json({ error: a.error });
+
+  try {
+    const upstream = await callLLMWithFallback({
+      messages: a.messages,
+      maxTokens: 700,
+      temperature: 0.3,
+      stream: true,
+      timeoutMs: config.scene.timeoutMs,
+      ...targetModel(a.hasSheet),
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const detail = await upstream.text().catch(() => '');
+      return res.status(502).json({ error: `Q&A returned ${upstream.status}`, detail: detail.slice(0, 300) });
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    const send = (event) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+    /* The inspection payload goes out first, so the panel can render what was
+       sent while the answer is still generating. */
+    send({ inspect: a.inspect });
+
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let answer = '';
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const text = extractDelta(JSON.parse(payload));
+          if (text) { answer += text; send({ delta: text }); }
+        } catch { /* partial JSON across a chunk boundary */ }
+      }
+    }
+
+    if (!answer) send({ error: 'The model returned an empty answer. Try rephrasing?' });
+    else if (a.sessionId) {
+      sessions.addTurn(a.sessionId, 'user', a.question);
+      sessions.addTurn(a.sessionId, 'assistant', answer);
+    }
+    send({ done: true });
+    res.end();
+  } catch (err) {
+    if (!res.headersSent) {
+      const timedOut = err.name === 'TimeoutError' || err.name === 'AbortError';
+      res.status(timedOut ? 504 : 500).json({ error: timedOut ? 'The model took too long.' : 'Q&A failed.' });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: 'Stream interrupted — try again.' })}\n\n`);
+      res.end();
+    }
   }
 });
 

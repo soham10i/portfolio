@@ -13,11 +13,36 @@ export default defineConfig(() => ({
   },
   server: {
     port: 3000,
-    allowedHosts: ['localhost'],
+    allowedHosts: ['localhost', '.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+      },
+      '/stf': {
+        target: 'http://localhost:5173',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/layout': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/command': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/orders': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true,
       },
     },
   },

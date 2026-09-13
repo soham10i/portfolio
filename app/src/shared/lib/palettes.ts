@@ -9,7 +9,7 @@
    distinct reading conditions. `readStoredPalette` falls back to the default
    for anyone whose browser still holds one of the removed keys. */
 
-export type PaletteKey = 'midnight' | 'daylight' | 'paper';
+export type PaletteKey = 'midnight' | 'neon' | 'daylight' | 'paper';
 
 export interface Palette {
   name: string;
@@ -41,6 +41,19 @@ export const PALETTES: Record<PaletteKey, Palette> = {
     line: 'rgba(130,175,255,.15)',
     p: '#4d8dff', s: '#8b7bff', a: '#2fe0f0',
     canvas: '#03060e', depth: true,
+  },
+  /* Cyberpunk neon: cyan primary + violet secondary on near-black.
+     The palette carries the same depth as midnight but with electric
+     hues — the rim glow and shadow tint pull from the primary so the
+     cards read as illuminated glass rather than tinted panels. */
+  neon: {
+    name: 'Neon', note: 'Cyberpunk cyan & violet',
+    bg: '#030712', bg2: '#080c18',
+    surf: 'rgba(10,18,36,.68)', surf2: 'rgba(0,229,255,.06)',
+    fg: '#d8e4f2', fg2: '#8ba3c4', fg3: '#556a88',
+    line: 'rgba(0,229,255,.12)',
+    p: '#00e5ff', s: '#8b5cf6', a: '#00e5ff',
+    canvas: '#02040a', depth: true,
   },
   daylight: {
     name: 'Daylight Glass', note: 'Light, frosted surfaces',
