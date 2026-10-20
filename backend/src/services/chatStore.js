@@ -7,22 +7,9 @@
  * Storage is best-effort by design: every call here swallows and logs its own
  * errors, so a Supabase outage or missing key never breaks the chat itself.
  * The client is created lazily, so an unconfigured deploy never loads it. */
-const config = require('../config');
+const { db, isUuid } = require('./supabase');
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const isConversationId = (id) => typeof id === 'string' && UUID.test(id);
-
-let client = null;
-function db() {
-  if (!config.supabase.ready) return null;
-  if (!client) {
-    const { createClient } = require('@supabase/supabase-js');
-    client = createClient(config.supabase.url, config.supabase.secretKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-  return client;
-}
+const isConversationId = isUuid;
 
 /** Store one exchange (the visitor's message and JARVIS's reply). */
 async function saveTurn({ conversationId, page, userAgent, message, reply, voice }) {

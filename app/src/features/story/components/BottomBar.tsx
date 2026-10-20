@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
 import { PROJECTS } from '@/shared/data/portfolio';
 import { CHAPTERS } from '../lib/chapters';
 import ThemeToggle from './ThemeToggle';
@@ -47,7 +47,7 @@ export default function BottomBar() {
           onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
           aria-label="Ask JARVIS about my work"
         >
-          <Sparkles className="h-3.5 w-3.5 text-a" />
+          <JarvisOrb size={22} className="-ml-1.5" />
           <span className="hidden sm:inline">Ask JARVIS</span>
         </button>
         <button

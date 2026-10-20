@@ -1,9 +1,10 @@
 import type React from 'react';
 import { DOMAINS, HERO_STATS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
+import HilFit from '../components/HilFit';
 
-/* 02 — About. One large statement, the four proof numbers as glass tiles,
-   then the four domains as an index. */
+/* 02 — About. The story in three short paragraphs, four numbers, then the
+   four areas of work as an index. */
 export default function About() {
   return (
     <section id="about" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
@@ -12,13 +13,29 @@ export default function About() {
 
       <p
         data-reveal
-        className="max-w-[24ch] text-[clamp(32px,5.4vw,84px)] font-medium leading-[1.02] tracking-[-.04em]"
+        className="t-statement max-w-[24ch]"
       >
-        I build software that has to work on a <span className="serif text-p">factory floor</span>,
-        in a <span className="serif text-a">camera feed</span>, and in production.
+        I work on software that <span className="serif text-p">senses</span>,{' '}
+        <span className="serif text-a">models</span> and acts in the real world.
       </p>
 
-      <div className="mt-[10vh] grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div data-reveal className="content-glass mt-10 grid max-w-[1100px] t-body gap-6 md:grid-cols-3">
+        <p>
+          I started in backend development. As an intern I built an expense-sharing app. At Electrum I wrote
+          payment APIs, and at Altera I built Azure data pipelines for clinical software.
+        </p>
+        <p>
+          In 2024 I moved to Germany to study AI at OTH Amberg-Weiden. There my projects moved to physical
+          systems: a factory cell simulated from its PLC code, a robot that maps mazes with LIDAR, and indoor
+          tracking with BLE beacons.
+        </p>
+        <p>
+          Now I study Computer Engineering at Paderborn University, with a focus on Physical AI: state estimation,
+          perception, planning and control, and testing them in simulation before they run on hardware.
+        </p>
+      </div>
+
+      <div className="mt-[8vh] grid grid-cols-2 gap-3 md:grid-cols-4">
         {HERO_STATS.map((s, i) => (
           <div key={s.label} data-reveal={i * 0.06} className="lg-panel p-5 md:p-6">
             <p className="text-[clamp(30px,3.6vw,52px)] font-medium tracking-[-.04em]">{s.value}</p>
@@ -27,7 +44,9 @@ export default function About() {
         ))}
       </div>
 
-      <ol className="mt-[12vh] border-t border-[color:var(--line)]">
+      <HilFit />
+
+      <ol className="content-glass content-list mt-[8vh] border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
           <li
             key={d.no}
@@ -37,7 +56,7 @@ export default function About() {
             <span className="mono pt-2 text-fg3">{d.no}</span>
             <h3 className="text-[clamp(22px,2.4vw,34px)] font-medium tracking-[-.03em]">{d.title}</h3>
             <div>
-              <p className="text-[15px] leading-relaxed text-fg2">{d.claim}</p>
+              <p className="t-body">{d.claim}</p>
               <ul className="mt-4 flex flex-wrap gap-1.5">
                 {d.items.map((it) => (
                   <li key={it} className="lg-pill px-3 py-1 text-[12px] text-fg2">{it}</li>

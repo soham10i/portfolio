@@ -37,7 +37,9 @@ export default function App() {
           <Route path="/classic" element={<Navigate to="/" replace />} />
           <Route path="/robot" element={<AutonomousRobot />} />
           <Route path="/scene" element={<SceneLab />} />
-          <Route path="/notes" element={<Notes />} />
+          <Route path="/blog" element={<Notes />} />
+          <Route path="/blog/:slug" element={<NoteView />} />
+          <Route path="/notes" element={<Navigate to="/blog" replace />} />
           <Route path="/notes/new" element={<NoteEditor />} />
           <Route path="/notes/:slug" element={<NoteView />} />
           <Route path="/notes/:slug/edit" element={<NoteEditor />} />

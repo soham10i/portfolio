@@ -1,31 +1,47 @@
 import { create } from 'zustand';
 import { applyPalette, storePalette } from './palettes';
 
-/* Light / dark for the whole site.
+/* Light / dark / editorial / physical for the whole site. Editorial is a
+ * light theme (warm paper, Playfair Display) and Physical AI a dark one (split
+ * layout with an animation stage), so each paints data-theme light or dark
+ * plus a data-style — everything that only asks "is it dark?" keeps working.
  *
  * html[data-theme] is set before first paint by the inline script in
  * index.html (stored choice, else the OS preference), so this module only
  * reads it. Choosing a theme also moves the older palette system — used by the
  * demos and notes — to its matching palette, so every page agrees. */
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'editorial' | 'physical' | 'hil' | 'minimal';
+export const THEMES: Theme[] = ['light', 'dark', 'editorial', 'physical', 'hil', 'minimal'];
+export const isDarkTheme = (t: Theme) => t === 'dark' || t === 'physical' || t === 'hil';
+/** Themes painted as a data-style on top of light/dark. */
+const STYLED: Theme[] = ['editorial', 'physical', 'hil', 'minimal'];
 const KEY = 'sp-theme';
 
-const current = (): Theme =>
-  document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+const current = (): Theme => {
+  const h = document.documentElement.dataset;
+  if ((STYLED as string[]).includes(h.style ?? '')) return h.style as Theme;
+  return h.theme === 'dark' ? 'dark' : 'light';
+};
+
+const PALETTE_FOR = { light: 'daylight', dark: 'midnight', editorial: 'paper', physical: 'midnight', hil: 'midnight', minimal: 'daylight' } as const;
+const META_COLOR = { light: '#e4e9f1', dark: '#030509', editorial: '#ece5d8', physical: '#060708', hil: '#04070d', minimal: '#f6f6f4' } as const;
 
 function paint(theme: Theme) {
   const html = document.documentElement;
-  html.dataset.theme = theme;
-  html.classList.toggle('dark', theme === 'dark');
+  const dark = isDarkTheme(theme);
+  html.dataset.theme = dark ? 'dark' : 'light';
+  if (STYLED.includes(theme)) html.dataset.style = theme;
+  else delete html.dataset.style;
+  html.classList.toggle('dark', dark);
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]:not([media])');
-  if (meta) meta.content = theme === 'dark' ? '#04060a' : '#dfe5ee';
+  if (meta) meta.content = META_COLOR[theme];
 }
 
 function stored(): Theme | null {
   try {
     const v = localStorage.getItem(KEY);
-    return v === 'dark' || v === 'light' ? v : null;
+    return (THEMES as string[]).includes(v ?? '') ? (v as Theme) : null;
   } catch {
     return null;
   }
@@ -34,7 +50,7 @@ function stored(): Theme | null {
 interface ThemeState {
   theme: Theme;
   setTheme: (t: Theme) => void;
-  toggle: () => void;
+  toggle: () => void;   // light ↔ dark
 }
 
 export const useTheme = create<ThemeState>((set, get) => ({
@@ -42,12 +58,12 @@ export const useTheme = create<ThemeState>((set, get) => ({
   setTheme: (theme) => {
     paint(theme);
     try { localStorage.setItem(KEY, theme); } catch { /* non-fatal */ }
-    const palette = theme === 'dark' ? 'midnight' : 'daylight';
+    const palette = PALETTE_FOR[theme];
     applyPalette(palette);
     storePalette(palette);
     set({ theme });
   },
-  toggle: () => get().setTheme(get().theme === 'dark' ? 'light' : 'dark'),
+  toggle: () => get().setTheme(isDarkTheme(get().theme) ? 'light' : 'dark'),
 }));
 
 /* Until the visitor picks one, follow the OS live (e.g. macOS auto

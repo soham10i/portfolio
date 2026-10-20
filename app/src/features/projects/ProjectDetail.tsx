@@ -1,7 +1,8 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Github, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Github } from 'lucide-react';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
 import { PROJECTS, CONTACT, type Project } from '@/shared/data/portfolio';
 import { PROJECT_DETAILS } from '@/features/projects/lib/projectDetailContent';
 import { lenis } from '@/shared/lib/lenis';
@@ -11,6 +12,7 @@ import LiveShot from '@/features/story/components/LiveShot';
 import ProjectCover from '@/features/story/components/ProjectCover';
 import { useStory } from '@/features/story/lib/store';
 import { useTilt } from '@/features/story/lib/useTilt';
+import RunViewer from '@/features/projects/components/RunViewer';
 
 /* Project case study, in the gallery art direction (story.css), light/dark.
  *
@@ -109,7 +111,7 @@ export default function ProjectDetail() {
                 {String(index + 1).padStart(2, '0')} / {total}
                 <span className="text-fg3"> · {project.category}</span>
               </p>
-              <h1 className="text-[clamp(38px,5.4vw,84px)] font-medium leading-[.95] tracking-[-.05em]">{project.title}</h1>
+              <h1 className="t-display !text-[clamp(36px,4.6vw,72px)]">{project.title}</h1>
               {project.impact && (
                 <p className="mt-6 text-[clamp(18px,1.6vw,22px)] leading-snug tracking-[-.01em]">
                   <span className="serif text-p">Result —</span> {project.impact}
@@ -171,6 +173,16 @@ export default function ProjectDetail() {
           </div>
         </section>
 
+        {project.viewer && (
+          <section className="panel px-[var(--gutter)] py-[clamp(40px,6vh,72px)]">
+            <p className="mono mb-3 text-fg3">Interactive run viewer</p>
+            <h2 className="mb-6 max-w-[24ch] text-[clamp(26px,3vw,40px)] font-medium leading-[1.05] tracking-[-.03em]">
+              Replay a walk — <span className="serif text-p">particles, beacons and error</span> in sync.
+            </h2>
+            <RunViewer runs={project.viewer.runs} />
+          </section>
+        )}
+
         {/* body */}
         <section className="panel px-[var(--gutter)] py-[clamp(56px,9vh,112px)]">
           <div className="grid items-start gap-[clamp(32px,5vw,72px)] lg:grid-cols-[minmax(0,1.6fr)_minmax(0,.6fr)]">
@@ -196,7 +208,7 @@ export default function ProjectDetail() {
                       <span className="relative grid h-10 w-10 place-items-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg2)] text-[13px] font-medium">
                         {i + 1}
                       </span>
-                      <p className="lg-panel p-5 text-[15px] leading-relaxed text-fg2">{a}</p>
+                      <p className="lg-panel t-body p-5">{a}</p>
                     </li>
                   ))}
                 </ol>
@@ -251,7 +263,7 @@ export default function ProjectDetail() {
                   <h2 className={H2}>Technical notes</h2>
                   <ul className="flex flex-col gap-4 border-l-2 pl-6" style={{ borderColor: project.tint ?? 'var(--p)' }}>
                     {detail.technicalNotes.map((n, i) => (
-                      <li key={i} className="text-[15.5px] leading-relaxed text-fg2">{n}</li>
+                      <li key={i} className="t-body">{n}</li>
                     ))}
                   </ul>
                 </section>
@@ -264,7 +276,7 @@ export default function ProjectDetail() {
                     {detail.timeline.map((t) => (
                       <li key={t.phase} className="grid gap-2 border-b border-[color:var(--line)] py-5 md:grid-cols-[240px_1fr] md:gap-6">
                         <span className="text-[16px] font-medium tracking-[-.01em]">{t.phase}</span>
-                        <span className="text-[15px] leading-relaxed text-fg2">{t.desc}</span>
+                        <span className="t-body">{t.desc}</span>
                       </li>
                     ))}
                   </ol>
@@ -300,9 +312,9 @@ export default function ProjectDetail() {
                 onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
                 className="lg-panel flex items-start gap-3 p-6 text-left transition-transform hover:-translate-y-0.5"
               >
-                <span className="jarvis-orb mt-0.5" style={{ width: 28, height: 28 }} aria-hidden />
+                <JarvisOrb size={30} className="mt-0.5" />
                 <span>
-                  <span className="flex items-center gap-1.5 text-[15px] font-medium">Ask JARVIS <Sparkles className="h-3.5 w-3.5 text-a" /></span>
+                  <span className="flex items-center gap-1.5 text-[15px] font-medium">Ask JARVIS</span>
                   <span className="mt-1 block text-[13.5px] leading-relaxed text-fg2">Questions about how this was built?</span>
                 </span>
               </button>

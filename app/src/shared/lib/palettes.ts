@@ -138,7 +138,9 @@ export function readStoredPalette(): PaletteKey {
   }
   /* No stored palette: match the site theme index.html chose (stored choice
      or OS preference), so a dark-mode visitor's demos are dark too. */
-  return document.documentElement.dataset.theme === 'dark' ? 'midnight' : DEFAULT_PALETTE;
+  const h = document.documentElement.dataset;
+  if (h.theme === 'dark') return 'midnight';
+  return h.style === 'editorial' ? 'paper' : DEFAULT_PALETTE;   // physical is dark → midnight
 }
 
 export function storePalette(key: PaletteKey) {

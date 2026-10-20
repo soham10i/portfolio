@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { CONTACT } from '@/shared/data/portfolio';
-import { STF_LIVE_URL } from '@/shared/lib/env';
 import { lenis } from '@/shared/lib/lenis';
 import { CHAPTERS } from '../lib/chapters';
 import { useStory } from '../lib/store';
@@ -64,7 +63,7 @@ export default function TopBar() {
       >
         <span className="flex items-center gap-4 whitespace-nowrap">
           <span className="text-fg" aria-label="Soham Patel">{name}</span>
-          <span className="hidden sm:inline">/ Computer Engineer</span>
+          <span className="hidden sm:inline">/ Software engineer</span>
         </span>
         <span className="hidden items-center gap-5 whitespace-nowrap md:flex">
           <span>51.7189°N 8.7575°E</span>
@@ -111,16 +110,6 @@ export default function TopBar() {
             <a href="/Soham_Patel_CV.pdf" download className="lg-btn !h-10 max-sm:!hidden">
               CV <Download className="h-3.5 w-3.5" />
             </a>
-            {STF_LIVE_URL && (
-              <a
-                href="#lab"
-                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[color:var(--fg)] px-4 text-[13px] font-medium text-[color:var(--on-fg)]"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--a)]" />
-                Live twin
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </a>
-            )}
           </div>
         </div>
       </div>

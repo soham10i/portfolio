@@ -12,6 +12,7 @@ const { createLimiter } = require('../middleware/rateLimit');
 const { caption, blipHealth } = require('../services/captioner');
 const { callLLMWithFallback, extractText, extractDelta, reachableVision } = require('../services/llm');
 const sessions = require('../services/sceneSession');
+const sceneStore = require('../services/sceneStore');
 const prompt = require('../services/scenePrompt');
 const multer = require('multer');
 
@@ -382,5 +383,22 @@ router.post('/interpolate', upload.single('file'), async (req, res) => {
     res.status(500).json({ error: `Interpolation proxy error: ${error.message}` });
   }
 });
+
+/* ── Saved analyses (opt-in, text only — services/sceneStore.js) ────────── */
+const savedLimit = createLimiter({ windowMs: 5 * 60 * 1000, max: 120, message: 'Too many save requests — try again in a few minutes.' });
+
+const reply = (res, r) => (r.error ? res.status(r.status).json({ error: r.error }) : r.body ? res.status(r.status).json(r.body) : res.status(r.status).end());
+const guard = (fn) => async (req, res) => {
+  try { reply(res, await fn(req)); }
+  catch (err) {
+    console.error('scene store:', err.message || err);
+    res.status(500).json({ error: 'Could not reach the session store' });
+  }
+};
+
+router.post('/saved', savedLimit, guard((req) => sceneStore.save(req.body)));
+router.get('/saved', savedLimit, guard((req) => sceneStore.list(String(req.query.client || ''))));
+router.get('/saved/:id', savedLimit, guard((req) => sceneStore.load(req.params.id, String(req.query.client || ''))));
+router.delete('/saved/:id', savedLimit, guard((req) => sceneStore.remove(req.params.id, String(req.query.client || ''))));
 
 module.exports = router;

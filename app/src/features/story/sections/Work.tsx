@@ -56,9 +56,8 @@ function WorkCard({ p, i, total, seen, onOpen }: { p: Project; i: number; total:
   );
 }
 
-/* 03 — Work. Projects as collectible cards (Evan Fasquelle): each shows a
-   real screenshot when there is one, generative cover art otherwise, and
-   leans toward the pointer in 3D. */
+/* 03 — Work. Project cards: a real screenshot or replay when there is one,
+   generative cover art otherwise, tilting toward the pointer. */
 export default function Work() {
   const collected = useStory((s) => s.collected);
   const collect = useStory((s) => s.collect);
@@ -71,12 +70,12 @@ export default function Work() {
       <div className="mb-[clamp(40px,6vh,72px)] flex flex-wrap items-end justify-between gap-6">
         <h2
           data-reveal
-          className="max-w-[14ch] text-[clamp(40px,7vw,112px)] font-medium leading-[.92] tracking-[-.05em]"
+          className="max-w-[14ch] t-h2"
         >
-          Nine projects. <span className="serif text-s">Collect them all.</span>
+          Nine projects, <span className="serif text-s">with code.</span>
         </h2>
-        <p data-reveal className="max-w-[34ch] text-[15px] leading-relaxed text-fg2">
-          From a PLC-accurate factory twin to on-device vision. Open a card to explore it; the counter below keeps score.
+        <p data-reveal className="content-glass t-body max-w-[42ch]">
+          Each card opens a short write-up: the problem, what I built, how I measured it and what did not work.
         </p>
       </div>
 

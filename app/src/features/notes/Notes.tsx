@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Plus, Search } from 'lucide-react';
-import { PALETTES, applyPalette, readStoredPalette, storePalette, type PaletteKey } from '@/shared/lib/palettes';
-import PaletteMenu from '@/shared/components/PaletteMenu';
+import '@/features/story/story.css';
+import ThemeToggle from '@/features/story/components/ThemeToggle';
 import { getToken } from '@/features/notes/lib/notesApi';
 
 /* Notes index.
@@ -32,10 +32,7 @@ function formatDate(iso: string | null) {
 }
 
 export default function Notes() {
-  const [palette, setPalette] = useState<PaletteKey>(readStoredPalette);
-  useEffect(() => { applyPalette(palette); }, [palette]);
-  const accent = PALETTES[palette].a;
-  const pickPalette = (k: PaletteKey) => { setPalette(k); storePalette(k); };
+  const accent = 'var(--p)';
 
   const [notes, setNotes] = useState<NoteMeta[] | null>(null);
   const [error, setError] = useState('');
@@ -48,7 +45,7 @@ export default function Notes() {
     fetch(`${API_BASE}/notes`)
       .then((r) => r.json())
       .then((d) => { if (!dead) setNotes(d.notes ?? []); })
-      .catch(() => { if (!dead) setError('Could not load the notes index.'); });
+      .catch(() => { if (!dead) setError('Could not load the posts.'); });
     return () => { dead = true; };
   }, []);
 
@@ -67,13 +64,13 @@ export default function Notes() {
   }, [notes, query, topic]);
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
+    <div className="story min-h-screen">
       <header className="sticky top-0 z-40 border-b border-line" style={{ background: 'var(--bg)' }}>
         <div className="mx-auto flex h-[62px] max-w-[1080px] items-center justify-between gap-4 px-6">
           <Link to="/" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
             <ArrowLeft className="h-3.5 w-3.5" /> Portfolio
           </Link>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-fg3">Study notes</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-fg3">Blog</p>
           <div className="flex items-center gap-2">
             {canEdit && (
               <Link to="/notes/new"
@@ -81,20 +78,16 @@ export default function Notes() {
                 <Plus className="h-3.5 w-3.5" /> New
               </Link>
             )}
-            <PaletteMenu palette={palette} onPalette={pickPalette} compact />
+            <ThemeToggle className="!h-9 !w-9" placement="down" />
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1080px] px-6 pb-24 pt-14">
-        <h1 className="max-w-[22ch] text-[38px] font-semibold leading-[1.12] tracking-[-0.03em] sm:text-[46px]">
-          Working through the maths
-        </h1>
-        <p className="mt-5 max-w-[62ch] text-[16.5px] leading-[1.7] text-fg2">
-          Derivations written out in full while studying — every step shown, and each one
-          followed through on a worked example with real numbers. These are the notes I
-          keep for myself; they are here because a derivation you can follow is better
-          evidence of understanding than a line on a CV.
+        <h1 className="t-h2">Blog</h1>
+        <p className="t-lead mt-5">
+          Longer write-ups from my studies and projects. Derivations are worked through step by step and
+          checked on small examples with real numbers.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-3 border-y border-line py-3.5">
@@ -131,7 +124,7 @@ export default function Notes() {
         {notes !== null && shown.length === 0 && (
           <p className="mt-10 text-[14.5px] text-fg3">
             {notes.length === 0
-              ? 'No notes published yet.'
+              ? 'No posts published yet.'
               : 'Nothing matches that search.'}
           </p>
         )}
@@ -139,7 +132,7 @@ export default function Notes() {
         <ul className="mt-4">
           {shown.map((n) => (
             <li key={n.slug}>
-              <Link to={`/notes/${n.slug}`}
+              <Link to={`/blog/${n.slug}`}
                 className="group block border-b border-line py-7 transition-colors hover:bg-surf2">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-mono text-[10px] uppercase tracking-[0.13em]" style={{ color: accent }}>

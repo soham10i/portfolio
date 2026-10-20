@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Clock, Pencil } from 'lucide-react';
-import PaletteMenu from '@/shared/components/PaletteMenu';
-import { PALETTES, applyPalette, readStoredPalette, storePalette, type PaletteKey } from '@/shared/lib/palettes';
+import '@/features/story/story.css';
+import ThemeToggle from '@/features/story/components/ThemeToggle';
 import { fetchNote, getToken, type Note } from '@/features/notes/lib/notesApi';
 import { outline, renderNote, type Heading } from '@/features/notes/lib/noteRender';
 
@@ -15,10 +15,7 @@ import { outline, renderNote, type Heading } from '@/features/notes/lib/noteRend
 
 export default function NoteView() {
   const { slug = '' } = useParams();
-  const [palette, setPalette] = useState<PaletteKey>(readStoredPalette);
-  useEffect(() => { applyPalette(palette); }, [palette]);
-  const accent = PALETTES[palette].a;
-  const pickPalette = (k: PaletteKey) => { setPalette(k); storePalette(k); };
+  const accent = 'var(--p)';
 
   /* One state object keyed by slug, rather than four independent pieces reset
      at the top of the effect. Navigating between notes then swaps the whole
@@ -137,14 +134,14 @@ export default function NoteView() {
   }, [html]);
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
+    <div className="story min-h-screen">
       {/* Opaque, not frosted. A backdrop-filter on a sticky bar forces the
           compositor to re-blur that strip on every frame of every scroll, and
           over a note this long it is the single biggest source of stutter. */}
       <header className="sticky top-0 z-40 border-b border-line" style={{ background: 'var(--bg)' }}>
         <div className="mx-auto flex h-[62px] max-w-[1180px] items-center justify-between gap-4 px-6">
-          <Link to="/notes" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" /> Notes
+          <Link to="/blog" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
+            <ArrowLeft className="h-3.5 w-3.5" /> Blog
           </Link>
           <p className="hidden truncate font-mono text-[10px] uppercase tracking-[0.15em] text-fg3 sm:block">
             {note?.topic ?? ''}
@@ -156,7 +153,7 @@ export default function NoteView() {
                 <Pencil className="h-3 w-3" /> Edit
               </Link>
             )}
-            <PaletteMenu palette={palette} onPalette={pickPalette} compact />
+            <ThemeToggle className="!h-9 !w-9" placement="down" />
           </div>
         </div>
         {/* transform, not width: a scaleX runs on the compositor and never
@@ -170,7 +167,7 @@ export default function NoteView() {
       {error && (
         <div className="mx-auto max-w-[720px] px-6 pt-20">
           <p className="text-[15px] text-[#f87171]">{error}</p>
-          <Link to="/notes" className="mt-4 inline-block text-[14px] text-fg2 underline">Back to the index</Link>
+          <Link to="/blog" className="mt-4 inline-block text-[14px] text-fg2 underline">Back to the blog</Link>
         </div>
       )}
 

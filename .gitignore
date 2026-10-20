@@ -36,7 +36,7 @@ backend/.env.gemini.bak
 # The cost of that choice: no version history. If this material becomes worth
 # versioning, the right fix is a separate PRIVATE repository (or a private
 # submodule), not un-ignoring this folder.
-projects/
+/projects/
 
 # ── Secrets ──────────────────────────────────────────────────────────────────
 # Every real value lives in the host's environment (the Render dashboard) or in

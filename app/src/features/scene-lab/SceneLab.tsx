@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  AlertCircle, ArrowLeft, Camera, Github, Pause, Play, Sparkles, Square, Upload,
+  AlertCircle, ArrowUp, Camera, Check, Database, Loader2, Pause, Play, Save, Sparkles, Square, Upload, Wand2,
 } from 'lucide-react';
+import '@/features/story/story.css';
+import PageHeader from '@/features/story/components/PageHeader';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
+import Pipeline, { type PipelineState } from '@/features/scene-lab/components/Pipeline';
+import ObjectChart from '@/features/scene-lab/components/ObjectChart';
+import SavedAnalyses from '@/features/scene-lab/components/SavedAnalyses';
+import * as saved from '@/features/scene-lab/lib/savedSessions';
 import { SceneDetector, frameDelta, type Detection } from '@/features/scene-lab/lib/yolo';
 import { probeVideo, seekTo, waitForFrame } from '@/features/scene-lab/lib/videoProbe';
 import * as session from '@/features/scene-lab/lib/videoSession';
@@ -12,7 +18,6 @@ import VlmInspector from '@/features/scene-lab/components/VlmInspector';
 import { buildContactSheet, MAX_SHEET_FRAMES, type ContactSheet } from '@/features/scene-lab/lib/contactSheet';
 import * as sceneApi from '@/features/scene-lab/lib/sceneApi';
 import { describeFrame, summariseLog } from '@/features/scene-lab/lib/localNarrator';
-import { PALETTES, applyPalette, readStoredPalette, type PaletteKey } from '@/shared/lib/palettes';
 
 /* Real-Time Scene Understanding — interactive demo.
  *
@@ -71,9 +76,8 @@ function drawBoxes(cv: HTMLCanvasElement, found: Detection[], sw: number) {
 }
 
 export default function SceneLab() {
-  const [palette] = useState<PaletteKey>(readStoredPalette);
-  useEffect(() => { applyPalette(palette); }, [palette]);
-  const accent = PALETTES[palette].a;
+  /* Colours come from the site's design tokens (story.css), light or dark. */
+  const accent = 'var(--a)';
 
   const video = useRef<HTMLVideoElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
@@ -109,7 +113,16 @@ export default function SceneLab() {
   const [notice, setNotice] = useState<string | null>(null);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [lastFrame, setLastFrame] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'live' | 'context'>('live');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'summary' | 'ask' | 'how'>('timeline');
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  /* Saving (opt-in, text only — lib/savedSessions.ts). `viewing` is set while a
+     saved analysis from the database is on screen instead of a live run. */
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedRefresh, setSavedRefresh] = useState(0);
+  const [viewing, setViewing] = useState<{ title: string; createdAt: string } | null>(null);
   const [interpolating, setInterpolating] = useState(false);
 
   /* ── Scenario + VLM transparency ──────────────────────────────────────────
@@ -416,9 +429,14 @@ export default function SceneLab() {
 
   useEffect(() => stopAll, [stopAll]);
 
+  const startFresh = () => {
+    setSaveState('idle'); setSavedId(null); setViewing(null); setLabelFilter(null);
+  };
+
   const startWebcam = async () => {
     setNotice(null);
     setLastFrame(null);
+    startFresh();
     const d = await ensureModel();
     if (!d) return;
     try {
@@ -547,6 +565,7 @@ export default function SceneLab() {
   }, [threshold, narrate, serviceUp, describeOne]);
 
   const processVideoUrl = async (url: string, filename: string, size: number) => {
+    startFresh();
     const info = await probeVideo(url);
     if (!info.ok) {
       URL.revokeObjectURL(url);
@@ -600,7 +619,12 @@ export default function SceneLab() {
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.target.value = '';
+    if (file) await handleFile(file);
+  };
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('video/')) { setNotice('That is not a video file — drop an MP4, WebM or MOV clip.'); return; }
     setNotice(null);
     setLastFrame(null);
     cancelScan.current = false;
@@ -714,6 +738,51 @@ export default function SceneLab() {
     setDetections([]);
   }, []);
 
+  /* Save the current analysis to the database — text only. */
+  const saveAnalysis = async () => {
+    if (!keyframes.length || saveState === 'saving') return;
+    setSaveState('saving'); setSaveError('');
+    const item = activeVideo ? session.get(activeVideo) : undefined;
+    try {
+      const r = await saved.saveSession({
+        title: viewing?.title ?? item?.name ?? (source === 'webcam' ? 'Camera session' : 'Clip analysis'),
+        source: item?.kind === 'camera' || source === 'webcam' ? 'camera' : 'file',
+        durationSec: item && isFinite(item.durationSec) ? item.durationSec : null,
+        scenario, summary,
+        keyframes: [...keyframes].reverse().map((k) => ({
+          t: k.at, labels: k.labels, caption: k.caption ?? null, engine: k.engine ?? null, confidence: k.confidence ?? null,
+        })),
+        qa: qa.filter((m) => m.content.trim()),
+      });
+      setSavedId(r.id); setSaveState('saved'); setSavedRefresh((n) => n + 1);
+    } catch (err) {
+      setSaveState('error');
+      setSaveError(err instanceof Error ? err.message : 'Could not save');
+    }
+  };
+
+  /* Bring a saved analysis back: timeline, summary, scenario and Q&A. There
+     are no thumbnails (they were never stored), and follow-up questions work
+     from the saved text log. */
+  const openSaved = async (id: string) => {
+    try {
+      const s = await saved.loadSession(id);
+      stopAll();
+      setLastFrame(null);
+      setKeyframes([...s.keyframes].reverse().map((k) => ({
+        id: keyId.current++, at: k.t, thumb: '', labels: k.labels, caption: k.caption ?? undefined,
+        engine: k.engine ?? undefined, confidence: k.confidence, pending: false,
+      })));
+      setSummary(s.summary); setQa(s.qa); setScenario(s.scenario);
+      setSavedId(s.id); setSaveState('saved'); setLabelFilter(null);
+      setViewing({ title: s.title, createdAt: s.createdAt });
+      setActiveTab('timeline');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Could not open that analysis');
+    }
+  };
+
   /* Ask a follow-up about the scene.
    *
    * Three things are combined into ONE request, which is the whole point of
@@ -803,406 +872,424 @@ export default function SceneLab() {
     return acc;
   }, {});
 
+  /* How often each label appears across the keyframes — the chart and the
+     timeline filter both read this. */
+  const seenCounts = keyframes.reduce<Record<string, number>>((acc, k) => {
+    for (const l of k.labels) acc[l] = (acc[l] ?? 0) + 1;
+    return acc;
+  }, {});
+  const shownKeyframes = labelFilter ? keyframes.filter((k) => k.labels.includes(labelFilter)) : keyframes;
+  const pendingCaptions = keyframes.filter((k) => k.pending).length;
+  const captionedCount = keyframes.filter((k) => k.caption).length;
+  const live = running || scanning;
+
+  const pipeline: PipelineState = {
+    source: {
+      active: source !== 'idle',
+      detail: source === 'webcam' ? 'Camera live' : source === 'video' ? (scanning ? `Scanning ${Math.round(progress * 100)}%` : 'Clip loaded') : viewing ? 'Saved analysis' : 'Waiting',
+    },
+    detect: {
+      active: live,
+      detail: loadPct > 0 && loadPct < 1 ? `Loading ${Math.round(loadPct * 100)}%` : ready ? `${inferMs ? inferMs.toFixed(0) + ' ms' : 'ready'} · ${backend}` : 'Not loaded',
+    },
+    gate: { active: live && keyframes.length > 0, detail: `${keyframes.length} keyframe${keyframes.length === 1 ? '' : 's'}` },
+    caption: {
+      active: pendingCaptions > 0,
+      offline: serviceUp === false,
+      detail: serviceUp === false ? 'Offline · local text' : `${captionedCount} captioned${engine ? ' · ' + engine.toUpperCase() : ''}`,
+    },
+    reason: { active: asking || summarising, detail: asking ? 'Answering…' : summarising ? 'Summarising…' : `${qa.filter((m) => m.role === 'user').length} questions` },
+  };
+
+  const TABS = [
+    ['timeline', `Timeline${keyframes.length ? ` · ${keyframes.length}` : ''}`],
+    ['summary', 'Summary'],
+    ['ask', 'Ask'],
+    ['how', 'How it works'],
+  ] as const;
+
+  const dockBtn = 'inline-flex h-10 items-center gap-2 rounded-full px-4 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40';
+
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <header className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-2.5 sm:h-[60px] sm:flex-nowrap sm:px-[22px] sm:py-0">
-        <div className="flex items-center gap-4">
-          <Link to="/project/scene" className="inline-flex items-center gap-1.5 text-[13px] text-fg2 transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" />Project
-          </Link>
-          <span className="hidden h-5 w-px bg-surf2 sm:block" />
-          <div>
-            <p className="text-[14.5px] font-semibold tracking-[-0.01em] text-fg">Scene understanding — live</p>
-            <p className="hidden font-mono text-[10.5px] uppercase tracking-[0.1em] text-fg3 sm:block">
-              YOLOV8N IN-BROWSER · ONNX RUNTIME · BLIP CAPTIONS
-            </p>
-          </div>
-        </div>
-        <a href="https://github.com/soham10i/Real-Time-Scene-Understanding" target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-[12.5px] text-fg2 transition-colors hover:text-fg">
-          <Github className="h-3.5 w-3.5" />Source
-        </a>
-      </header>
+    <div className="story">
+      <PageHeader back={{ to: '/project/scene', label: 'Project' }} githubUrl="https://github.com/soham10i/Real-Time-Scene-Understanding" />
 
-      <main className="mx-auto max-w-[1180px] px-6 py-8">
-        {/* Privacy statement first — it is the strongest thing about the design */}
-        <div className="glass-panel mb-5 flex flex-wrap items-center gap-3 rounded-[12px] px-4 py-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-          <p className="text-[12.5px] leading-relaxed text-fg2">
-            Detection runs <strong className="font-semibold text-fg">entirely in your browser</strong> — camera and
-            video frames never leave this device. Only sampled keyframes are sent for captioning, and only while
-            narration is on.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          {/* ── viewer ────────────────────────────────────────────────── */}
-          <section className="glass-card flex flex-col rounded-[18px] resize-y overflow-hidden min-h-[50vh]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={startWebcam}
-                  className="inline-flex items-center gap-1.5 rounded-[9px] border border-[color-mix(in_oklab,var(--a)_45%,transparent)] bg-[color-mix(in_oklab,var(--a)_15%,transparent)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_25%,transparent)]">
-                  <Camera className="h-3 w-3" />Camera
-                </button>
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] border border-line px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
-                  <Upload className="h-3 w-3" />Video ≤4 min
-                  <input type="file" accept="video/*" className="sr-only" onChange={onFile} disabled={interpolating} />
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] border border-[color-mix(in_oklab,var(--a)_45%,transparent)] bg-[color-mix(in_oklab,var(--a)_15%,transparent)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_25%,transparent)]">
-                  <Sparkles className="h-3 w-3" />AI 60fps
-                  <input type="file" accept="video/*" className="sr-only" onChange={onUpscaleFile} disabled={interpolating} />
-                </label>
-                {source !== 'idle' && (
-                  <>
-                    <button type="button" onClick={() => setRunning((r) => !r)}
-                      className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
-                      {running ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                      {running ? 'Pause' : 'Resume'}
-                    </button>
-                    <button type="button" onClick={stopAll}
-                      className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
-                      <Square className="h-3 w-3" />Stop
-                    </button>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.1em] text-fg3">
-                <span>{backend}</span>
-                <span>{fps ? `${fps.toFixed(1)} fps` : '—'}</span>
-                <span>{inferMs ? `${inferMs.toFixed(0)} ms` : '—'}</span>
-              </div>
+      <main>
+        {/* ── hero + live pipeline ─────────────────────────────────────── */}
+        <section className="panel px-[var(--gutter)] pb-[clamp(28px,4vh,44px)] pt-[clamp(100px,13vh,136px)]"
+          style={{ '--t1': 'rgba(34,211,238,.18)', '--t2': 'rgba(94,162,255,.14)' } as React.CSSProperties}>
+          <div className="mb-[clamp(28px,4vh,44px)] flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="mono mb-4 text-fg2">SceneLab · live demo</p>
+              <h1 className="max-w-[14ch] text-[clamp(40px,6vw,88px)] font-medium leading-[.95] tracking-[-.05em]">
+                See what the model <span className="serif text-a">sees.</span>
+              </h1>
+              <p className="mt-5 max-w-[56ch] text-[clamp(15px,1.2vw,17px)] leading-relaxed text-fg2">
+                Point a camera or drop in a clip. YOLOv8 finds objects right here in your browser, the pipeline picks the
+                frames worth describing, and you can ask questions about what happened.
+              </p>
             </div>
-
-            <div className="relative flex-grow w-full bg-canvas min-h-[300px]">
-              <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-contain" />
-              <canvas ref={overlay} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
-
-              {source === 'idle' && lastFrame && (
-                <img src={lastFrame} alt="Last camera frame" className="absolute inset-0 h-full w-full object-contain" />
-              )}
-              {source === 'idle' && !lastFrame && (
-                <div className="absolute inset-0 grid place-items-center px-8 text-center">
-                  <div>
-                    {loadPct > 0 && loadPct < 1 ? (
-                      <>
-                        <div className="mx-auto h-[34px] w-[34px] animate-spin rounded-full border-2 border-line border-t-a" />
-                        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-fg2">
-                          Loading detector · {Math.round(loadPct * 100)}%
-                        </p>
-                        <p className="mt-1 text-[11.5px] text-fg3">13 MB, cached after the first run</p>
-                      </>
-                    ) : interpolating ? (
-                      <>
-                        <div className="mx-auto h-[34px] w-[34px] animate-pulse rounded-full border-2 border-line bg-a/20" />
-                        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-fg2">
-                          Upscaling to 60fps
-                        </p>
-                        <p className="mt-1 text-[11.5px] text-fg3">Processing video on the backend...</p>
-                      </>
-                    ) : loadError ? (
-                      <>
-                        <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#f87171]">Detector failed to load</p>
-                        <p className="mt-2 text-[12.5px] text-fg3">{loadError}</p>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mx-auto h-7 w-7 text-fg3" strokeWidth={1.5} />
-                        <p className="mt-3 text-[13.5px] text-fg2">Pick a camera or drop in a clip to start</p>
-                        <p className="mt-1 text-[12px] text-fg3">Nothing uploads — the model downloads to you instead</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {scanning && (
-                <div className="absolute inset-x-0 bottom-0">
-                  <div className="h-[3px] w-full bg-surf2">
-                    <div className="h-full transition-[width] duration-200"
-                      style={{ width: `${Math.round(progress * 100)}%`, background: accent }} />
-                  </div>
-                  <p className="glass-panel m-3 inline-block rounded-[9px] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-fg2">
-                    Scanning clip · {Math.round(progress * 100)}%
-                  </p>
-                </div>
-              )}
-
-              {ready && source !== 'idle' && (
-                <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1.5">
-                  <span className="glass-panel rounded-[9px] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-fg2">
-                    {detections.length} object{detections.length === 1 ? '' : 's'}
-                  </span>
-                  {Object.entries(objectCounts).slice(0, 4).map(([k, n]) => (
-                    <span key={k} className="glass-panel rounded-[9px] px-2.5 py-1.5 font-mono text-[10px] text-fg2">
-                      {k}{n > 1 ? ` ×${n}` : ''}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4 border-t border-line px-4 py-3">
-              <label className="flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-fg3">
-                Confidence
-                <input type="range" min={0.15} max={0.8} step={0.05} value={threshold}
-                  onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                  className="twin-scrub h-1 w-28 cursor-pointer appearance-none rounded-full bg-surf2 accent-a" />
-                <span className="font-mono text-[11px] text-fg2">{threshold.toFixed(2)}</span>
-              </label>
-              <button type="button" onClick={() => setNarrate((n) => !n)}
-                className={'inline-flex items-center gap-1.5 rounded-[9px] border px-2.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors ' +
-                  (narrate ? 'border-[color-mix(in_oklab,var(--a)_45%,transparent)] bg-[color-mix(in_oklab,var(--a)_15%,transparent)] text-fg' : 'border-line text-fg3')}>
-                <span className={'h-1.5 w-1.5 rounded-full ' + (narrate ? 'bg-a' : 'bg-fg3')} />
-                Narration
-              </button>
-              {notice && (
-                <span className="inline-flex items-center gap-1.5 text-[12px] text-[#fbbf24]">
-                  <AlertCircle className="h-3.5 w-3.5" />{notice}
-                </span>
-              )}
-            </div>
-          </section>
-
-          <aside className="glass-card flex flex-col overflow-hidden rounded-[18px]">
-            <div className="flex items-center justify-between border-b border-line px-2 py-2">
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('live')}
-                  className={`rounded-[10px] px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors ${
-                    activeTab === 'live' ? 'bg-[color-mix(in_oklab,var(--a)_15%,transparent)] text-fg' : 'text-fg3 hover:text-fg2'
-                  }`}
-                >
-                  Live Analysis
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('context')}
-                  className={`rounded-[10px] px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] transition-colors ${
-                    activeTab === 'context' ? 'bg-[color-mix(in_oklab,var(--a)_15%,transparent)] text-fg' : 'text-fg3 hover:text-fg2'
-                  }`}
-                >
-                  Context & QKV
-                </button>
-              </div>
-              <span className="inline-flex items-center gap-1.5 pr-2 font-mono text-[9.5px] uppercase tracking-[0.1em]"
-                style={{ color: serviceUp === false ? 'var(--fg3)' : accent }}>
-                <span className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: serviceUp === null ? 'var(--fg3)' : serviceUp ? '#4ade80' : '#f87171' }} />
-                {serviceUp === null
-                  ? 'checking'
-                  : !serviceUp
-                    ? 'detector only'
-                    : engine === 'blip' ? 'BLIP online' : 'VLM online'}
+            <div className="flex flex-wrap gap-2">
+              <span className="lg-pill inline-flex h-10 items-center gap-2 px-4 text-[13px]">
+                <span className="h-2 w-2 rounded-full bg-[#22c55e]" /> Frames stay on your device
+              </span>
+              <span className="lg-pill inline-flex h-10 items-center gap-2 px-4 text-[13px]">
+                <span className="h-2 w-2 rounded-full" style={{ background: serviceUp === null ? 'var(--fg3)' : serviceUp ? '#4ade80' : '#f87171' }} />
+                {serviceUp === null ? 'Checking captioner' : serviceUp ? (engine === 'blip' ? 'BLIP online' : 'VLM online') : 'Captioner offline'}
               </span>
             </div>
+          </div>
+          <Pipeline state={pipeline} />
+        </section>
 
-            {activeTab === 'context' ? (
-              <div className="flex-1 overflow-y-auto p-5">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">What Context is Used?</h3>
-                    <p className="mt-2 text-[12.5px] leading-relaxed text-fg2">
-                      When you ask a question about the video, the LLM cannot actually "see" the video directly. Instead, it reads a <strong className="font-semibold text-fg">keyframe log</strong>. 
-                      Every time the scene changes significantly, the image is passed to a Vision-Language Model (VLM) which generates a detailed caption. 
-                      These captions, along with their timestamps, are compiled into a chronological story of the video.
-                    </p>
+        {/* ── studio: stage + insight panel ────────────────────────────── */}
+        <section className="panel px-[var(--gutter)] py-[clamp(20px,3vh,32px)]">
+          {viewing && (
+            <div className="lg-panel mb-3 flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <p className="flex items-center gap-2 text-[14px]">
+                <Database className="h-4 w-4 text-a" />
+                Viewing saved analysis <strong className="font-medium">{viewing.title}</strong>
+                <span className="text-fg3">· {new Date(viewing.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </p>
+              <span className="mono !text-[10px] text-fg3">Text only — frames were never stored</span>
+            </div>
+          )}
+
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            {/* stage */}
+            <div className="flex flex-col gap-2">
+              <div
+                className={'relative min-h-[340px] overflow-hidden rounded-[26px] border bg-[#05070d] transition-colors xl:min-h-[520px] ' + (dragOver ? 'border-[color:var(--a)]' : 'border-[color:var(--line)]')}
+                style={{ aspectRatio: '16 / 10' }}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) void handleFile(f); }}
+              >
+                <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-contain" />
+                <canvas ref={overlay} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
+
+                {source === 'idle' && lastFrame && (
+                  <img src={lastFrame} alt="Last camera frame" className="absolute inset-0 h-full w-full object-contain" />
+                )}
+
+                {source === 'idle' && !lastFrame && (
+                  <div className="absolute inset-0 grid place-items-center px-8 text-center text-white">
+                    {/* faint scanning grid behind the empty state */}
+                    <div aria-hidden className="absolute inset-0 opacity-[.12]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)', backgroundSize: '36px 36px', maskImage: 'radial-gradient(60% 60% at 50% 50%,#000,transparent)', WebkitMaskImage: 'radial-gradient(60% 60% at 50% 50%,#000,transparent)' }} />
+                    <div className="relative">
+                      {loadPct > 0 && loadPct < 1 ? (
+                        <>
+                          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/15 border-t-[#22d3ee]" />
+                          <p className="mono mt-4 text-white/80">Loading detector · {Math.round(loadPct * 100)}%</p>
+                          <p className="mt-1 text-[13px] text-white/50">13 MB, cached after the first run</p>
+                        </>
+                      ) : interpolating ? (
+                        <>
+                          <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-[#22d3ee]/30" />
+                          <p className="mono mt-4 text-white/80">Upscaling to 60 fps</p>
+                          <p className="mt-1 text-[13px] text-white/50">Optical-flow interpolation on the server…</p>
+                        </>
+                      ) : loadError ? (
+                        <>
+                          <p className="mono text-[#f87171]">Detector failed to load</p>
+                          <p className="mt-2 text-[13px] text-white/60">{loadError}</p>
+                        </>
+                      ) : viewing ? (
+                        <>
+                          <Database className="mx-auto h-9 w-9 text-white/40" strokeWidth={1.5} />
+                          <p className="mt-4 text-[17px] font-medium">Saved analysis — text only</p>
+                          <p className="mt-1 text-[13px] text-white/55">The timeline, summary and Q&amp;A are on the right. Ask it something new.</p>
+                        </>
+                      ) : (
+                        <>
+                          <JarvisOrb size={64} className="mx-auto" />
+                          <p className="mt-5 text-[clamp(18px,1.8vw,24px)] font-medium tracking-[-.02em]">Start a camera, or drop a clip here</p>
+                          <p className="mt-1.5 text-[13.5px] text-white/55">MP4, WebM or MOV up to 4 minutes · the model downloads to you, nothing uploads</p>
+                          <div className="mt-6 flex flex-wrap justify-center gap-2">
+                            <button type="button" onClick={startWebcam} className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-medium text-[#0d1626]">
+                              <Camera className="h-4 w-4" /> Start camera
+                            </button>
+                            <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-white/20 px-5 text-[14px] text-white/90 hover:bg-white/10">
+                              <Upload className="h-4 w-4" /> Choose a clip
+                              <input type="file" accept="video/*" className="sr-only" onChange={onFile} disabled={interpolating} />
+                            </label>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
+                )}
 
-                  <div>
-                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">How is it Stored?</h3>
-                    <p className="mt-2 text-[12.5px] leading-relaxed text-fg2">
-                      The context is completely <strong className="font-semibold text-fg">ephemeral</strong>. It exists only in the memory of this browser tab (React state). 
-                      When you ask a question, the entire keyframe log is serialized into a JSON array and sent to the backend. It is never persisted to a database, ensuring complete privacy.
-                    </p>
+                {dragOver && (
+                  <div className="pointer-events-none absolute inset-3 grid place-items-center rounded-[20px] border-2 border-dashed border-[#22d3ee] bg-[#22d3ee]/10">
+                    <p className="text-[17px] font-medium text-white">Drop to analyse</p>
                   </div>
+                )}
 
-                  <div>
-                    <h3 className="font-mono text-[11px] uppercase tracking-[0.12em] text-fg">How QKV (Attention) Generates Answers</h3>
-                    <div className="mt-3 rounded-[12px] border border-line bg-surf2 p-4">
-                      <p className="text-[12.5px] leading-relaxed text-fg2 mb-3">
-                        When the language model receives your question and the keyframe log, it uses the <strong>Self-Attention mechanism</strong> (Query-Key-Value):
+                {/* HUD */}
+                {ready && source !== 'idle' && (
+                  <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="mono rounded-full bg-black/55 px-3 py-1.5 !text-[10px] text-white backdrop-blur-md">
+                        {detections.length} object{detections.length === 1 ? '' : 's'}
+                      </span>
+                      {Object.entries(objectCounts).slice(0, 4).map(([k, n]) => (
+                        <span key={k} className="rounded-full bg-black/55 px-3 py-1.5 text-[12px] text-white/90 backdrop-blur-md">
+                          {k}{n > 1 ? ` ×${n}` : ''}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="mono flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 !text-[10px] text-white/90 backdrop-blur-md">
+                      {live && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ef4444]" />}
+                      {backend} · {fps ? `${fps.toFixed(1)} fps` : '—'} · {inferMs ? `${inferMs.toFixed(0)} ms` : '—'}
+                    </span>
+                  </div>
+                )}
+
+                {scanning && (
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
+                    <div className="h-full bg-[#22d3ee] transition-[width] duration-200" style={{ width: `${Math.round(progress * 100)}%` }} />
+                  </div>
+                )}
+
+                {/* control dock */}
+                {(source !== 'idle' || lastFrame) && (
+                  <div className="absolute inset-x-0 bottom-4 flex justify-center px-3">
+                    <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-full border border-white/15 bg-black/55 p-1.5 backdrop-blur-xl">
+                      <button type="button" onClick={startWebcam} className={dockBtn}><Camera className="h-4 w-4" /> Camera</button>
+                      <label className={dockBtn + ' cursor-pointer'}>
+                        <Upload className="h-4 w-4" /> Clip
+                        <input type="file" accept="video/*" className="sr-only" onChange={onFile} disabled={interpolating} />
+                      </label>
+                      {source !== 'idle' && (
+                        <>
+                          <button type="button" onClick={() => setRunning((r) => !r)} className={dockBtn}>
+                            {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}{running ? 'Pause' : 'Resume'}
+                          </button>
+                          <button type="button" onClick={stopAll} className={dockBtn}><Square className="h-4 w-4" /> Stop</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* tuning row */}
+              <div className="lg-panel flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3.5">
+                <label className="flex items-center gap-3 text-[13px] text-fg2">
+                  Confidence
+                  <input type="range" min={0.15} max={0.8} step={0.05} value={threshold}
+                    onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                    className="h-1 w-32 cursor-pointer appearance-none rounded-full bg-[color:var(--surf2)] accent-[color:var(--a)]" />
+                  <span className="mono !text-[11px] text-fg">{threshold.toFixed(2)}</span>
+                </label>
+                <button type="button" onClick={() => setNarrate((n) => !n)} aria-pressed={narrate}
+                  className="lg-btn">
+                  <span className={'h-2 w-2 rounded-full ' + (narrate ? 'bg-[color:var(--a)]' : 'bg-[color:var(--fg3)]')} />
+                  Narration {narrate ? 'on' : 'off'}
+                </button>
+                <label className="lg-btn cursor-pointer" title="Interpolate the clip to 60 fps on the server, then analyse it">
+                  <Wand2 className="h-4 w-4" /> Upscale to 60 fps
+                  <input type="file" accept="video/*" className="sr-only" onChange={onUpscaleFile} disabled={interpolating} />
+                </label>
+                <span className="ml-auto flex items-center gap-2">
+                  {saveState === 'error' && <span className="text-[12.5px] text-[#ef4444]">{saveError}</span>}
+                  <button type="button" onClick={() => void saveAnalysis()}
+                    disabled={!keyframes.length || saveState === 'saving' || saveState === 'saved' || live}
+                    title={live ? 'Stop or finish the analysis first' : 'Save the captions, labels, summary and Q&A — no frames'}
+                    className="btn-ink !h-10 disabled:opacity-40">
+                    {saveState === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : saveState === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                    {saveState === 'saved' ? 'Saved' : 'Save analysis'}
+                  </button>
+                </span>
+              </div>
+              {notice && (
+                <p className="lg-panel flex items-start gap-2 px-5 py-3 text-[13px] text-fg2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-none text-[#f59e0b]" />{notice}
+                </p>
+              )}
+            </div>
+
+            {/* insight panel */}
+            <aside className="lg-panel flex min-h-[520px] flex-col overflow-hidden xl:max-h-[calc(520px+64px)]">
+              <div className="flex gap-1 overflow-x-auto border-b border-[color:var(--line)] p-1.5">
+                {TABS.map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setActiveTab(key)}
+                    className={'whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] transition-colors ' +
+                      (activeTab === key ? 'bg-[color:var(--fg)] text-[color:var(--on-fg)]' : 'text-fg2 hover:text-fg')}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {serviceUp === false && activeTab !== 'how' && (
+                <p className="border-b border-[color:var(--line)] px-5 py-3 text-[12.5px] leading-relaxed text-fg3">
+                  <span className="text-fg2">No language model is reachable</span>
+                  {serviceReason ? ` — ${serviceReason.replace(/^no captioning engine reachable — /, '')}` : ''}. Descriptions
+                  come from the detector itself (marked <span className="mono !text-[9.5px]">local</span>).
+                </p>
+              )}
+
+              <div className="flex-1 overflow-y-auto" data-lenis-prevent>
+                {activeTab === 'timeline' && (
+                  <div className="p-4">
+                    {labelFilter && (
+                      <p className="mb-3 flex items-center justify-between text-[13px] text-fg2">
+                        <span>Showing frames with <strong className="text-fg">{labelFilter}</strong></span>
+                        <button type="button" onClick={() => setLabelFilter(null)} className="mono !text-[10px] text-p">Clear</button>
                       </p>
-                      <ul className="space-y-3 text-[12.5px] leading-relaxed text-fg2">
-                        <li>
-                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--p)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Query (Q)</span>
-                          <br />Represents what the model is looking for right now. In this case, your question (e.g., <em>"What color was the car?"</em>).
-                        </li>
-                        <li>
-                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--a)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Key (K)</span>
-                          <br />Represents the "labels" on all the information it holds. Each keyframe caption acts as a Key (e.g., <em>"t+2.5s: A red car drives past."</em>).
-                        </li>
-                        <li>
-                          <span className="inline-block rounded-[6px] bg-[color-mix(in_oklab,var(--s)_20%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-fg">Value (V)</span>
-                          <br />The actual content to be extracted. If a Key strongly matches the Query (high attention score), the model pulls the corresponding Value to construct your answer.
-                        </li>
+                    )}
+                    {shownKeyframes.length === 0 ? (
+                      <p className="px-2 py-12 text-center text-[13.5px] text-fg3">Keyframes appear here as the scene changes.</p>
+                    ) : (
+                      <ol className="relative">
+                        <span aria-hidden className="absolute bottom-3 left-[39px] top-3 w-px bg-[color:var(--line)]" />
+                        {shownKeyframes.map((k) => (
+                          <li key={k.id} className="relative mb-3 grid grid-cols-[80px_1fr] gap-3 last:mb-0">
+                            {k.thumb ? (
+                              <img src={k.thumb} alt="" className="relative h-[60px] w-[80px] rounded-[12px] object-cover ring-1 ring-[color:var(--line)]" />
+                            ) : (
+                              <span className="relative grid h-[60px] w-[80px] place-items-center rounded-[12px] bg-[color:var(--surf2)] mono !text-[9px] text-fg3">t+{k.at.toFixed(0)}s</span>
+                            )}
+                            <div className="min-w-0">
+                              <p className="mono !text-[9.5px] text-fg3">t+{k.at.toFixed(1)}s{k.engine && ` · ${k.engine}`}{typeof k.confidence === 'number' && ` · ${k.confidence.toFixed(2)}`}</p>
+                              {k.pending ? (
+                                <p className="mt-1 flex items-center gap-1.5 text-[13px] text-fg3"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Captioning…</p>
+                              ) : k.error ? (
+                                <p className="mt-1 text-[13px] text-[#ef4444]">{k.error}</p>
+                              ) : (
+                                <p className="mt-1 text-[13.5px] leading-snug">{k.caption || '—'}</p>
+                              )}
+                              {k.labels.length > 0 && (
+                                <div className="mt-1.5 flex flex-wrap gap-1">
+                                  {k.labels.map((l) => (
+                                    <button key={l} type="button" onClick={() => setLabelFilter(labelFilter === l ? null : l)}
+                                      className={'rounded-full border px-2 py-0.5 text-[11px] transition-colors ' + (labelFilter === l ? 'border-[color:var(--a)] text-fg' : 'border-[color:var(--line)] text-fg3 hover:text-fg')}>
+                                      {l}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'summary' && (
+                  <div className="flex h-full flex-col p-5">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="mono text-fg3">Whole-video account</p>
+                      <button type="button" onClick={() => void summarise(keyframes)} disabled={summarising || keyframes.length === 0}
+                        className="lg-btn !h-8 disabled:opacity-40">
+                        {summarising ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        {summarising ? 'Reading…' : 'Regenerate'}
+                      </button>
+                    </div>
+                    <textarea
+                      readOnly={summarising}
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      placeholder={keyframes.length === 0
+                        ? 'Analyse a clip, or stop a camera session, and the whole-video description lands here.'
+                        : 'Press regenerate for a description of the whole video.'}
+                      className="min-h-[260px] w-full flex-1 resize-none rounded-[18px] border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-4 py-3.5 text-[14.5px] leading-relaxed text-fg outline-none placeholder:text-fg3 focus:border-[color:var(--p)]"
+                    />
+                    {summaryError && <p className="mt-2 text-[12.5px] text-[#ef4444]">{summaryError}</p>}
+                  </div>
+                )}
+
+                {activeTab === 'ask' && (
+                  <div className="flex h-full flex-col">
+                    <div className="flex-1 space-y-3 p-5">
+                      {qa.length === 0 ? (
+                        <div className="py-6 text-center">
+                          <JarvisOrb size={44} className="mx-auto" />
+                          <p className="mt-4 text-[15px] font-medium">Ask about this video</p>
+                          <p className="mt-1 text-[13px] text-fg3">{askBlockedReason || 'e.g. “How many people appear?” or “When does the car leave?”'}</p>
+                        </div>
+                      ) : qa.map((m, i) => (
+                        m.role === 'user' ? (
+                          <div key={i} className="flex justify-end">
+                            <p className="max-w-[88%] whitespace-pre-wrap rounded-[18px] rounded-br-md bg-[color:var(--fg)] px-4 py-2.5 text-[14px] leading-relaxed text-[color:var(--on-fg)]">{m.content}</p>
+                          </div>
+                        ) : (
+                          <div key={i} className="flex gap-2.5">
+                            <JarvisOrb size={20} active={asking && i === qa.length - 1} className="mt-0.5" />
+                            <p className="min-w-0 flex-1 whitespace-pre-wrap text-[14px] leading-relaxed">{m.content || (asking ? '…' : '')}</p>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                    <div className="p-3 pt-0">
+                      <div className="composer">
+                        <input
+                          type="text"
+                          value={question}
+                          onChange={(e) => setQuestion(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void askQuestion(); } }}
+                          disabled={!canAsk}
+                          placeholder={askBlockedReason || 'Ask about what happened…'}
+                          className="min-h-[36px] flex-1 bg-transparent text-[14px] text-fg outline-none placeholder:text-fg3 disabled:opacity-50"
+                        />
+                        <button type="button" onClick={() => void askQuestion()} disabled={asking || !canAsk || !question.trim()}
+                          aria-label="Ask"
+                          className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)] disabled:opacity-30">
+                          <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'how' && (
+                  <div className="space-y-6 p-5 text-[14px] leading-relaxed text-fg2">
+                    <div>
+                      <p className="mono mb-2 text-fg3">What the model reads</p>
+                      <p>The language model never watches the video. It reads a <strong className="text-fg">keyframe log</strong>: each time the scene changes enough, that frame is captioned, and the timestamped captions plus the detector's labels become a written account of the clip.</p>
+                    </div>
+                    <div>
+                      <p className="mono mb-2 text-fg3">What is stored</p>
+                      <p>During a run, everything lives in this tab. Nothing is saved unless you press <strong className="text-fg">Save analysis</strong>, and then only the text (captions, labels, timestamps, summary, scenario and Q&amp;A). Frames and video are never stored.</p>
+                    </div>
+                    <div>
+                      <p className="mono mb-3 text-fg3">How attention picks the answer</p>
+                      <ul className="space-y-3">
+                        {[
+                          ['Query', 'var(--p)', 'Your question: what the model is looking for, e.g. “what colour was the car?”'],
+                          ['Key', 'var(--a)', 'Each keyframe caption is a key, e.g. “t+2.5s: a red car drives past.”'],
+                          ['Value', 'var(--s)', 'When a key matches the query strongly, its content is pulled into the answer.'],
+                        ].map(([k, c, d]) => (
+                          <li key={k} className="flex gap-3">
+                            <span className="mono h-fit rounded-full px-2.5 py-1 !text-[9.5px] text-fg" style={{ background: `color-mix(in oklab, ${c} 22%, transparent)` }}>{k}</span>
+                            <span>{d}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            ) : (
-              <>
-            {serviceUp === false && (
-              <p className="border-b border-line px-4 py-3 text-[12px] leading-relaxed text-fg3">
-                <span className="text-fg2">No language model is reachable</span>
-                {serviceReason ? ` — ${serviceReason.replace(/^no captioning engine reachable — /, '')}` : ''}.
-                {' '}Descriptions below are written from the detector's own output instead, so the demo still
-                works; they are marked <span className="font-mono text-[10px] uppercase tracking-[0.1em]">local</span>.
-                Follow-up questions need a language model and stay disabled.
-              </p>
-            )}
-            {serviceUp && engine === 'vlm' && (
-              <p className="border-b border-line px-4 py-3 text-[12px] leading-relaxed text-fg3">
-                Captions are coming from the self-hosted vision-language model — the project's own BLIP service is not reachable.
-                Set <code className="font-mono text-fg2">SCENE_API_BASE</code> on the backend to use it instead.
-              </p>
-            )}
+            </aside>
+          </div>
+        </section>
 
-            {/* Overall description of the whole clip or session */}
-            <div className="border-b border-line px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">Overall summary</p>
-                <button
-                  type="button"
-                  onClick={() => void summarise(keyframes)}
-                  disabled={summarising || keyframes.length === 0}
-                  className="rounded-[8px] border border-line px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg disabled:opacity-40"
-                >
-                  {summarising ? 'reading…' : 'regenerate'}
-                </button>
-              </div>
-              <textarea
-                readOnly={summarising}
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                rows={7}
-                placeholder={
-                  keyframes.length === 0
-                    ? 'Analyse a clip, or stop a camera session, and the whole-video description lands here.'
-                    : 'Press regenerate for a description of the whole video.'
-                }
-                className="mt-2 w-full resize-y rounded-[10px] border border-line bg-surf2 px-3 py-2.5 text-[12.5px] leading-relaxed text-fg2 outline-none placeholder:text-fg3 focus:border-p"
-              />
-              {summaryError && <p className="mt-1 text-[12px] text-[#f87171]">{summaryError}</p>}
-            </div>
+        {/* ── analytics + transparency ─────────────────────────────────── */}
+        <section className="panel grid gap-3 px-[var(--gutter)] py-[clamp(20px,3vh,32px)] lg:grid-cols-3">
+          <ObjectChart counts={seenCounts} total={keyframes.length} filter={labelFilter}
+            onFilter={(l) => { setLabelFilter(l); setActiveTab('timeline'); }} />
+          <ScenarioPanel value={scenario} onChange={setScenario} onCommit={commitScenario}
+            maxChars={600} ephemeralNote={sessionNote} accent={accent} />
+          <VlmInspector sheet={sheet} inspection={inspection} loading={sheetBusy} accent={accent} />
+        </section>
 
-            {/* Session-scoped Q&A over the keyframe log */}
-            <div className="border-b border-line px-4 py-3">
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">Ask about this video</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-fg3">
-                Context lives in this tab only — it is gone on reload and never stored on the server.
-                {!canAsk && askBlockedReason && <span className="mt-1 block text-fg3">{askBlockedReason}</span>}
-              </p>
-
-              {qa.length > 0 && (
-                <div className="mt-2.5 max-h-[220px] space-y-2 overflow-y-auto">
-                  {qa.map((m, i) => (
-                    <div key={i} className={m.role === 'user' ? 'text-right' : ''}>
-                      <span
-                        className="inline-block max-w-[92%] break-words whitespace-pre-wrap rounded-[10px] px-2.5 py-1.5 text-left text-[12px] leading-snug"
-                        style={m.role === 'user'
-                          ? { background: 'color-mix(in oklab,var(--p) 20%,transparent)', color: 'var(--fg)' }
-                          : { background: 'var(--surf2)', color: 'var(--fg2)' }}
-                      >
-                        {m.content}
-                      </span>
-                    </div>
-                  ))}
-                  {asking && <p className="font-mono text-[11px] text-fg3">thinking…</p>}
-                </div>
-              )}
-
-              <div className="mt-2.5 flex gap-2">
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void askQuestion(); } }}
-                  disabled={!canAsk}
-                  placeholder={askBlockedReason || 'e.g. how many people appear?'}
-                  className="flex-1 rounded-[10px] border border-line bg-surf2 px-3 py-2 text-[12.5px] text-fg outline-none placeholder:text-fg3 focus:border-p disabled:opacity-50"
-                />
-                <button
-                  type="button"
-                  onClick={() => void askQuestion()}
-                  disabled={asking || !canAsk || !question.trim()}
-                  className="rounded-[10px] border border-[color-mix(in_oklab,var(--a)_45%,transparent)] bg-[color-mix(in_oklab,var(--a)_15%,transparent)] px-3 py-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-fg transition-colors disabled:opacity-40"
-                >
-                  Ask
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
-              {keyframes.length === 0 && (
-                <p className="px-1 py-6 text-center text-[12.5px] text-fg3">
-                  Keyframes appear here when the scene changes.
-                </p>
-              )}
-              {keyframes.map((k) => (
-                <div key={k.id} className="glass-panel flex gap-3 rounded-[12px] p-2.5">
-                  <img src={k.thumb} alt="" className="h-[54px] w-[72px] flex-none rounded-[7px] object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-fg3">
-                      t+{k.at.toFixed(1)}s · {k.labels.join(', ') || 'no objects'}
-                    </p>
-                    {k.pending ? (
-                      <p className="mt-1 font-mono text-[11px] text-fg3">captioning…</p>
-                    ) : k.error ? (
-                      <p className="mt-1 text-[11.5px] leading-snug text-[#f87171]">{k.error}</p>
-                    ) : (
-                      <p className="mt-1 text-[12.5px] leading-snug text-fg2">
-                        {k.caption || '—'}
-                        {typeof k.confidence === 'number' && (
-                          <span className="ml-1.5 font-mono text-[10px] text-fg3">{k.confidence.toFixed(2)}</span>
-                        )}
-                        {k.engine && (
-                          <span className="ml-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-fg3">
-                            {k.engine}
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            </>
-            )}
-          </aside>
-        </div>
-
-        {/* Scenario in, and the exact request out. Side by side on purpose:
-            the left panel is the input that changes the answer, the right is
-            proof of what that input turned into. */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <ScenarioPanel
-            value={scenario}
-            onChange={setScenario}
-            onCommit={commitScenario}
-            maxChars={600}
-            ephemeralNote={sessionNote}
-            accent={accent}
-          />
-          <VlmInspector
-            sheet={sheet}
-            inspection={inspection}
-            loading={sheetBusy}
-            accent={accent}
-          />
-        </div>
-
-        {/* What this tab is holding, and how to let go of it. */}
-        <div className="mt-4">
-          <SessionLibrary
-            activeId={activeVideo}
-            onOpen={(id) => void reopen(id)}
-            onRemove={forget}
-            onClear={forgetAll}
-            accent={accent}
-          />
-        </div>
+        {/* ── library: this tab + database ─────────────────────────────── */}
+        <section className="panel grid gap-3 px-[var(--gutter)] py-[clamp(20px,3vh,32px)] lg:grid-cols-2">
+          <SessionLibrary activeId={activeVideo} onOpen={(id) => void reopen(id)} onRemove={forget} onClear={forgetAll} accent={accent} />
+          <SavedAnalyses refreshKey={savedRefresh} activeId={savedId} onOpen={(id) => void openSaved(id)} />
+        </section>
       </main>
     </div>
   );

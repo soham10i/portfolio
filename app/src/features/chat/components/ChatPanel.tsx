@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { AlertCircle, ArrowUp, AudioLines, Maximize2, Mic, MicOff, Minimize2, RotateCcw, X } from 'lucide-react';
 import '@/features/story/story.css';
 import MarkdownText from '@/features/chat/components/MarkdownText';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
 import {
   createRecognizer, createSpeaker, sttSupported, ttsSupported,
   type Recognizer, type Speaker,
@@ -25,12 +26,12 @@ import { lenis } from '@/shared/lib/lenis';
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 
 const GREETING =
-  "Hey! I'm JARVIS — Soham's personal assistant. Ask me anything: projects, skills, whether he can actually center a div. Facts, some wit, zero corporate fluff. Tap the mic and we can just talk.";
+  "Hi, I'm JARVIS. I answer questions about Soham's projects, experience and skills, using the facts on this site. You can type or use the mic.";
 
 const SUGGESTIONS = [
   'What projects has Soham built?',
   'Tell me about the Smart Tabletop Factory twin',
-  "What are Soham's strongest skills?",
+  "Which skills does Soham use most?",
   'How can I contact Soham?',
 ];
 
@@ -58,9 +59,7 @@ export interface ChatPanelProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function Orb({ size, active = false }: { size: number; active?: boolean }) {
-  return <span className="jarvis-orb" data-active={active} style={{ width: size, height: size }} aria-hidden />;
-}
+const Orb = JarvisOrb;
 
 export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   const [maximised, setMaximised] = useState(false);
@@ -421,7 +420,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
 
         {/* Composer */}
         <div className="flex-none p-3 pt-0">
-          <div className="flex items-end gap-1.5 rounded-[22px] border border-[color:var(--line)] bg-[color:var(--chip-fill)] p-1.5 pl-4 focus-within:border-[color:var(--p)]">
+          <div className="composer">
             <textarea
               ref={input}
               rows={1}
