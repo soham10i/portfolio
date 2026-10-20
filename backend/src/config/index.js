@@ -93,6 +93,18 @@ const config = {
     maxFileBytes: 5_000_000,
   },
 
+  /* Supabase stores JARVIS conversations. Server-side only: the secret key
+     bypasses row-level security and must never reach the browser (no VITE_
+     prefix, no client import). Unset → chat works, nothing is stored. The
+     publishable key and JWKS URL are kept for future visitor sign-in. */
+  supabase: {
+    url: (process.env.SUPABASE_URL || '').replace(/\/$/, ''),
+    secretKey: process.env.SUPABASE_SECRET_KEY || '',
+    publishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || '',
+    jwksUrl: process.env.SUPABASE_JWKS_URL || '',
+    get ready() { return !!(this.url && this.secretKey); },
+  },
+
   /* MedQA's retrieval index loads a quantised embedding model into memory on
      first use. On a 512 MB free instance that is the single largest allocation
      in the process, so it is opt-out: set MEDQA_ENABLED=false to keep the rest

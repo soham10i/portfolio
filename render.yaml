@@ -140,3 +140,11 @@ services:
       # Set only if the API is ever called from another domain.
       - key: ALLOWED_ORIGINS
         sync: false
+
+      # JARVIS chat storage (supabase/migrations/*_jarvis_chat.sql). Unset
+      # means chat still works and nothing is stored. Paste the secret key in
+      # the Render dashboard — it bypasses row-level security.
+      - key: SUPABASE_URL
+        value: https://jigowswcjzfwytxuoqsj.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false                       # sb_secret_…  Supabase → Settings → API Keys

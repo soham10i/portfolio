@@ -86,6 +86,7 @@ const server = app.listen(config.port, () => {
   line('fallback', config.llm.fallback ? config.llm.fallback.baseUrl : 'none — a 429 from the primary is fatal');
   line('blip', config.scene.baseUrl || 'not configured (SceneLab falls back to the vision model)');
   line('medqa', config.medqa.enabled ? 'enabled (index loads on first request)' : 'disabled');
+  line('chat store', config.supabase.ready ? `Supabase (${config.supabase.url})` : 'off — set SUPABASE_URL and SUPABASE_SECRET_KEY to store chats');
   line('notes', config.notes.adminToken ? 'editable' : 'read-only (no ADMIN_TOKEN)');
   line('cors', cors_ === true ? 'any origin (development)' : cors_ === false ? 'same-origin only' : cors_.join(', '));
 

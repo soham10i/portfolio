@@ -1,15 +1,64 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { PROJECTS, type Project } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
+import ProjectCover from '../components/ProjectCover';
 import { useStory } from '../lib/store';
+import { useTilt } from '../lib/useTilt';
 
 const yearOf = (p: Project) => p.timeline.match(/\d{4}/g)?.at(-1) ?? p.timeline;
 
-/* 03 — Work. Projects as portrait "trading cards" (Evan Fasquelle), shown in
-   the page's one light chapter so they read like a gallery wall.
-   Phase 2 pins this section and fans the same cards out as a 3D deck; these
-   DOM cards stay as the accessible, reduced-motion and mobile version. */
+function WorkCard({ p, i, total, seen, onOpen }: { p: Project; i: number; total: string; seen: boolean; onOpen: () => void }) {
+  const card = useRef<HTMLAnchorElement>(null);
+  useTilt(card, 6);
+
+  return (
+    <div className="tilt-stage h-full">
+      <Link
+        ref={card}
+        to={`/project/${p.id}`}
+        onClick={onOpen}
+        className="tilt lg-panel group relative flex h-full flex-col overflow-hidden !rounded-[26px] p-2"
+      >
+        <div className="cq relative">
+          <ProjectCover project={p} index={i} className="aspect-[16/11] rounded-[20px]" />
+          <div className="absolute inset-x-3 top-3 z-[2] flex items-center justify-between">
+            <span className="mono rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md">
+              {String(i + 1).padStart(2, '0')} / {total}
+            </span>
+            <span className="flex items-center gap-1.5">
+              {p.featured && <span className="mono rounded-full bg-white px-2.5 py-1 !text-[9.5px] text-[#0d1626]">Featured</span>}
+              {p.liveUrl && <span className="mono flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md"><span className="h-1.5 w-1.5 rounded-full bg-[#34d399]" />Live</span>}
+              {!p.githubUrl && <span className="mono rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md">Soon</span>}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col justify-between gap-4 px-3 pb-2 pt-4" style={{ transform: 'translateZ(30px)' }}>
+          <div>
+            <p className="mono mb-2 flex items-center gap-2 text-fg3">
+              {p.category} · {yearOf(p)}
+              {seen && <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" title="Explored" />}
+            </p>
+            <h3 className="text-[clamp(21px,1.9vw,27px)] font-medium leading-[1.08] tracking-[-.03em]">{p.title}</h3>
+            {p.impact && <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-fg2">{p.impact}</p>}
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[color:var(--line)] pt-3">
+            <span className="truncate text-[12.5px] text-fg3">{p.tech?.slice(0, 3).join(' · ')}</span>
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)] transition-transform duration-300 group-hover:rotate-45">
+              <ArrowUpRight className="h-4 w-4" />
+            </span>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+/* 03 — Work. Projects as collectible cards (Evan Fasquelle): each shows a
+   real screenshot when there is one, generative cover art otherwise, and
+   leans toward the pointer in 3D. */
 export default function Work() {
   const collected = useStory((s) => s.collected);
   const collect = useStory((s) => s.collect);
@@ -32,51 +81,11 @@ export default function Work() {
       </div>
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PROJECTS.map((p, i) => {
-          const seen = collected.includes(p.id);
-          const tint = p.tint ?? '#4d8dff';
-          return (
-            <li key={p.id} data-reveal={(i % 3) * 0.08}>
-              <Link
-                to={`/project/${p.id}`}
-                onClick={() => collect(p.id)}
-                className="lg-panel group relative flex aspect-[5/6] flex-col justify-between overflow-hidden p-6 transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-1.5"
-              >
-                {/* colour field: the card's identity, brighter on hover */}
-                <span
-                  aria-hidden
-                  className="absolute -right-1/4 -top-1/4 h-[85%] w-[85%] rounded-full opacity-50 blur-3xl transition-opacity duration-500 group-hover:opacity-80"
-                  style={{ background: tint }}
-                />
-
-                <div className="relative flex items-center justify-between">
-                  <span className="mono text-fg2">
-                    {String(i + 1).padStart(2, '0')} / {total}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    {p.featured && <span className="mono rounded-full bg-[color:var(--fg)] px-2.5 py-1 !text-[9.5px] text-[color:var(--bg)]">Featured</span>}
-                    {!p.githubUrl && <span className="mono rounded-full border border-[color:var(--line)] px-2.5 py-1 !text-[9.5px] text-fg2">Soon</span>}
-                    {seen && <span className="h-2 w-2 rounded-full bg-[#10b981]" title="Explored" />}
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <p className="mono mb-3 text-fg3">{p.category} · {yearOf(p)}</p>
-                  <h3 className="text-[clamp(24px,2.2vw,32px)] font-medium leading-[1.05] tracking-[-.03em]">
-                    {p.title}
-                  </h3>
-                  {p.impact && <p className="mt-3 line-clamp-2 text-[14px] leading-snug text-fg2">{p.impact}</p>}
-                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-[color:var(--line)] pt-4">
-                    <span className="truncate text-[12.5px] text-fg3">{p.tech?.slice(0, 3).join(' · ')}</span>
-                    <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--bg)] transition-transform duration-300 group-hover:rotate-45">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
+        {PROJECTS.map((p, i) => (
+          <li key={p.id} data-reveal={(i % 3) * 0.08}>
+            <WorkCard p={p} i={i} total={total} seen={collected.includes(p.id)} onOpen={() => collect(p.id)} />
+          </li>
+        ))}
       </ul>
     </section>
   );

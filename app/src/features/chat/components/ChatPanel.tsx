@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { AlertCircle, AudioLines, Maximize2, Mic, MicOff, Send, Sparkles, X } from 'lucide-react';
+import { AlertCircle, ArrowUp, AudioLines, Maximize2, Mic, MicOff, Minimize2, RotateCcw, X } from 'lucide-react';
+import '@/features/story/story.css';
 import MarkdownText from '@/features/chat/components/MarkdownText';
 import {
   createRecognizer, createSpeaker, sttSupported, ttsSupported,
   type Recognizer, type Speaker,
 } from '@/features/chat/lib/voice';
+import { conversationId, fetchHistory, newConversation } from '@/features/chat/lib/conversation';
 import { lenis } from '@/shared/lib/lenis';
 
-/* JARVIS chat panel.
+/* JARVIS chat panel, in the site's gallery art direction (story.css tokens,
+   light and dark).
+
    Posts to `${API_BASE}/chat/stream` on the Express backend and parses the SSE
-   frames it returns, sending prior turns as context. The base URL comes from
-   VITE_CHAT_API_BASE (see app/.env.example) and defaults to '/api', which the
-   Vite dev proxy forwards to the backend.
+   frames it returns, sending prior turns as context and a conversation id. The
+   backend stores each turn in Supabase under that id, so reopening the site
+   picks the conversation back up (lib/conversation.ts).
 
    Voice: the mic button (one-shot "talkback") and the AudioLines toggle
    (hands-free voice mode) use the browser's Web Speech API — SpeechRecognition
@@ -21,12 +25,12 @@ import { lenis } from '@/shared/lib/lenis';
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 
 const GREETING =
-  "Hey! I'm JARVIS — Soham's LLM-based personal assistant. Ask me anything: projects, skills, whether he can actually center a div. I come with facts, wit, and zero corporate fluff. Tap the mic and we can just talk.";
+  "Hey! I'm JARVIS — Soham's personal assistant. Ask me anything: projects, skills, whether he can actually center a div. Facts, some wit, zero corporate fluff. Tap the mic and we can just talk.";
 
 const SUGGESTIONS = [
   'What projects has Soham built?',
-  'Tell me about the Digital Twin project',
-  "What are Soham's top skills?",
+  'Tell me about the Smart Tabletop Factory twin',
+  "What are Soham's strongest skills?",
   'How can I contact Soham?',
 ];
 
@@ -37,23 +41,25 @@ interface Message { role: 'user' | 'assistant'; content: string }
 const GEOM: Record<'docked' | 'max', CSSProperties> = {
   docked: {
     position: 'fixed', zIndex: 80,
-    top: 'auto', right: '24px', bottom: '96px', left: 'auto',
-    width: 'min(430px, calc(100vw - 32px))', height: 'min(660px,72vh)',
+    top: 'auto', right: 'max(8px, min(24px, 2vw))', bottom: '84px', left: 'auto',
+    width: 'min(440px, calc(100vw - 16px))', height: 'min(680px, calc(100svh - 112px))',
     maxWidth: 'none', margin: 0,
-    transition: 'opacity .3s ease',
   },
   max: {
     position: 'fixed', zIndex: 80,
-    top: '20px', right: '20px', bottom: '20px', left: '20px',
+    top: '16px', right: '16px', bottom: '16px', left: '16px',
     width: 'auto', height: 'auto',
-    maxWidth: '980px', margin: '0 auto',
-    transition: 'opacity .3s ease',
+    maxWidth: '960px', margin: '0 auto',
   },
 };
 
 export interface ChatPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function Orb({ size, active = false }: { size: number; active?: boolean }) {
+  return <span className="jarvis-orb" data-active={active} style={{ width: size, height: size }} aria-hidden />;
 }
 
 export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
@@ -67,6 +73,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   const [listening, setListening] = useState(false);   // mic is capturing right now
   const [speaking, setSpeaking] = useState(false);     // JARVIS is talking right now
   const scroller = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
 
   /* Refs mirror the state the voice callbacks need — recognizer and speaker
      callbacks fire long after the render that created them. */
@@ -79,14 +86,33 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   const haltedRef = useRef(false);       // mic permission denied — stop retrying
   const listenTimer = useRef<number | null>(null);
   const sendRef = useRef<(text?: string, opts?: { spoken?: boolean }) => Promise<void>>(async () => {});
+  const restored = useRef(false);
 
   const voiceOk = sttSupported() && ttsSupported();
+
+  /* Pick up where the visitor left off: the stored conversation, if the
+     backend has it. Silent on failure — a fresh greeting is fine. */
+  useEffect(() => {
+    if (!open || restored.current) return;
+    restored.current = true;
+    fetchHistory(API_BASE).then((past) => {
+      if (past.length) setMessages((m) => (m.length <= 1 ? [m[0], ...past] : m));
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!open || !maximised) return;
     lenis.stop();
     return () => lenis.start();
   }, [open, maximised]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onOpenChange(false); };
+    window.addEventListener('keydown', onKey);
+    const t = window.setTimeout(() => input.current?.focus(), 120);
+    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(t); };
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
@@ -126,7 +152,8 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     if (!msg || sending) return;
     const spoken = opts?.spoken === true;
 
-    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    /* The greeting is UI, not conversation — it is never sent as context. */
+    const history = messages.slice(1).map((m) => ({ role: m.role, content: m.content }));
     setMessages((m) => [...m, { role: 'user', content: msg }]);
     setDraft('');
     setSending(true);
@@ -155,7 +182,10 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       const res = await fetch(`${API_BASE}/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, history, voice: spoken }),
+        body: JSON.stringify({
+          message: msg, history, voice: spoken,
+          conversationId: conversationId(), page: window.location.pathname,
+        }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -263,237 +293,173 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     startListening();
   };
 
+  /* A new chat is a new conversation id; the old one stays stored. */
   const clear = () => {
     stopVoiceActivity();
     setVoiceModeBoth(false);
+    newConversation();
     setMessages([{ role: 'assistant', content: GREETING }]);
     setError('');
     setStreaming('');
   };
 
-  const showSuggestions = messages.length <= 1;
+  const fresh = messages.length <= 1 && !sending;
   const showTyping = sending && !streaming;
+  const active = listening || speaking || sending;
+  const status = listening ? 'Listening…' : speaking ? 'Speaking…' : sending ? 'Thinking…' : 'Online · answers from Soham’s work';
+  const iconBtn = 'lg-btn !h-9 !w-9 !px-0 justify-center !bg-transparent hover:!bg-[color:var(--surf2)]';
 
-  const statusDot = listening ? '#ef4444' : speaking ? 'var(--p)' : '#22c55e';
-  const statusText = listening ? 'Listening…' : speaking ? 'Speaking…' : 'Connected · self-hosted LLM';
-
-  const jarvisAvatar = (
-    <span
-      className="grid h-7 w-7 flex-none place-items-center rounded-[9px]"
-      style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
-    >
-      <Sparkles className="h-3.5 w-3.5 text-bg" strokeWidth={2.2} />
-    </span>
-  );
+  if (!open) return null;
 
   return (
-    <>
-      {open && (
-        <div style={GEOM[maximised ? 'max' : 'docked']}>
-          <div
-            className="relative flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-line"
-            style={{
-              background: 'color-mix(in oklab,var(--bg) 82%,transparent)',
-              backdropFilter: 'blur(26px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(26px) saturate(180%)',
-              boxShadow: '0 36px 70px -20px rgba(0,0,0,.7)',
-            }}
-          >
-            {/* Header */}
-            <div className="flex flex-none items-center gap-3 border-b border-line bg-surf2 px-[18px] py-[15px]">
+    <div className="jarvis" style={GEOM[maximised ? 'max' : 'docked']} role="dialog" aria-label="JARVIS assistant">
+      <div className="jarvis-panel lg-panel lg-chrome flex h-full w-full flex-col overflow-hidden !rounded-[28px]">
+        {/* Header */}
+        <div className="flex flex-none items-center gap-3 border-b border-[color:var(--line)] py-3 pl-4 pr-2.5">
+          <Orb size={36} active={active} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-medium tracking-[-.01em]">
+              JARVIS <span className="serif text-fg3">assistant</span>
+            </p>
+            <p className="mono mt-0.5 flex items-center gap-1.5 truncate !text-[9.5px] text-fg3">
               <span
-                className="grid h-[34px] w-[34px] place-items-center rounded-[11px]"
-                style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
-              >
-                <Sparkles className="h-4 w-4 text-bg" strokeWidth={2} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13.5px] font-semibold tracking-[.02em]">JARVIS</p>
-                <p className="mt-0.5 flex items-center gap-[7px] font-mono text-[10.5px] text-fg3">
-                  <span
-                    className={'h-1.5 w-1.5 rounded-full' + (listening ? ' animate-pulse' : '')}
-                    style={{ background: statusDot }}
-                  />
-                  {statusText}
-                </p>
-              </div>
-              {voiceOk && (
-                <button
-                  type="button" onClick={toggleVoiceMode}
-                  title={voiceMode ? 'Voice mode on — click to end the conversation' : 'Start a hands-free voice conversation'}
-                  aria-label="Toggle voice conversation"
-                  aria-pressed={voiceMode}
-                  className="grid h-7 w-7 place-items-center rounded-[9px] transition-colors hover:bg-surf2"
-                  style={
-                    voiceMode
-                      ? { background: 'linear-gradient(135deg,var(--p),var(--s))' }
-                      : undefined
-                  }
-                >
-                  <AudioLines className={'h-3.5 w-3.5 ' + (voiceMode ? 'text-bg' : 'text-fg3')} />
-                </button>
-              )}
-              <button
-                type="button" onClick={clear}
-                className="h-[26px] rounded-lg border border-line px-2.5 font-mono text-[11px] text-fg3 transition-colors hover:bg-surf2 hover:text-fg"
-              >
-                Clear
-              </button>
-              <button
-                type="button" onClick={() => setMaximised((v) => !v)} title="Expand"
-                className="grid h-7 w-7 place-items-center rounded-[9px] text-fg3 transition-colors hover:bg-surf2 hover:text-fg"
-              >
-                <Maximize2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button" onClick={() => { onOpenChange(false); setMaximised(false); }} aria-label="Close chat"
-                className="grid h-7 w-7 place-items-center rounded-[9px] text-fg3 transition-colors hover:bg-surf2 hover:text-fg"
-              >
-                <X className="h-[15px] w-[15px]" />
-              </button>
-            </div>
-
-            {/* Transcript */}
-            <div ref={scroller} data-lenis-prevent className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-[18px]">
-              {messages.map((m, i) => {
-                const mine = m.role === 'user';
-                return (
-                  <div key={i} className={'flex gap-2.5 ' + (mine ? 'flex-row-reverse' : 'flex-row')}>
-                    {mine ? (
-                      <span className="grid h-7 w-7 flex-none place-items-center rounded-[9px] bg-surf2 font-mono text-[10px] font-semibold text-fg">
-                        You
-                      </span>
-                    ) : (
-                      jarvisAvatar
-                    )}
-                    <div
-                      className={mine ? "max-w-[80%] whitespace-pre-wrap rounded-[14px] border px-3.5 py-[11px] text-[13px] leading-[1.6]" : "max-w-[80%] rounded-[14px] border px-3.5 py-[11px] text-[13px] leading-[1.6] text-fg"}
-                      style={
-                        mine
-                          ? { background: 'linear-gradient(135deg,var(--p),var(--s))', borderColor: 'transparent', color: 'var(--bg)' }
-                          : { background: 'var(--surf2)', borderColor: 'var(--line)', color: 'var(--fg)' }
-                      }
-                    >
-                      {mine ? m.content : <MarkdownText text={m.content} />}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {streaming && (
-                <div className="flex gap-2.5">
-                  {jarvisAvatar}
-                  <div className="max-w-[80%] rounded-[14px] border border-line bg-surf2 px-3.5 py-[11px] text-[13px] leading-[1.6] text-fg">
-                    <MarkdownText text={streaming} />
-                    <span className="animate-blink text-p">▍</span>
-                  </div>
-                </div>
-              )}
-
-              {showTyping && (
-                <div className="flex gap-2.5">
-                  {jarvisAvatar}
-                  <div className="flex items-center gap-[5px] rounded-[14px] border border-line bg-surf2 px-[15px] py-[13px]">
-                    <span className="h-[5px] w-[5px] rounded-full bg-fg3" />
-                    <span className="h-[5px] w-[5px] rounded-full bg-fg3 opacity-60" />
-                    <span className="h-[5px] w-[5px] rounded-full bg-fg3 opacity-[.35]" />
-                  </div>
-                </div>
-              )}
-
-              {error && (
-                <div
-                  className="flex items-start gap-2.5 rounded-[13px] border px-3.5 py-3"
-                  style={{
-                    borderColor: 'color-mix(in oklab,#f87171 40%,transparent)',
-                    background: 'color-mix(in oklab,#f87171 10%,transparent)',
-                  }}
-                >
-                  <AlertCircle className="mt-0.5 h-[15px] w-[15px] flex-none text-[#f87171]" />
-                  <p className="text-[12.5px] leading-[1.55] text-fg2">{error}</p>
-                </div>
-              )}
-
-              {showSuggestions && (
-                <div className="pt-1">
-                  <p className="mb-2 font-mono text-[9.5px] uppercase tracking-[.18em] text-fg3">Try asking</p>
-                  <div className="flex flex-wrap gap-[7px]">
-                    {SUGGESTIONS.map((q) => (
-                      <button
-                        key={q} type="button" onClick={() => send(q)}
-                        className="rounded-full border border-line bg-surf2 px-3 py-[7px] text-left text-[11.5px] text-fg2 transition-colors hover:border-[color-mix(in_oklab,var(--a)_50%,transparent)] hover:text-fg"
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Composer */}
-            <div className="flex flex-none items-center gap-2.5 border-t border-line bg-surf2 px-4 py-3.5">
-              <input
-                type="text"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
-                }}
-                placeholder={listening ? 'Listening — speak now…' : "Ask about Soham's work..."}
-                aria-label="Message JARVIS"
-                className="flex-1 rounded-full border border-line px-4 py-[11px] text-[13px] text-fg outline-none placeholder:text-fg3 focus:border-p"
-                style={{ background: 'color-mix(in oklab,var(--bg) 55%,transparent)' }}
+                className={'h-1.5 w-1.5 flex-none rounded-full ' + (listening ? 'animate-pulse' : '')}
+                style={{ background: listening ? '#ef4444' : speaking || sending ? 'var(--p)' : '#22c55e' }}
               />
-              {voiceOk && (
-                <button
-                  type="button"
-                  onClick={onMicClick}
-                  disabled={sending && !listening}
-                  aria-label={listening ? 'Stop listening' : 'Talk to JARVIS'}
-                  title={listening ? 'Stop listening' : 'Talk to JARVIS — your words are sent and the reply is read aloud'}
-                  className={
-                    'grid h-[38px] w-[38px] flex-none place-items-center rounded-xl border transition-[filter,transform] hover:brightness-110 disabled:opacity-60 ' +
-                    (listening ? 'animate-pulse border-transparent' : 'border-line')
-                  }
-                  style={
-                    listening
-                      ? { background: 'linear-gradient(135deg,var(--p),var(--s))' }
-                      : { background: 'color-mix(in oklab,var(--bg) 55%,transparent)' }
-                  }
-                >
-                  {listening
-                    ? <MicOff className="h-[15px] w-[15px] text-bg" strokeWidth={2} />
-                    : <Mic className="h-[15px] w-[15px] text-fg2" strokeWidth={2} />}
-                </button>
-              )}
+              {status}
+            </p>
+          </div>
+          {voiceOk && (
+            <button
+              type="button" onClick={toggleVoiceMode}
+              title={voiceMode ? 'Voice mode on — click to end the conversation' : 'Start a hands-free voice conversation'}
+              aria-label="Toggle voice conversation" aria-pressed={voiceMode}
+              className={iconBtn + (voiceMode ? ' !bg-[color:var(--fg)] !text-[color:var(--on-fg)]' : '')}
+            >
+              <AudioLines className="h-4 w-4" />
+            </button>
+          )}
+          <button type="button" onClick={clear} className={iconBtn} title="New chat" aria-label="Start a new chat">
+            <RotateCcw className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => setMaximised((v) => !v)} className={iconBtn + ' max-sm:hidden'} title={maximised ? 'Dock' : 'Expand'} aria-label={maximised ? 'Dock the chat' : 'Expand the chat'}>
+            {maximised ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+          <button type="button" onClick={() => { onOpenChange(false); setMaximised(false); }} className={iconBtn} aria-label="Close chat">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Transcript */}
+        <div ref={scroller} data-lenis-prevent className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-5 py-6">
+          {fresh ? (
+            <div className="flex flex-1 flex-col justify-end">
+              <Orb size={56} active={active} />
+              <p className="mt-5 text-[clamp(26px,3vw,34px)] font-medium leading-[1.05] tracking-[-.035em]">
+                Ask me anything about <span className="serif text-p">Soham’s work.</span>
+              </p>
+              <p className="mt-3 text-[14px] leading-relaxed text-fg2">{GREETING}</p>
+              <div className="mt-6 flex flex-col gap-2">
+                {SUGGESTIONS.map((q) => (
+                  <button
+                    key={q} type="button" onClick={() => send(q)}
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-4 py-3 text-left text-[13.5px] text-fg2 transition-colors hover:text-fg"
+                  >
+                    {q}
+                    <ArrowUp className="h-3.5 w-3.5 flex-none rotate-45 text-fg3 transition-transform group-hover:rotate-90" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            messages.slice(1).map((m, i) =>
+              m.role === 'user' ? (
+                <div key={i} className="flex justify-end">
+                  <p className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-[color:var(--fg)] px-4 py-2.5 text-[14px] leading-relaxed text-[color:var(--on-fg)]">
+                    {m.content}
+                  </p>
+                </div>
+              ) : (
+                <div key={i} className="flex gap-3">
+                  <Orb size={22} />
+                  <div className="min-w-0 flex-1 text-[14.5px] leading-relaxed text-fg">
+                    <MarkdownText text={m.content} />
+                  </div>
+                </div>
+              ),
+            )
+          )}
+
+          {streaming && (
+            <div className="flex gap-3">
+              <Orb size={22} active />
+              <div className="min-w-0 flex-1 text-[14.5px] leading-relaxed text-fg">
+                <MarkdownText text={streaming} />
+                <span className="animate-blink text-p">▍</span>
+              </div>
+            </div>
+          )}
+
+          {showTyping && (
+            <div className="flex items-center gap-3">
+              <Orb size={22} active />
+              <span className="jarvis-typing flex gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--fg2)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--fg2)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--fg2)]" />
+              </span>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-[#f87171]/40 bg-[#f87171]/10 px-4 py-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-none text-[#ef4444]" />
+              <p className="text-[13px] leading-relaxed text-fg2">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Composer */}
+        <div className="flex-none p-3 pt-0">
+          <div className="flex items-end gap-1.5 rounded-[22px] border border-[color:var(--line)] bg-[color:var(--chip-fill)] p-1.5 pl-4 focus-within:border-[color:var(--p)]">
+            <textarea
+              ref={input}
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
+              }}
+              placeholder={listening ? 'Listening — speak now…' : 'Ask about Soham’s work…'}
+              aria-label="Message JARVIS"
+              className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-2 text-[14px] leading-relaxed text-fg outline-none placeholder:text-fg3"
+            />
+            {voiceOk && (
               <button
                 type="button"
-                onClick={() => void send()}
-                disabled={sending}
-                aria-label="Send"
-                className="grid h-[38px] w-[38px] flex-none place-items-center rounded-xl transition-[filter] hover:brightness-110 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
+                onClick={onMicClick}
+                disabled={sending && !listening}
+                aria-label={listening ? 'Stop listening' : 'Talk to JARVIS'}
+                title={listening ? 'Stop listening' : 'Talk to JARVIS — your words are sent and the reply is read aloud'}
+                className={'grid h-9 w-9 flex-none place-items-center rounded-full transition-colors disabled:opacity-50 ' +
+                  (listening ? 'animate-pulse bg-[#ef4444] text-white' : 'text-fg2 hover:bg-[color:var(--surf2)] hover:text-fg')}
               >
-                <Send className="h-[15px] w-[15px] text-bg" strokeWidth={2} />
+                {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </button>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={() => void send()}
+              disabled={sending || !draft.trim()}
+              aria-label="Send"
+              className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)] transition-[opacity,transform] hover:scale-105 disabled:opacity-30 disabled:hover:scale-100"
+            >
+              <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
+            </button>
           </div>
+          <p className="mono mt-2 text-center !text-[9px] text-fg3">Conversations are stored to improve JARVIS</p>
         </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onOpenChange(!open)}
-        aria-label="Open JARVIS"
-        className="fixed bottom-6 right-6 z-[80] grid h-14 w-14 place-items-center rounded-full border border-line transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-110"
-        style={{
-          background: 'linear-gradient(135deg,var(--p),var(--s))',
-          boxShadow: '0 16px 36px -10px color-mix(in oklab,var(--p) 75%,transparent)',
-        }}
-      >
-        <Sparkles className="h-[21px] w-[21px] text-bg" strokeWidth={1.9} />
-      </button>
-    </>
+      </div>
+    </div>
   );
 }

@@ -13,7 +13,10 @@
    fixed rather than themeable.
    ================================================================ */
 
-.story {
+/* Design tokens. Shared by the pages (.story) and by JARVIS (.jarvis),
+   which is mounted in the app shell outside any page. */
+.story,
+.jarvis {
   --font-display: 'Geist', 'Inter', system-ui, sans-serif;
   --font-serif: 'Instrument Serif', 'Times New Roman', serif;
   --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
@@ -25,36 +28,73 @@
   --ground: #dfe5ee;
   --bg: #eef2f8;
   --bg2: #ffffff;
+  --surf2: rgba(13, 22, 38, .045);
   --fg: #0d1626;
   --fg2: #46546b;
   --fg3: #6f819c;
+  --on-fg: #ffffff;              /* text on an ink (--fg) surface */
   --line: rgba(13, 22, 38, .10);
   --p: #2563eb;
   --s: #6d4aff;
   --a: #0e8fb0;
   --canvas: #0b1220;
+  --glass-fill: rgba(255, 255, 255, .62);
+  --chrome-fill: rgba(255, 255, 255, .78);
+  --chip-fill: rgba(255, 255, 255, .6);
   --glass-rim: rgba(255, 255, 255, .95);
   --glass-inner: rgba(255, 255, 255, .6);
   --glass-shadow: 0 24px 50px -28px rgba(13, 22, 38, .35), 0 2px 6px -2px rgba(13, 22, 38, .08);
+  --field-alpha: 1;              /* strength of the panels' colour fields */
+}
 
+/* Dark: the same gallery, at night. The ground drops to near-black, panels
+   become deep blue-grey slabs, glass turns from frosted white to smoked, and
+   the colour fields glow instead of tint. html[data-theme] is set before
+   first paint by index.html (stored choice, else the OS setting). */
+html[data-theme="dark"] :is(.story, .jarvis) {
+  --ground: #04060a;
+  --bg: #0b1019;
+  --bg2: #111826;
+  --surf2: rgba(255, 255, 255, .05);
+  --fg: #e8edf6;
+  --fg2: #9ba8bd;
+  --fg3: #6c7b93;
+  --on-fg: #0b1019;
+  --line: rgba(255, 255, 255, .09);
+  --p: #79a8ff;
+  --s: #a891ff;
+  --a: #3fd4e8;
+  --canvas: #05080e;
+  --glass-fill: rgba(255, 255, 255, .045);
+  --chrome-fill: rgba(14, 20, 31, .78);
+  --chip-fill: rgba(255, 255, 255, .05);
+  --glass-rim: rgba(255, 255, 255, .10);
+  --glass-inner: rgba(255, 255, 255, .035);
+  --glass-shadow: 0 28px 60px -30px rgba(0, 0, 0, .9), 0 2px 6px -2px rgba(0, 0, 0, .5);
+  --field-alpha: 1.6;
+  color-scheme: dark;
+}
+
+.story {
   position: relative;
   min-height: 100vh;
   background: var(--ground);
   color: var(--fg);
   color-scheme: light;
+  transition: background-color .5s var(--ease-out), color .5s var(--ease-out);
   font-family: var(--font-display);
   font-feature-settings: 'ss01', 'cv11';
   padding-bottom: var(--inset);
 }
 
-.story .serif {
+:is(.story, .jarvis) .serif {
   font-family: var(--font-serif);
   font-style: italic;
   font-weight: 400;
   letter-spacing: -.01em;
 }
 
-.story .mono {
+:is(.story, .jarvis) .mono {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: .14em;
@@ -65,6 +105,9 @@
    Every chapter is a rounded panel inset from the window edge, with two
    soft colour fields set per section through --t1 / --t2. */
 .story .panel {
+  /* Slightly see-through so the background point cloud (CloudLayer) shows;
+     the hero sets it lower to let the LIDAR scan lead. */
+  --panel-opacity: 64%;
   --t1: rgba(77, 141, 255, .16);
   --t2: rgba(139, 123, 255, .13);
   position: relative;
@@ -73,8 +116,17 @@
   background:
     radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
     radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
-    var(--bg);
+    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
   overflow: clip;
+  transition: background-color .5s var(--ease-out);
+}
+/* In the dark the fields need more presence to read as light, not mud. */
+html[data-theme="dark"] .story .panel {
+  background:
+    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
+    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 55%),
+    radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
+    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
 }
 .story .panel + .panel { margin-top: var(--inset); }
 .story .panel:first-child { margin-top: var(--inset); }
@@ -92,7 +144,7 @@
 .lg-pill {
   position: relative;
   isolation: isolate;
-  background: color-mix(in oklab, #ffffff 62%, transparent);
+  background: var(--glass-fill);
   -webkit-backdrop-filter: blur(22px) saturate(170%);
   backdrop-filter: blur(22px) saturate(170%);
   border: 1px solid var(--line);
@@ -117,8 +169,8 @@
 }
 
 /* Fixed chrome: denser, so its text stays legible over anything. */
-.story .lg-chrome {
-  background: color-mix(in oklab, #ffffff 78%, transparent);
+:is(.story, .jarvis) .lg-chrome {
+  background: var(--chrome-fill);
   -webkit-backdrop-filter: blur(26px) saturate(180%);
   backdrop-filter: blur(26px) saturate(180%);
 }
@@ -141,7 +193,7 @@
 .lg-btn[aria-pressed="true"] { border-color: var(--line); background: color-mix(in oklab, var(--p) 14%, transparent); }
 
 /* Primary action: solid ink pill. */
-.story .btn-ink {
+:is(.story, .jarvis) .btn-ink {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -152,22 +204,22 @@
   font-size: 14px;
   font-weight: 500;
   background: var(--fg);
-  color: #fff;
+  color: var(--on-fg);
   transition: transform .3s var(--ease-out), box-shadow .3s ease;
 }
-.story .btn-ink:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -14px rgba(13, 22, 38, .6); }
+:is(.story, .jarvis) .btn-ink:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -14px rgba(13, 22, 38, .6); }
 
-.story :focus-visible {
+:is(.story, .jarvis) :focus-visible {
   outline: 2px solid var(--p);
   outline-offset: 3px;
   border-radius: 8px;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .lg-panel, .lg-pill, .story .lg-chrome { background: var(--bg2); }
+  .lg-panel, .lg-pill, .lg-chrome { background: var(--bg2); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .lg-panel, .lg-pill, .story .lg-chrome {
+  .lg-panel, .lg-pill, .lg-chrome {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: var(--bg2);
@@ -190,7 +242,7 @@ html[data-motion="on"] .story [data-reveal] {
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--fg);
-  color: #fff;
+  color: var(--on-fg);
   font-size: 13px;
   transition: top .2s ease;
 }
@@ -200,3 +252,95 @@ html[data-motion="on"] .story [data-reveal] {
 @keyframes story-marquee { to { transform: translate3d(-50%, 0, 0); } }
 .story-marquee > div { animation: story-marquee 38s linear infinite; }
 html[data-motion="off"] .story-marquee > div { animation-play-state: paused; }
+
+/* ---------------- JARVIS ---------------- */
+.jarvis {
+  color: var(--fg);
+  font-family: var(--font-display);
+}
+
+/* The orb: a slowly turning conic gradient with a soft inner light. It
+   breathes faster while JARVIS listens or speaks. */
+@keyframes jarvis-spin { to { transform: rotate(360deg); } }
+@keyframes jarvis-breathe { 50% { transform: scale(1.08); filter: brightness(1.15); } }
+.jarvis-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 999px;
+  isolation: isolate;
+}
+.jarvis-orb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, var(--p), var(--a), var(--s), #ec4899, var(--p));
+  animation: jarvis-spin 8s linear infinite;
+  z-index: -2;
+}
+.jarvis-orb::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .95), rgba(255, 255, 255, .25) 45%, transparent 70%);
+  filter: blur(1px);
+  z-index: -1;
+}
+.jarvis-orb[data-active="true"] { animation: jarvis-breathe 1.4s ease-in-out infinite; }
+html[data-motion="off"] .jarvis-orb::before,
+html[data-motion="off"] .jarvis-orb { animation: none; }
+
+@keyframes jarvis-dot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.jarvis-typing span { animation: jarvis-dot 1.2s infinite ease-in-out; }
+.jarvis-typing span:nth-child(2) { animation-delay: .15s; }
+.jarvis-typing span:nth-child(3) { animation-delay: .3s; }
+
+@keyframes jarvis-in { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+.jarvis-panel { animation: jarvis-in .45s var(--ease-out) both; transform-origin: bottom right; }
+html[data-motion="off"] .jarvis-panel { animation: none; }
+
+/* ---------------- 3D tilt ----------------
+   useTilt() feeds --rx/--ry/--mx/--my; the element leans toward the pointer
+   and a soft highlight follows it, like light across a glass card. */
+.tilt-stage { perspective: 1200px; }
+.tilt {
+  --rx: 0deg; --ry: 0deg; --mx: .5; --my: .5;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform .5s var(--ease-out);
+  will-change: transform;
+}
+.tilt:hover { transition: transform .12s linear; }
+.tilt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(40% 40% at calc(var(--mx) * 100%) calc(var(--my) * 100%), rgba(255, 255, 255, .22), transparent 70%);
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 3;
+}
+.tilt:hover::after { opacity: 1; }
+.cq { container-type: inline-size; }
+
+/* ---------------- legibility over the point cloud ----------------
+   Text that sits directly on a translucent panel gets a halo in the panel's
+   own colour: invisible as a glow, but it clears the cloud's points out of
+   the letterforms' immediate surroundings. Surfaces with their own ground —
+   glass cards, pills, ink buttons, photos — opt out (text-shadow inherits,
+   so resetting the container resets everything inside it). */
+.story .panel {
+  text-shadow:
+    0 0 1px var(--bg),
+    0 0 8px var(--bg),
+    0 0 18px var(--bg),
+    0 0 32px color-mix(in oklab, var(--bg) 70%, transparent);
+}
+.story .panel :is(.lg-panel, .lg-pill, .lg-btn, .btn-ink, .tilt, img, video, [class*="bg-[color:var(--fg)]"], [class*="bg-white"], [class*="bg-black"]) {
+  text-shadow: none;
+}

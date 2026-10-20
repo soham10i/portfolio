@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import '@/features/story/story.css';
 
 /* The floating JARVIS button and its panel.
  *
@@ -38,21 +38,17 @@ export default function ChatLauncher() {
   return (
     <>
       {!open && !docked && (
-        <button
-          type="button"
-          onClick={() => { setOpen(true); setTouched(true); }}
-          aria-label="Ask JARVIS"
-          className="fixed bottom-6 right-6 z-[75] inline-flex items-center gap-2 rounded-full border border-line px-4 py-3 text-[13px] font-medium text-fg shadow-lg transition-transform hover:scale-[1.03]"
-          style={{
-            background: 'var(--surf)',
-            backdropFilter: 'blur(14px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(160%)',
-            boxShadow: 'var(--glass-shadow)',
-          }}
-        >
-          <Sparkles className="h-4 w-4 text-a" strokeWidth={1.9} />
-          <span className="hidden sm:inline">Ask JARVIS</span>
-        </button>
+        <div className="jarvis fixed bottom-5 right-5 z-[75]">
+          <button
+            type="button"
+            onClick={() => { setOpen(true); setTouched(true); }}
+            aria-label="Ask JARVIS"
+            className="lg-pill lg-chrome flex h-12 items-center gap-2.5 pl-1.5 pr-1.5 text-[13.5px] font-medium transition-transform duration-300 hover:-translate-y-0.5 sm:pr-4"
+          >
+            <span className="jarvis-orb" style={{ width: 36, height: 36 }} aria-hidden />
+            <span className="hidden sm:inline">Ask JARVIS</span>
+          </button>
+        </div>
       )}
 
       {/* Keep the panel mounted once opened so the transcript is not lost when
