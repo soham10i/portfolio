@@ -1,4 +1,8 @@
 import Lenis from 'lenis'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 /**
  * Single app-wide Lenis instance.
@@ -16,8 +20,15 @@ export const lenis = new Lenis({
   touchMultiplier: 2,
 })
 
-function raf(time: number) {
-  lenis.raf(time)
-  requestAnimationFrame(raf)
+/* Lenis runs on GSAP's ticker rather than its own requestAnimationFrame, so
+   smooth scroll, ScrollTrigger and every tween advance in the same frame.
+   With two loops the pinned sections lag the scroll by a frame and judder. */
+lenis.on('scroll', ScrollTrigger.update)
+gsap.ticker.add((time) => lenis.raf(time * 1000))
+gsap.ticker.lagSmoothing(0)
+
+/** Motion off → native wheel scrolling; Lenis stays mounted so stop()/start()
+    and scrollTo() keep working for the overlays that use them. */
+export function setSmoothScroll(on: boolean) {
+  lenis.options.smoothWheel = on
 }
-requestAnimationFrame(raf)

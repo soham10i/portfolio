@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
+
+/* ================================================================
+   STORY — the site's design system (docs/REDESIGN.md §6b).
+
+   One art direction, "gallery": a cool grey ground, each chapter a
+   large rounded panel with soft colour fields, white liquid-glass
+   cards, near-black ink and serif-italic accents. It started as the
+   Work chapter and now runs through the home page and project pages.
+
+   The tokens are set here on .story, so they override the palette
+   system's :root values for everything inside — the art direction is
+   fixed rather than themeable.
+   ================================================================ */
+
+.story {
+  --font-display: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --gutter: clamp(16px, 4vw, 40px);
+  --inset: clamp(8px, 1.2vw, 16px);
+  --radius-panel: clamp(28px, 4vw, 56px);
+
+  --ground: #dfe5ee;
+  --bg: #eef2f8;
+  --bg2: #ffffff;
+  --fg: #0d1626;
+  --fg2: #46546b;
+  --fg3: #6f819c;
+  --line: rgba(13, 22, 38, .10);
+  --p: #2563eb;
+  --s: #6d4aff;
+  --a: #0e8fb0;
+  --canvas: #0b1220;
+  --glass-rim: rgba(255, 255, 255, .95);
+  --glass-inner: rgba(255, 255, 255, .6);
+  --glass-shadow: 0 24px 50px -28px rgba(13, 22, 38, .35), 0 2px 6px -2px rgba(13, 22, 38, .08);
+
+  position: relative;
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--fg);
+  color-scheme: light;
+  font-family: var(--font-display);
+  font-feature-settings: 'ss01', 'cv11';
+  padding-bottom: var(--inset);
+}
+
+.story .serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -.01em;
+}
+
+.story .mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/* ---------------- gallery panels ----------------
+   Every chapter is a rounded panel inset from the window edge, with two
+   soft colour fields set per section through --t1 / --t2. */
+.story .panel {
+  --t1: rgba(77, 141, 255, .16);
+  --t2: rgba(139, 123, 255, .13);
+  position: relative;
+  margin-inline: var(--inset);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
+    radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
+    var(--bg);
+  overflow: clip;
+}
+.story .panel + .panel { margin-top: var(--inset); }
+.story .panel:first-child { margin-top: var(--inset); }
+
+/* Chapter rhythm: the top padding clears the folded header (~64px) with
+   room to breathe; anchor jumps land on the panel edge (offset 0). */
+.story .chapter {
+  padding-top: clamp(104px, 13vh, 150px);
+  padding-bottom: clamp(72px, 10vh, 128px);
+}
+
+/* ---------------- liquid glass ---------------- */
+
+.lg-panel,
+.lg-pill {
+  position: relative;
+  isolation: isolate;
+  background: color-mix(in oklab, #ffffff 62%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 0 0 1px var(--glass-inner),
+    var(--glass-shadow);
+}
+.lg-panel { border-radius: 22px; }
+.lg-pill  { border-radius: 999px; }
+
+/* Specular sheen across the top, like light catching the upper edge. */
+.lg-panel::after,
+.lg-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--glass-inner), transparent 45%);
+  pointer-events: none;
+}
+
+/* Fixed chrome: denser, so its text stays legible over anything. */
+.story .lg-chrome {
+  background: color-mix(in oklab, #ffffff 78%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+}
+
+.lg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 0 14px;
+  height: 34px;
+  font-size: 13px;
+  color: var(--fg);
+  background: color-mix(in oklab, var(--fg) 6%, transparent);
+  border: 1px solid transparent;
+  transition: background-color .2s ease, border-color .2s ease, transform .2s var(--ease-out);
+}
+.lg-btn:hover { background: color-mix(in oklab, var(--fg) 11%, transparent); }
+.lg-btn:active { transform: scale(.97); }
+.lg-btn[aria-pressed="true"] { border-color: var(--line); background: color-mix(in oklab, var(--p) 14%, transparent); }
+
+/* Primary action: solid ink pill. */
+.story .btn-ink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--fg);
+  color: #fff;
+  transition: transform .3s var(--ease-out), box-shadow .3s ease;
+}
+.story .btn-ink:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -14px rgba(13, 22, 38, .6); }
+
+.story :focus-visible {
+  outline: 2px solid var(--p);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lg-panel, .lg-pill, .story .lg-chrome { background: var(--bg2); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lg-panel, .lg-pill, .story .lg-chrome {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--bg2);
+  }
+}
+
+/* ---------------- reveals ----------------
+   [data-reveal] elements start hidden only once JS has confirmed motion is
+   on (html[data-motion="on"]); with JS or motion off they are just there. */
+html[data-motion="on"] .story [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+}
+
+.story-skip {
+  position: fixed;
+  left: 16px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--fg);
+  color: #fff;
+  font-size: 13px;
+  transition: top .2s ease;
+}
+.story-skip:focus { top: 16px; }
+
+/* Marquee (Contact) — CSS only, paused when motion is off */
+@keyframes story-marquee { to { transform: translate3d(-50%, 0, 0); } }
+.story-marquee > div { animation: story-marquee 38s linear infinite; }
+html[data-motion="off"] .story-marquee > div { animation-play-state: paused; }

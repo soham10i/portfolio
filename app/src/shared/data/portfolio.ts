@@ -1,3 +1,5 @@
+import { STF_LIVE_URL } from '@/shared/lib/env';
+
 /* Content for the redesigned pages, transcribed from the design source
    (portfolio_source/pages/Portfolio Home v2.dc.html). Single source of truth —
    Home, Project Detail and the mobile frames all read from here. */
@@ -19,7 +21,16 @@ export interface Project {
   timeline: string;
   hasVideo?: boolean;
   demoUrl?: string;
-  githubUrl: string;
+  /** Absent while the source is not public yet. */
+  githubUrl?: string;
+  /** Badge on the home-page card; one project at most. */
+  featured?: boolean;
+  /** External live deployment (the STF twin on Google Cloud). */
+  liveUrl?: string;
+  /** Muted looping preview shown on the card / Lab section. */
+  loopVideo?: string;
+  /** Per-card accent; drives the card's rim light in the 3D deck. */
+  tint?: string;
   description?: string;
   impact?: string;
   tech?: string[];
@@ -34,8 +45,11 @@ export const PROJECTS: Project[] = [
     title: 'Smart Tabletop Factory — Physics Digital Twin',
     category: 'AI/ML',
     timeline: 'Oct 2025 – Mar 2026',
-    demoUrl: '/stf-layout',
     githubUrl: 'https://github.com/soham10i/stf-hw',
+    featured: true,
+    liveUrl: STF_LIVE_URL,
+    loopVideo: '/media/stf-cycle.mp4',
+    tint: '#4d8dff',
     description: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays. Includes a predictive-maintenance dashboard for warehouse automation subsystems driven by MQTT sensor pipelines at 10 Hz, time-series storage in InfluxDB, and interactive Streamlit dashboards.',
     impact: '56/56 checks passed · 85% failure-prediction accuracy',
     tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MQTT', 'InfluxDB', 'Streamlit'],
@@ -61,6 +75,16 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
+    id: 'slam', title: 'Autonomous Robots — SLAM Navigation',
+    category: 'Robotics', timeline: 'Oct 2024 – Mar 2025', hasVideo: true,
+    description: 'SLAM with LIDAR + odometry fusion, log-odds occupancy mapping and A* planning, driving a ROSBot through five Webots maps. The controller pipeline is re-implemented in the browser, so the runs are live rather than recorded.',
+    impact: 'Five maps, live in-browser re-implementation',
+    tech: ['ROS', 'Webots', 'SLAM', 'LIDAR', 'A*'],
+    demoUrl: '/robot',
+    githubUrl: 'https://github.com/soham10i/autonomouse_robots',
+    tint: '#8b7bff',
+  },
+  {
     id: 'scene',
     title: 'Real-Time Multimodal Agentic Scene Understanding',
     category: 'Computer Vision',
@@ -71,29 +95,14 @@ export const PROJECTS: Project[] = [
     tech: ['YOLOv8', 'ONNX Runtime Web', 'BLIP', 'FastAPI', 'WebGPU', 'Docker'],
     demoUrl: '/scene',
     githubUrl: 'https://github.com/soham10i/Real-Time-Scene-Understanding',
-  },
-  {
-    id: 'slam', title: 'Autonomous Robots — SLAM Navigation',
-    category: 'Robotics', timeline: 'Oct 2024 – Mar 2025', hasVideo: true,
-    description: 'SLAM with LIDAR + odometry fusion, log-odds occupancy mapping and A* planning, driving a ROSBot through five Webots maps. The controller pipeline is re-implemented in the browser, so the runs are live rather than recorded.',
-    impact: 'Five maps, live in-browser re-implementation',
-    tech: ['ROS', 'Webots', 'SLAM', 'LIDAR', 'A*'],
-    demoUrl: '/robot',
-    githubUrl: 'https://github.com/soham10i/autonomouse_robots',
-  },
-  {
-    id: 'ble', title: 'Indoor Localization System — Embedded BLE',
-    category: 'Embedded', timeline: 'May 2025 – Jun 2025',
-    description: 'IMU + BLE beacon sensor fusion with Kalman and Particle filters on an Arduino Nano BLE Sense, tracking at a 50 Hz update rate.',
-    impact: 'Sub-meter accuracy on embedded hardware',
-    tech: ['Arduino', 'Kalman Filter', 'Particle Filter', 'IMU', 'BLE'],
-    githubUrl: 'https://github.com/soham10i/oth_ai_sem_01_mdne',
+    tint: '#2fe0f0',
   },
   {
     id: 'cv-uad',
     title: 'Unsupervised Brain-MRI Lesion Segmentation (BraTS-PEDs)',
     category: 'Computer Vision', timeline: '2026',
     githubUrl: 'https://github.com/soham10i/cv-project',
+    tint: '#a78bfa',
     versions: [
       {
         key: 'pdm', label: 'PDM',
@@ -108,6 +117,55 @@ export const PROJECTS: Project[] = [
         tech: ['PyTorch', 'KL-VAE', 'DDPM', 'DDIM', 'TensorBoard'],
       },
     ],
+  },
+  {
+    id: 'ble', title: 'Indoor Localization System — Embedded BLE',
+    category: 'Embedded', timeline: 'May 2025 – Jun 2025',
+    description: 'IMU + BLE beacon sensor fusion with Kalman and Particle filters on an Arduino Nano BLE Sense, tracking at a 50 Hz update rate.',
+    impact: 'Sub-meter accuracy on embedded hardware',
+    tech: ['Arduino', 'Kalman Filter', 'Particle Filter', 'IMU', 'BLE'],
+    githubUrl: 'https://github.com/soham10i/oth_ai_sem_01_mdne',
+    tint: '#7fb2ff',
+  },
+  {
+    id: 'wind-pdm',
+    title: 'Predictive Maintenance for Wind Turbines',
+    category: 'AI/ML', timeline: '2025 – 2026',
+    description: 'Failure prediction on SCADA data from the CARE-to-Compare benchmark (Wind Farm C). Healthy operation is isolated first — DBSCAN on wind speed and power, a fitted piecewise ideal power curve and a 3σ tolerance band — then a two-level system flags failures early: an XGBoost triage model validated with leave-one-out CV, and timestamp-level unsupervised scoring from model residuals and an Isolation Forest that turns a verdict into concrete alarm times.',
+    impact: 'Scored on the full CARE metric, with early-detection lead time per failure',
+    tech: ['Python', 'XGBoost', 'Isolation Forest', 'DBSCAN', 'scikit-learn', 'pandas'],
+    githubUrl: 'https://github.com/soham10i/preventive--maintenance',
+    tint: '#34d399',
+  },
+  {
+    id: 'co2-tracker',
+    title: 'CO₂ Footprint Tracker',
+    category: 'Fullstack', timeline: 'WS 2024/25',
+    description: 'A team-built web application for tracking personal CO₂ emissions from transport and household energy. Spring Boot REST API with JWT sign-up, sign-in and token refresh, per-activity emission calculators (car, flight, household), and a dashboard front end. Delivered in two iterations as the OTH software-engineering team project.',
+    impact: 'Two delivered iterations, JWT-secured REST API',
+    tech: ['Java', 'Spring Boot', 'Maven', 'JWT', 'SQL', 'JavaScript'],
+    githubUrl: 'https://github.com/soham10i/CO2-racking-System',
+    tint: '#a3e635',
+  },
+  {
+    id: 'medqa-nlp',
+    title: 'Medical Question Answering over Wikipedia',
+    category: 'NLP', timeline: '2025',
+    description: 'Answers USMLE-style multiple-choice questions from the MedQA dataset using Wikipedia as a live knowledge source. Biomedical NER with SciSpacy picks the articles to fetch, Sentence-Transformers embeds the passages, a FAISS index (CPU or GPU) retrieves evidence for every option, and an answer selector scores the candidates. Modular pipeline with unit tests per stage; the /medqa demo on this site is its retrieval-and-verification successor.',
+    impact: 'End-to-end RAG pipeline with tested, swappable stages',
+    tech: ['Python', 'Sentence-Transformers', 'FAISS', 'SciSpacy', 'PyTorch'],
+    demoUrl: '/medqa',
+    githubUrl: 'https://github.com/soham10i/natural-language-processing-project',
+    tint: '#f472b6',
+  },
+  {
+    id: 'embedded-intelligence',
+    title: 'Embedded Intelligence',
+    category: 'Embedded', timeline: '2026',
+    description: 'On-device machine learning for microcontrollers. Write-up and source code are being prepared.',
+    impact: 'Source code coming soon',
+    tech: ['Embedded ML', 'C/C++'],
+    tint: '#fbbf24',
   },
 ];
 
@@ -244,6 +302,14 @@ export const INTERESTS = [
 
 export const EDUCATION = [
   {
+    period: 'Current',
+    degree: 'M.Sc. Computer Engineering',
+    institution: 'Paderborn University',
+    location: 'Paderborn, Germany',
+    grade: 'In progress',
+    focus: 'Graduate study in computer engineering, building on the industrial-AI coursework at OTH Amberg-Weiden.',
+  },
+  {
     period: 'Oct 2024 – Aug 2026',
     degree: 'Graduate Coursework — Artificial Intelligence for Industrial Applications',
     institution: 'Ostbayerische Technische Hochschule Amberg-Weiden',
@@ -271,14 +337,14 @@ export const EDUCATION = [
 
 export const LANGUAGES = [
   { name: 'English', level: 'C1 · professional working proficiency (IELTS 6.5)' },
-  { name: 'German', level: 'A2 · in active study toward B1, living in Bavaria' },
+  { name: 'German', level: 'A2 · in active study toward B1, living in Germany' },
   { name: 'Gujarati', level: 'Native' },
   { name: 'Hindi', level: 'Fluent' },
 ];
 
 export const HERO_STATS = [
   { value: '2.5 yrs', label: 'Production experience' },
-  { value: '5', label: 'Projects, end to end' },
+  { value: '9', label: 'Projects, end to end' },
   { value: 'Rank 1', label: 'M.Sc. — Gold Medalist' },
   { value: '1.0', label: 'Keynote grade, AI Conference' },
 ];
@@ -290,6 +356,6 @@ export const ROLES = ['Software Engineer', 'Industrial AI Engineer', 'Digital Tw
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',
   github: 'https://github.com/soham10i',
-  location: 'Amberg, Bavaria — open to relocation across Germany and the EU',
+  location: 'Paderborn, Germany — open to relocation across Germany and the EU',
   availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
 };

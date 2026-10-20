@@ -80,7 +80,9 @@ export const PALETTES: Record<PaletteKey, Palette> = {
 };
 
 export const PALETTE_KEYS = Object.keys(PALETTES) as PaletteKey[];
-export const DEFAULT_PALETTE: PaletteKey = 'midnight';
+/* Daylight matches the light gallery art direction of the home and project
+   pages, so a first visit to a demo or the notes looks like the same site. */
+export const DEFAULT_PALETTE: PaletteKey = 'daylight';
 const STORAGE_KEY = 'sp-palette';
 
 export function applyPalette(key: PaletteKey) {

@@ -1,0 +1,32 @@
+diff --git a/services/api/app.py b/services/api/app.py
+index 588fa64..10778b2 100644
+--- a/services/api/app.py
++++ b/services/api/app.py
+@@ -168,6 +168,11 @@ app.add_middleware(
+ )
+ 
+ 
++# Origins allowed to show the app in an <iframe> (e.g. the portfolio), space-separated:
++#   STF_FRAME_ANCESTORS="https://soham-patel.onrender.com http://localhost:3000"
++# Unset keeps the default of no framing at all.
++FRAME_ANCESTORS = os.environ.get("STF_FRAME_ANCESTORS", "").split()
++
+ # The headers `vite preview` sends (web/vite.config.ts), for when this process serves the app.
+ SECURITY_HEADERS = {
+     "Content-Security-Policy": "; ".join(
+@@ -183,12 +188,13 @@ SECURITY_HEADERS = {
+             "base-uri 'self'",
+             "form-action 'none'",
+             "object-src 'none'",
+-            "frame-ancestors 'none'",
++            "frame-ancestors " + (" ".join(["'self'", *FRAME_ANCESTORS]) if FRAME_ANCESTORS else "'none'"),
+         ]
+     ),
+     "X-Content-Type-Options": "nosniff",
+     "Referrer-Policy": "no-referrer",
+-    "X-Frame-Options": "DENY",
++    # X-Frame-Options has no allow-list; CSP frame-ancestors governs whenever it is set.
++    **({} if FRAME_ANCESTORS else {"X-Frame-Options": "DENY"}),
+     "Permissions-Policy": "camera=(), microphone=(self), geolocation=(), usb=(), serial=()",
+     "Cross-Origin-Opener-Policy": "same-origin",
+ }

@@ -31,10 +31,13 @@ export default function ChatLauncher() {
 
   const hidden = HIDDEN_ON.includes(pathname) || pathname.endsWith(HIDDEN_SUFFIX);
   if (hidden) return null;
+  /* The home page docks its own JARVIS button in the bottom bar (it fires the
+     same `jarvis:open` event), so the floating one would sit on top of it. */
+  const docked = pathname === '/';
 
   return (
     <>
-      {!open && (
+      {!open && !docked && (
         <button
           type="button"
           onClick={() => { setOpen(true); setTouched(true); }}

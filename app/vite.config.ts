@@ -24,26 +24,6 @@ export default defineConfig(() => ({
         changeOrigin: true,
         ws: true,
       },
-      '/layout': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/command': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/orders': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/health': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/ws': {
-        target: 'ws://localhost:8000',
-        ws: true,
-      },
     },
   },
   resolve: {

@@ -10,6 +10,7 @@ const config = require('../config');
  *   - blob: workers and wasm-unsafe-eval for onnxruntime-web
  *   - blob: media for the visitor's own uploaded video and camera stream
  *   - data: images for keyframe thumbnails
+ *   - the STF digital twin on Cloud Run, framed in the home page's Lab section
  * Everything else is denied. Note there is no external script host: three.js,
  * onnxruntime, KaTeX and marked are all served from this origin. */
 const CSP = [
@@ -25,6 +26,8 @@ const CSP = [
   "img-src 'self' data: blob:",
   "media-src 'self' blob:",
   "connect-src 'self' blob:",
+  // The Lab section embeds the live STF twin from Cloud Run.
+  "frame-src https://stf-live-500754517962.europe-west1.run.app",
 ].join('; ');
 
 function securityHeaders(req, res, next) {

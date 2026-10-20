@@ -16,7 +16,7 @@ from a hosted model. Nothing on it is a screenshot of something that once worked
 | `/` | Portfolio, with a streaming assistant ("JARVIS") that answers from a grounded system prompt | model call is server-side |
 | `/scene` | **SceneLab** — YOLOv8n-seg object detection on webcam or an uploaded clip, keyframe captioning, and grounded Q&A over the resulting keyframe log | detection in the **visitor's browser** (ONNX Runtime Web); captioning server-side |
 | `/medqa` | Retrieval-augmented medical QA over a local corpus, with NLI verification of the generated answer | Node, in-process embeddings |
-| `/factory-twin` | Smart Tabletop Factory digital twin — PLC I/O model and a 3D cell view | browser |
+| `/project/digital-twin` | Smart Tabletop Factory digital twin — the live deployment framed in the page, code on [GitHub](https://github.com/soham10i/stf-hw) | Google Cloud Run |
 | `/robot` | SLAM / maze navigation replay | browser |
 | `/notes` | Long-form technical write-ups, editable with an admin token | server |
 
