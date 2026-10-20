@@ -1,1 +1,0 @@
-{"source":"vgr-trajectory.json","fps":30.0,"frames":2034,"width":3,"duration":67.779,"names":["q0","q1","q2"],"wrapped":[],"lo":[0.0,0.0,0.0],"span":[3.7525,0.11684,0.0641],"solver_frames":54224,"max_quant_error":2.861982146940001e-05,"max_quant_error_channel":"q0"}

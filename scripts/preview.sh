@@ -24,8 +24,8 @@ code="$(wait_for "http://localhost:$BACKEND_PORT/api/health" 25)"
 [ "$code" = 200 ] || { echo "--- server log ---"; tail -30 "$SERVE_LOG"; die "backend did not come up"; }
 
 log "route check"
-for p in / /factory-twin /robot /scene /medqa /project/digital-twin \
-         /factory-twin-3d.js /vendor/three.min.js /worlds/maze3-world.json \
+for p in / /robot /scene /medqa /project/digital-twin \
+         /vendor/three.min.js /worlds/maze3-world.json \
          /videos/maze1.mp4 /api/health; do
   printf '   %-32s %s\n' "$p" "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "http://localhost:$BACKEND_PORT$p")"
 done

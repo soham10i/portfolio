@@ -1,474 +1,275 @@
-import { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, Github } from 'lucide-react';
-import CellDiagram from '@/features/factory-twin/components/CellDiagram';
-import SiteBackground from '@/shared/components/SiteBackground';
-import { PALETTES, PALETTE_KEYS, applyPalette, readStoredPalette, storePalette, type PaletteKey } from '@/shared/lib/palettes';
-import { PROJECTS, CONTACT } from '@/shared/data/portfolio';
-import { TWIN_PROBLEM, TWIN_TIMELINE, TWIN_VERSIONS } from '@/features/factory-twin/lib/twinDetail';
+import { ArrowUpRight, Github, Sparkles } from 'lucide-react';
+import { PROJECTS, CONTACT, type Project } from '@/shared/data/portfolio';
 import { PROJECT_DETAILS } from '@/features/projects/lib/projectDetailContent';
+import { lenis } from '@/shared/lib/lenis';
+import '@/features/story/story.css';
+import PageHeader from '@/features/story/components/PageHeader';
+import LiveSiteFrame from '@/features/story/components/LiveSiteFrame';
+import { useStory } from '@/features/story/lib/store';
 
-/* Project detail — now with rich content for every project, not just the twin. */
+/* Project case study, in the same gallery art direction as the home page:
+ * a tinted hero panel (title, links, results, and the live site when there
+ * is one), a body panel (problem → approach → architecture → notes →
+ * timeline, with a sticky aside), and a panel to the neighbouring projects.
+ *
+ * Projects with a public deployment show it live in a browser frame; the code
+ * link always points at the GitHub repository. */
 
-const SECTION_H2 = 'mb-4 font-mono text-[13px] font-semibold uppercase tracking-[.16em] text-fg3';
-const CARD = 'glass-card rounded-2xl';
+const H2 = 'mono mb-5 text-fg3';
 
-function ThemeButton({ palette, onPalette }: { palette: PaletteKey; onPalette: (k: PaletteKey) => void }) {
-  const [open, setOpen] = useState(false);
+function tints(p: Project): React.CSSProperties {
+  const t = p.tint ?? '#4d8dff';
+  return {
+    '--t1': `color-mix(in oklab, ${t} 24%, transparent)`,
+    '--t2': `color-mix(in oklab, ${t} 12%, transparent)`,
+  } as React.CSSProperties;
+}
+
+function NeighbourCard({ p, label }: { p: Project; label: string }) {
   return (
-    <div className="relative">
-      <button
-        type="button" onClick={() => setOpen((v) => !v)}
-        className="flex h-[34px] items-center gap-2 rounded-full border border-line bg-surf2 px-3 text-[12.5px] font-medium text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--p)_14%,transparent)]"
-      >
-        <span className="flex gap-[3px]">
-          <span className="h-[9px] w-[9px] rounded-full bg-p" />
-          <span className="h-[9px] w-[9px] rounded-full bg-s" />
-          <span className="h-[9px] w-[9px] rounded-full bg-a" />
+    <Link to={`/project/${p.id}`} className="lg-panel group relative flex min-h-[220px] flex-col justify-between overflow-hidden p-6">
+      <span aria-hidden className="absolute -right-1/4 -top-1/3 h-[90%] w-[70%] rounded-full opacity-40 blur-3xl transition-opacity duration-500 group-hover:opacity-70" style={{ background: p.tint ?? '#4d8dff' }} />
+      <span className="mono relative text-fg3">{label}</span>
+      <span className="relative flex items-end justify-between gap-4">
+        <span className="text-[clamp(22px,2.2vw,30px)] font-medium leading-[1.05] tracking-[-.03em]">{p.title}</span>
+        <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-white transition-transform duration-300 group-hover:rotate-45">
+          <ArrowUpRight className="h-4 w-4" />
         </span>
-        Theme
-      </button>
-      {open && (
-        <div
-          className="absolute right-0 top-[44px] z-[70] w-[262px] rounded-2xl border border-line p-2"
-          style={{
-            background: 'color-mix(in oklab,var(--bg) 88%,transparent)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-            boxShadow: '0 24px 48px -12px rgba(0,0,0,.55)',
-          }}
-        >
-          {PALETTE_KEYS.map((k) => {
-            const t = PALETTES[k];
-            return (
-              <button
-                key={k} type="button"
-                onClick={() => { onPalette(k); setOpen(false); }}
-                className="flex w-full items-center gap-[11px] rounded-[11px] border border-transparent px-2.5 py-[9px] text-left text-[13px] text-fg hover:border-line"
-                style={{ background: k === palette ? `color-mix(in oklab,${t.p} 15%,transparent)` : 'transparent' }}
-              >
-                <span className="flex flex-none gap-[3px]">
-                  <span className="h-[22px] w-3 rounded-[4px]" style={{ background: t.p }} />
-                  <span className="h-[22px] w-3 rounded-[4px]" style={{ background: t.s }} />
-                  <span className="h-[22px] w-3 rounded-[4px]" style={{ background: t.a }} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{t.name}</span>
-                  <span className="block text-[11px] text-fg3">{t.note}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+      </span>
+    </Link>
   );
 }
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
-  const [palette, setPalette] = useState<PaletteKey>(readStoredPalette);
-
-  useEffect(() => { applyPalette(palette); }, [palette]);
-
-  const pick = (k: PaletteKey) => { setPalette(k); applyPalette(k); storePalette(k); };
-
-  const project = PROJECTS.find((p) => p.id === id);
-  const isTwin = project?.id === 'digital-twin';
-  const [version, setVersion] = useState<'v3' | 'v2' | 'v1'>('v3');
-  const V = TWIN_VERSIONS[version];
+  const collect = useStory((s) => s.collect);
+  const index = PROJECTS.findIndex((p) => p.id === id);
+  const project = index >= 0 ? PROJECTS[index] : undefined;
   const detail = id ? PROJECT_DETAILS[id] : undefined;
 
-  const index = PROJECTS.findIndex((p) => p.id === id);
-  const prev = index > 0 ? PROJECTS[index - 1] : null;
-  const next = index >= 0 && index < PROJECTS.length - 1 ? PROJECTS[index + 1] : null;
+  useEffect(() => {
+    lenis.scrollTo(0, { immediate: true });
+    if (id) collect(id);
+  }, [id, collect]);
 
   if (!project) {
     return (
-      <div className="grid min-h-screen place-items-center bg-bg text-fg">
+      <div className="story grid min-h-screen place-items-center">
         <div className="text-center">
-          <h1 className="mb-2 text-2xl font-bold">Project not found</h1>
-          <Link to="/" className="text-fg2 transition-colors hover:text-fg">← Back home</Link>
+          <p className="mono mb-3 text-fg3">404</p>
+          <h1 className="mb-6 text-[40px] font-medium tracking-[-.04em]">Project not found</h1>
+          <Link to="/#work" className="btn-ink">Back to all work</Link>
         </div>
       </div>
     );
   }
 
-  const activeVersion = project.versions?.find((v) => v.key === version) ?? project.versions?.[0];
-  const highlights = isTwin ? V.highlights : [project.impact].filter(Boolean) as string[];
-  const stack = isTwin ? V.stack : project.tech ?? activeVersion?.tech ?? [];
-  const demoUrl = isTwin
-    ? (version === 'v2' ? '/factory-twin' : '/stf-layout')
-    : project.demoUrl;
+  const total = String(PROJECTS.length).padStart(2, '0');
+  const prev = PROJECTS[(index - 1 + PROJECTS.length) % PROJECTS.length];
+  const next = PROJECTS[(index + 1) % PROJECTS.length];
+  const approach = detail?.approach ?? [project.description, project.impact].filter(Boolean) as string[];
 
   return (
-    <div className="relative min-h-screen bg-bg text-fg">
-      <SiteBackground paletteKey={palette} />
+    <div className="story">
+      <PageHeader back={{ to: '/#work', label: 'All work' }} liveUrl={project.liveUrl} githubUrl={project.githubUrl} />
 
-      <header
-        className="sticky top-0 z-[60] border-b border-line"
-        style={{
-          background: 'color-mix(in oklab,var(--bg) 74%,transparent)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        }}
-      >
-        <div className="mx-auto flex h-16 max-w-[1080px] items-center justify-between gap-5 px-[26px]">
-          <Link to="/#projects" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2.2} />
-            All projects
-          </Link>
-          <ThemeButton palette={palette} onPalette={pick} />
-        </div>
-      </header>
-
-      <main className="relative z-[1] mx-auto max-w-[1080px] px-[26px] pb-[100px] pt-[60px]">
-        <div className="mb-[22px] flex animate-rise flex-wrap items-center gap-2.5">
-          <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-fg3">
-            {project.category}{isTwin && ' · Industrial automation'}
-          </span>
-          <span className="text-fg3">·</span>
-          <span className="font-mono text-[11px] text-fg3">{project.timeline}</span>
-        </div>
-
-        <h1 className="mb-[18px] max-w-[840px] animate-rise text-[clamp(36px,5vw,64px)] font-extrabold leading-[1.02] tracking-[-.035em] [animation-delay:.06s]">
-          {isTwin ? (
-            <>
-              Smart Tabletop Factory —{' '}
-              <span
-                style={{
-                  background: 'linear-gradient(135deg,var(--p),var(--a))',
-                  WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
-                }}
-              >
-                Digital Twin
-              </span>
-            </>
-          ) : (
-            project.title
+      <main>
+        {/* hero panel */}
+        <section className="panel px-[var(--gutter)] pb-[clamp(40px,6vh,72px)] pt-[clamp(104px,14vh,150px)]" style={tints(project)}>
+          <p className="mono mb-6 text-fg2">
+            {String(index + 1).padStart(2, '0')} / {total}
+            <span className="text-fg3"> · {project.category} · {project.timeline}</span>
+          </p>
+          <h1 className="max-w-[18ch] text-[clamp(40px,7vw,108px)] font-medium leading-[.94] tracking-[-.05em]">
+            {project.title}
+          </h1>
+          {project.description && (
+            <p className="mt-8 max-w-[64ch] text-[clamp(16px,1.3vw,19px)] leading-relaxed text-fg2">{project.description}</p>
           )}
-        </h1>
 
-        <p className="mb-[34px] max-w-[700px] animate-rise text-[16.5px] leading-[1.6] text-fg2 [text-wrap:pretty] [animation-delay:.12s]">
-          {isTwin
-            ? (activeVersion?.desc ?? project.description)
-            : project.description}
-        </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {project.liveUrl && (
+              <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="btn-ink">
+                Open the live site <ArrowUpRight className="h-4 w-4" />
+              </a>
+            )}
+            {!project.liveUrl && project.demoUrl && (
+              <Link to={project.demoUrl} className="btn-ink">
+                Open live demo <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            )}
+            {project.githubUrl ? (
+              <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-12 items-center gap-2 px-5 text-[14px]">
+                <Github className="h-4 w-4" /> View code on GitHub
+              </a>
+            ) : (
+              <span className="lg-pill mono inline-flex h-12 items-center px-5 text-fg3">Source coming soon</span>
+            )}
+          </div>
 
-        <div className="mb-11 flex animate-rise flex-wrap gap-3 [animation-delay:.18s]">
-          {demoUrl && (
-            <Link
-              to={demoUrl}
-              className="inline-flex items-center gap-2.5 rounded-full px-[22px] py-[11px] text-[13.5px] font-semibold text-bg transition-[filter] hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
-            >
-              Open live demo
-              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-            </Link>
-          )}
-          <a
-            href={project.githubUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 rounded-full border border-line bg-surf2 px-5 py-[11px] text-[13.5px] text-fg transition-colors hover:border-[color-mix(in_oklab,var(--a)_55%,transparent)]"
-          >
-            <Github className="h-3.5 w-3.5" />
-            Source
-          </a>
-        </div>
-
-        {isTwin && (
-          <>
-            <div className="mb-[26px] inline-flex animate-rise gap-1.5 rounded-[14px] border border-line bg-surf p-[5px] [animation-delay:.24s]">
-              {(['v3', 'v2', 'v1'] as const).map((k) => {
-                const on = k === version;
-                return (
-                  <button
-                    key={k} type="button" onClick={() => setVersion(k)}
-                    className="flex flex-col gap-0.5 rounded-[10px] px-5 py-2.5 text-left transition-all [transition-duration:300ms]"
-                    style={
-                      on
-                        ? { background: 'linear-gradient(135deg,var(--p),var(--s))', color: 'var(--bg)' }
-                        : { background: 'transparent', color: 'var(--fg2)' }
-                    }
-                  >
-                    <span className="font-mono text-[13px] font-semibold">{TWIN_VERSIONS[k].label}</span>
-                    <span className="text-[11px] opacity-75">{TWIN_VERSIONS[k].sub}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div
-              id="twin-demo"
-              className="glass-card mb-[18px] overflow-hidden rounded-[20px]"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-surf2 px-[18px] py-[13px]">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-[7px] w-[7px] rounded-full bg-[#22c55e]" />
-                  <span className="font-mono text-[11px] uppercase tracking-[.12em] text-fg3">{V.demoLabel}</span>
-                </div>
-                <div className="flex gap-3.5 font-mono text-[10.5px] text-fg3">
-                  <span>{version === 'v3' ? 'MuJoCo physics · 30 FPS' : 'ws://stf-gateway · live'}</span>
-                  <span>{version === 'v3' ? '56/56 checks passed' : '10 Hz telemetry'}</span>
-                </div>
-              </div>
-
-              {version === 'v2' && (
-                <div
-                  className="relative aspect-[16/8]"
-                  style={{ background: 'linear-gradient(160deg,color-mix(in oklab,var(--p) 12%,transparent),color-mix(in oklab,var(--s) 8%,transparent))' }}
-                >
-                  <CellDiagram />
-                  <div className="absolute inset-x-4 bottom-3.5 flex flex-wrap items-center justify-between gap-3">
-                    <span
-                      className="rounded-lg border border-line px-[11px] py-[5px] font-mono text-[10.5px] text-fg3"
-                      style={{ background: 'color-mix(in oklab,var(--bg) 70%,transparent)' }}
-                    >
-                      2D layout view — full cell renders in 3D
-                    </span>
-                    <Link
-                      to="/factory-twin"
-                      className="inline-flex items-center gap-2 rounded-full px-[15px] py-2 text-[12px] font-medium text-fg transition-colors hover:bg-[color-mix(in_oklab,var(--a)_18%,transparent)]"
-                      style={{
-                        background: 'color-mix(in oklab,var(--bg) 78%,transparent)',
-                        border: '1px solid color-mix(in oklab,var(--a) 50%,transparent)',
-                      }}
-                    >
-                      Open 3D twin viewer
-                      <ArrowUpRight className="h-3 w-3" strokeWidth={2.4} />
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {version === 'v3' && (
-                <div
-                  className="relative flex flex-col justify-between p-6 sm:p-8"
-                  style={{ background: 'linear-gradient(160deg,color-mix(in oklab,var(--p) 12%,transparent),color-mix(in oklab,var(--s) 8%,transparent))' }}
-                >
-                  <div className="max-w-[640px]">
-                    <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-line bg-surf px-3 py-1 font-mono text-[11px] text-a">
-                      Level 3 / Physics Twin · Solver-resampled trajectory
-                    </div>
-                    <h3 className="mb-2 text-[18px] font-bold text-fg sm:text-[21px]">Rigid-body MuJoCo simulation of all four factory stations</h3>
-                    <p className="text-[14px] leading-[1.6] text-fg2">
-                      Exported from fischertechnik's own S7-1500 PLC step tables, timer literals, and 89 addressed I/O points.
-                      Run the simulation directly in the browser with interactive station toggles, timeline scrubber, and step tape.
-                    </p>
-                  </div>
-                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-                    <span
-                      className="rounded-lg border border-line px-[11px] py-[5px] font-mono text-[10.5px] text-fg3"
-                      style={{ background: 'color-mix(in oklab,var(--bg) 70%,transparent)' }}
-                    >
-                      50,466 solver frames · 17 joints · 4 stations
-                    </span>
-                    <Link
-                      to="/stf-layout"
-                      className="inline-flex items-center gap-2 rounded-full px-[18px] py-2.5 text-[12.5px] font-semibold text-bg transition-[filter] hover:brightness-110"
-                      style={{ background: 'linear-gradient(135deg,var(--p),var(--s))' }}
-                    >
-                      Launch simulation viewer
-                      <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
-                {V.telemetry.map((t) => (
-                  <div key={t.label} className="border-r border-t border-line px-[18px] py-4 first:border-l-0">
-                    <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[.16em] text-fg3">{t.label}</p>
-                    <p className="text-[19px] font-semibold tracking-[-.01em]" style={{ color: t.color }}>{t.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p className="mb-[54px] text-[12px] text-fg3">{V.note}</p>
-          </>
-        )}
-
-        {/* ── Results / Metrics strip (non-twin projects with detail content) ── */}
-        {detail?.results && (
-          <div className="glass-card mb-[46px] overflow-hidden rounded-[20px]">
-            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+          {detail?.results && (
+            <div className="mt-[clamp(40px,6vh,64px)] grid grid-cols-2 gap-3 md:grid-cols-4">
               {detail.results.map((r) => (
-                <div key={r.label} className="border-r border-line px-[18px] py-4 first:border-l-0">
-                  <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[.16em] text-fg3">{r.label}</p>
-                  <p className="text-[19px] font-semibold tracking-[-.01em]" style={{ color: r.color ?? 'var(--a)' }}>{r.value}</p>
+                <div key={r.label} className="lg-panel p-5">
+                  <p className="text-[clamp(22px,2.4vw,34px)] font-medium tracking-[-.03em]" style={{ color: r.color }}>{r.value}</p>
+                  <p className="mt-2 text-[13px] text-fg2">{r.label}</p>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="grid items-start gap-[52px] lg:grid-cols-[minmax(0,1.4fr)_minmax(0,.6fr)]">
-          <div>
-            {/* ── Problem ── */}
-            {isTwin ? (
-              <section className="mb-[46px]">
-                <h2 className={SECTION_H2}>The problem</h2>
-                <p className="text-[15px] leading-[1.75] text-fg2 [text-wrap:pretty]">{TWIN_PROBLEM}</p>
+          {project.liveUrl && (
+            <LiveSiteFrame
+              url={project.liveUrl}
+              title={`${project.title} — live`}
+              previewVideo={project.loopVideo}
+              className="mt-3"
+            />
+          )}
+        </section>
+
+        {/* body panel */}
+        <section className="panel px-[var(--gutter)] py-[clamp(56px,9vh,112px)]">
+          <div className="grid items-start gap-[clamp(32px,5vw,72px)] lg:grid-cols-[minmax(0,1.5fr)_minmax(0,.7fr)]">
+            <div className="flex flex-col gap-[clamp(40px,6vh,64px)]">
+              {detail?.problem && (
+                <section>
+                  <h2 className={H2}>The problem</h2>
+                  <p className="text-[clamp(22px,2.2vw,32px)] font-medium leading-[1.25] tracking-[-.025em]">{detail.problem}</p>
+                </section>
+              )}
+
+              <section>
+                <h2 className={H2}>Approach</h2>
+                <ol className="flex flex-col gap-3">
+                  {approach.map((a, i) => (
+                    <li key={i} className="lg-panel grid grid-cols-[36px_1fr] gap-3 p-5">
+                      <span className="mono pt-0.5 text-fg3">{String(i + 1).padStart(2, '0')}</span>
+                      <p className="text-[15px] leading-relaxed text-fg2">{a}</p>
+                    </li>
+                  ))}
+                </ol>
               </section>
-            ) : detail?.problem ? (
-              <section className="mb-[46px]">
-                <h2 className={SECTION_H2}>The problem</h2>
-                <p className="text-[15px] leading-[1.75] text-fg2 [text-wrap:pretty]">{detail.problem}</p>
-              </section>
-            ) : null}
 
-            {/* ── What it does / Approach ── */}
-            <section className="mb-[46px]">
-              <h2 className={SECTION_H2}>{isTwin ? 'What this version does' : 'Approach'}</h2>
-              <div className="flex flex-col gap-3">
-                {(isTwin ? highlights : detail?.approach ?? [project.description ?? '', project.impact ?? ''].filter(Boolean)).map((h, i) => (
-                  <div key={i} className="glass-card flex items-start gap-[13px] rounded-[13px] px-[17px] py-[15px]">
-                    <span className="mt-1 h-1.5 w-1.5 flex-none rounded-full bg-a" />
-                    <p className="text-[14px] leading-[1.6] text-fg2">{h}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* ── Architecture ── */}
-            {detail?.architecture && (
-              <section className="mb-[46px]">
-                <h2 className={SECTION_H2}>Architecture</h2>
-                <div className="glass-card rounded-[18px] px-6 py-[26px]">
-                  {detail.architecture.map((l) => (
-                    <div key={l.tier} className="grid items-center gap-[18px] border-t border-line py-3.5 sm:[grid-template-columns:104px_minmax(0,1fr)]">
-                      <span className="font-mono text-[10.5px] uppercase tracking-[.12em] text-fg3">{l.tier}</span>
-                      <div className="flex flex-wrap gap-[7px]">
-                        {l.parts.map((pt) => (
-                          <span key={pt} className="rounded-[9px] border border-line bg-surf2 px-3 py-1.5 font-mono text-[11.5px] text-fg2">
-                            {pt}
-                          </span>
-                        ))}
+              {project.versions && (
+                <section>
+                  <h2 className={H2}>Versions</h2>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {project.versions.map((v) => (
+                      <div key={v.key} className="lg-panel p-5">
+                        <p className="mono mb-2 text-p">{v.label}</p>
+                        <p className="mb-3 text-[14px] font-medium">{v.impact}</p>
+                        <p className="text-[14px] leading-relaxed text-fg2">{v.desc}</p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            {/* ── Technical notes ── */}
-            {detail?.technicalNotes && (
-              <section className="mb-[46px]">
-                <h2 className={SECTION_H2}>Technical notes</h2>
-                <div className="flex flex-col gap-3">
-                  {detail.technicalNotes.map((note, i) => (
-                    <div key={i} className="glass-card flex items-start gap-[13px] rounded-[13px] px-[17px] py-[15px]">
-                      <span className="mt-1 h-1.5 w-1.5 flex-none rounded-full bg-s" />
-                      <p className="text-[14px] leading-[1.6] text-fg2">{note}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ── GitHub note ── */}
-            {detail?.githubNote && (
-              <section className="mb-[46px]">
-                <p className="text-[13px] leading-[1.65] text-fg3 [text-wrap:pretty]">{detail.githubNote}</p>
-              </section>
-            )}
-
-            {/* ── Twin-specific sections ── */}
-            {isTwin && (
-              <>
-                <section className="mb-[46px]">
-                  <h2 className={SECTION_H2}>Architecture</h2>
-                  <div className="glass-card rounded-[18px] px-6 py-[26px]">
-                    {V.arch.map((l) => (
-                      <div key={l.tier} className="grid items-center gap-[18px] border-t border-line py-3.5 sm:[grid-template-columns:104px_minmax(0,1fr)]">
-                        <span className="font-mono text-[10.5px] uppercase tracking-[.12em] text-fg3">{l.tier}</span>
-                        <div className="flex flex-wrap gap-[7px]">
+              {detail?.architecture && (
+                <section>
+                  <h2 className={H2}>Architecture</h2>
+                  <div className="lg-panel px-6 py-2">
+                    {detail.architecture.map((l) => (
+                      <div key={l.tier} className="grid items-center gap-3 border-b border-[color:var(--line)] py-4 last:border-b-0 sm:grid-cols-[120px_1fr]">
+                        <span className="mono text-fg3">{l.tier}</span>
+                        <div className="flex flex-wrap gap-1.5">
                           {l.parts.map((pt) => (
-                            <span key={pt} className="rounded-[9px] border border-line bg-surf2 px-3 py-1.5 font-mono text-[11.5px] text-fg2">
-                              {pt}
-                            </span>
+                            <span key={pt} className="rounded-full border border-[color:var(--line)] bg-white/60 px-3 py-1 text-[12.5px] text-fg2">{pt}</span>
                           ))}
                         </div>
                       </div>
                     ))}
                   </div>
                 </section>
+              )}
 
+              {detail?.technicalNotes && (
                 <section>
-                  <h2 className={SECTION_H2}>Version history</h2>
-                  <div className="flex flex-col gap-3.5">
-                    {TWIN_TIMELINE.map((tl) => (
-                      <div key={tl.ver} className="grid gap-[18px] border-t border-line py-[18px] sm:[grid-template-columns:76px_minmax(0,1fr)]">
-                        <span className="font-mono text-[13px] font-semibold text-p">{tl.ver}</span>
-                        <div>
-                          <p className="mb-1.5 text-[14.5px] font-semibold">{tl.title}</p>
-                          <p className="text-[13.5px] leading-[1.65] text-fg2 [text-wrap:pretty]">{tl.desc}</p>
-                        </div>
-                      </div>
+                  <h2 className={H2}>Technical notes</h2>
+                  <ul className="flex flex-col gap-3 border-l border-[color:var(--line)] pl-5">
+                    {detail.technicalNotes.map((n, i) => (
+                      <li key={i} className="text-[15px] leading-relaxed text-fg2">{n}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {detail?.timeline && (
+                <section>
+                  <h2 className={H2}>Timeline</h2>
+                  <ol className="border-t border-[color:var(--line)]">
+                    {detail.timeline.map((t) => (
+                      <li key={t.phase} className="grid gap-2 border-b border-[color:var(--line)] py-5 md:grid-cols-[220px_1fr] md:gap-6">
+                        <span className="text-[15px] font-medium">{t.phase}</span>
+                        <span className="text-[14.5px] leading-relaxed text-fg2">{t.desc}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+
+              {detail?.githubNote && <p className="text-[14px] leading-relaxed text-fg3">{detail.githubNote}</p>}
+            </div>
+
+            <aside className="flex flex-col gap-3 lg:sticky lg:top-24">
+              {(project.tech ?? []).length > 0 && (
+                <div className="lg-panel p-6">
+                  <p className={H2 + ' !mb-4'}>Stack</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.tech!.map((t) => (
+                      <span key={t} className="rounded-full border border-[color:var(--line)] bg-white/60 px-3 py-1 text-[12.5px] text-fg2">{t}</span>
                     ))}
                   </div>
-                </section>
-              </>
-            )}
-          </div>
-
-          <aside className="flex flex-col gap-3.5 lg:sticky lg:top-24">
-            <div className={CARD + ' p-[22px]'}>
-              <p className="mb-3.5 font-mono text-[9.5px] uppercase tracking-[.18em] text-fg3">Role</p>
-              <p className="text-[14px] font-semibold">Lead Developer &amp; AI Architect</p>
-              <p className="mt-4 font-mono text-[9.5px] uppercase tracking-[.18em] text-fg3">Status</p>
-              <p className="mt-1.5 inline-flex items-center gap-[7px] text-[13.5px]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
-                Completed
-              </p>
-            </div>
-
-            <div className={CARD + ' p-[22px]'}>
-              <p className="mb-3 font-mono text-[9.5px] uppercase tracking-[.18em] text-fg3">Stack</p>
-              <div className="flex flex-wrap gap-1.5">
-                {stack.map((s) => (
-                  <span key={s} className="rounded-[7px] border border-line bg-surf2 px-2.5 py-[5px] font-mono text-[11px] text-fg2">
-                    {s}
-                  </span>
-                ))}
+                </div>
+              )}
+              <div className="lg-panel flex flex-col gap-2 p-6">
+                <p className={H2 + ' !mb-2'}>Links</p>
+                {project.liveUrl && (
+                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1 text-[14px] hover:text-p">
+                    Live site <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                )}
+                {project.demoUrl && (
+                  <Link to={project.demoUrl} className="flex items-center justify-between gap-3 py-1 text-[14px] hover:text-p">
+                    Live demo on this site <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                )}
+                {project.githubUrl ? (
+                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1 text-[14px] hover:text-p">
+                    Source on GitHub <Github className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <span className="py-1 text-[14px] text-fg3">Source coming soon</span>
+                )}
               </div>
-            </div>
-
-            <div
-              className="rounded-2xl p-[22px]"
-              style={{
-                border: '1px solid color-mix(in oklab,var(--a) 34%,transparent)',
-                background: 'color-mix(in oklab,var(--a) 9%,transparent)',
-              }}
-            >
-              <p className="mb-2 text-[13.5px] font-semibold">Ask JARVIS</p>
-              <p className="mb-3.5 text-[12.5px] leading-[1.55] text-fg2">
-                {isTwin
-                  ? 'Questions about the adapter layer, the telemetry schema, or how v2 differs from v1?'
-                  : `Questions about ${project.title} — architecture, results, or how it was built?`}
-              </p>
-              <Link to="/" className="inline-flex items-center gap-[7px] text-[12.5px] font-medium text-a">
-                Open the assistant →
-              </Link>
-            </div>
-
-            <div className={CARD + ' p-[22px]'}>
-              <p className="mb-2 font-mono text-[9.5px] uppercase tracking-[.18em] text-fg3">Contact</p>
-              <a href={`mailto:${CONTACT.email}`} className="break-all text-[12.5px] text-fg2 transition-colors hover:text-fg">
-                {CONTACT.email}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
+                className="lg-panel flex items-start gap-3 p-6 text-left transition-transform hover:-translate-y-0.5"
+              >
+                <Sparkles className="mt-0.5 h-4 w-4 flex-none text-a" />
+                <span>
+                  <span className="block text-[15px] font-medium">Ask JARVIS</span>
+                  <span className="mt-1 block text-[13.5px] leading-relaxed text-fg2">Questions about how {project.title} was built?</span>
+                </span>
+              </button>
+              <a href={`mailto:${CONTACT.email}`} className="lg-panel block p-6 text-[13.5px] text-fg2 hover:text-fg">
+                <span className={H2 + ' !mb-2 block'}>Contact</span>
+                <span className="break-all">{CONTACT.email}</span>
               </a>
-            </div>
-          </aside>
-        </div>
+            </aside>
+          </div>
+        </section>
 
-        <nav className="mt-[74px] flex flex-wrap justify-between gap-5 border-t border-line pt-[30px]">
-          {prev ? (
-            <Link to={`/project/${prev.id}`} className="text-[13.5px] text-fg2 transition-colors hover:text-fg">← {prev.title}</Link>
-          ) : <span />}
-          {next ? (
-            <Link to={`/project/${next.id}`} className="text-[13.5px] text-fg2 transition-colors hover:text-fg">{next.title} →</Link>
-          ) : <span />}
-        </nav>
+        {/* neighbours */}
+        <section className="panel grid gap-3 px-[var(--gutter)] py-[clamp(40px,6vh,72px)] md:grid-cols-2">
+          <NeighbourCard p={prev} label="← Previous project" />
+          <NeighbourCard p={next} label="Next project →" />
+        </section>
       </main>
     </div>
   );

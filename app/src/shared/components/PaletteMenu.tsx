@@ -14,9 +14,11 @@ interface Props {
   /** `compact` drops the word "Theme" and shows only the three colour dots. */
   compact?: boolean;
   align?: 'left' | 'right';
+  /** `up` opens the menu above the button — for controls docked at the bottom. */
+  placement?: 'down' | 'up';
 }
 
-export default function PaletteMenu({ palette, onPalette, compact = false, align = 'right' }: Props) {
+export default function PaletteMenu({ palette, onPalette, compact = false, align = 'right', placement = 'down' }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,8 @@ export default function PaletteMenu({ palette, onPalette, compact = false, align
       {open && (
         <div
           role="menu"
-          className={'absolute top-[42px] z-[70] w-[264px] rounded-2xl border border-line p-2 ' +
+          className={'absolute z-[70] w-[264px] rounded-2xl border border-line p-2 ' +
+            (placement === 'up' ? 'bottom-[42px] ' : 'top-[42px] ') +
             (align === 'right' ? 'right-0' : 'left-0')}
           style={{
             background: 'var(--bg)',

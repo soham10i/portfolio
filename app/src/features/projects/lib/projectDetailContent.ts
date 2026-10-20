@@ -13,6 +13,88 @@ export interface ProjectDetailContent {
 }
 
 export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
+  'digital-twin': {
+    problem:
+      'A tabletop factory cell runs a full warehouse workflow — storage, retrieval, sorting, a vacuum gripper robot — but its controllers expose nothing a maintenance team can read. Faults show up as a stopped belt, not as a signal you could have acted on an hour earlier.',
+    approach: [
+      'Modelled all four stations of the fischertechnik 536634 cell from the controller rather than from photographs: the manufacturer’s PLC step tables, TON timer literals and component datasheets.',
+      'Solved the suction gripper’s three pulse-to-metre scales from the sorting line’s three collinear bays, because the PLC gives it no soft limits to read them from.',
+      'Ran the cell as a MuJoCo rigid-body simulation and verified it against 56 checks; the worst crane move lands within 0.303 mm, inside the PLC’s own 15-pulse window.',
+      'Served the twin as a web app on Google Cloud Run, with the live 3D cell, its process image and the production cycle in the browser.',
+    ],
+    architecture: [
+      { tier: 'Sources', parts: ['Siemens SCL step tables', 'Timer literals', 'Belegungsplan I/O', 'Datasheets'] },
+      { tier: 'Model', parts: ['OpenSCAD', 'MJCF', 'MuJoCo physics'] },
+      { tier: 'Service', parts: ['FastAPI', 'WebSockets', 'MQTT / OPC-UA adapters'] },
+      { tier: 'Web', parts: ['Three.js cell view', 'Process image', 'Cloud Run'] },
+    ],
+    results: [
+      { label: 'Checks passed', value: '56 / 56', color: '#16a34a' },
+      { label: 'Prediction', value: '1.2 mm RMS', color: 'var(--a)' },
+      { label: 'Worst crane error', value: '0.303 mm', color: 'var(--p)' },
+      { label: 'Process image', value: '9 DI · 14 DO', color: 'var(--s)' },
+    ],
+    timeline: [
+      { phase: 'v3.0 — Physics twin', desc: 'MuJoCo simulation of all four stations from the PLC sources, predicting positioning to 1.2 mm RMS over 120 mm without prior measurement data.' },
+      { phase: 'v2.0 — Live 3D twin', desc: 'Three.js cell on the real 15 mm grid, driven by the 9 DI / 14 DO process image over WebSockets, with an MQTT/OPC-UA adapter layer.' },
+      { phase: 'v1.0 — Maintenance dashboard', desc: 'MQTT ingestion at 10 Hz, InfluxDB history and Streamlit dashboards, with an 85%-accurate failure predictor, all containerised.' },
+    ],
+    githubNote: 'The full twin — simulation, service and web app — lives in the stf-hw repository and runs live on Google Cloud Run.',
+  },
+
+  'wind-pdm': {
+    problem:
+      'Wind turbines run unattended for decades and an unplanned failure costs far more than a planned repair. The task: predict every failure event on Wind Farm C of the CARE-to-Compare benchmark early, without drowning operators in false alarms on healthy turbines.',
+    approach: [
+      'Isolated healthy operation first: DBSCAN on wind speed against power, a fitted piecewise ideal power curve, and a 3σ tolerance band around it, so models learn from clean behaviour.',
+      'Grouped the large SCADA sensor set by physical meaning from the feature descriptions, and built leakage-free train/test splits with a pre-failure context window appended to each test event.',
+      'Level 1 triage: an XGBoost classifier, validated with leave-one-out cross-validation across events.',
+      'Level 2: timestamp-level unsupervised scoring from model residuals and an Isolation Forest, turning a per-event verdict into concrete alarm times, then scored with the full CARE metric including early-detection lead time.',
+    ],
+    architecture: [
+      { tier: 'Data', parts: ['CARE-to-Compare', 'Wind Farm C SCADA', 'Event annotations'] },
+      { tier: 'Cleaning', parts: ['DBSCAN', 'Ideal power curve', '3σ band'] },
+      { tier: 'Models', parts: ['XGBoost (LOO-CV)', 'Residual scoring', 'Isolation Forest'] },
+      { tier: 'Evaluation', parts: ['CARE score', 'Lead time', 'False-alarm check on normal turbines'] },
+    ],
+    githubNote: 'Notebooks for EDA, supervised and unsupervised learning, and the timestamp-level ensemble are in the repository, with the written report.',
+  },
+
+  'co2-tracker': {
+    problem:
+      'People who want to cut their carbon footprint rarely know where it comes from. The goal was a web app that turns everyday activity — driving, flying, household energy — into tracked CO₂ figures a user can act on.',
+    approach: [
+      'Spring Boot REST API with JWT authentication: sign-up, sign-in and token refresh, plus profile management.',
+      'Per-activity emission calculators for transportation (car, flight) and household energy, each saving its results to the user’s history.',
+      'A login, registration and dashboard front end over the API.',
+      'Delivered in two iterations as an OTH team software project, with design documents and final presentation.',
+    ],
+    architecture: [
+      { tier: 'Front end', parts: ['Login', 'Registration', 'Dashboard'] },
+      { tier: 'API', parts: ['Spring Boot', 'JWT auth', 'Calculator endpoints'] },
+      { tier: 'Data', parts: ['SQL schema', 'Activity history'] },
+      { tier: 'Build', parts: ['Maven', 'JDK 11+'] },
+    ],
+    githubNote: 'The repository holds the source code, both iteration reports and the final presentation.',
+  },
+
+  'medqa-nlp': {
+    problem:
+      'USMLE-style medical questions need answers grounded in evidence, not a language model’s guess. The aim was a system that picks the right option by finding support for it in an external knowledge source.',
+    approach: [
+      'Loads MedQA questions (JSONL) and runs biomedical named-entity recognition with SciSpacy to decide which Wikipedia articles to fetch.',
+      'Segments the fetched articles and embeds passages and questions with Sentence-Transformers (all-MiniLM-L6-v2).',
+      'Builds a FAISS index — CPU or GPU — and scores every answer option against the retrieved evidence before an answer selector makes the final choice.',
+      'Each stage is its own module with unit tests and logging, so retrievers and scorers can be swapped. The /medqa demo on this site is its successor, adding NLI verification.',
+    ],
+    architecture: [
+      { tier: 'Input', parts: ['MedQA (JSONL)', 'SciSpacy NER'] },
+      { tier: 'Knowledge', parts: ['Wikipedia (live)', 'Passage segmentation'] },
+      { tier: 'Retrieval', parts: ['Sentence-Transformers', 'FAISS (CPU / GPU)'] },
+      { tier: 'Answer', parts: ['Evidence scorer', 'Answer selector'] },
+    ],
+    githubNote: 'Modular Python pipeline with unit tests per stage.',
+  },
   scene: {
     problem:
       'Most scene-understanding systems either run in the cloud (privacy risk, latency) or are limited to fixed object lists (no open-vocabulary description). The goal was a pipeline that detects objects in real time on the device, narrates what is happening in natural language, and does so without sending every frame to a server.',
@@ -37,62 +119,6 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
       'The ONNX model is quantised to float16 and cached by the browser after first load.',
       'Scene-change detection uses a 64×64 luma downsample; mean absolute delta > 0.04 triggers a new keyframe.',
       'Captions are written from detection labels when the language model is unreachable, so the demo never breaks.',
-    ],
-  },
-
-  medqa: {
-    problem:
-      'Medical question-answering requires high accuracy and traceability — a wrong answer has consequences. Off-the-shelf LLMs hallucinate on clinical content. The goal was to benchmark how much retrieval context improves factual correctness across different NLI models and retrieval strategies, with everything reproducible and containerised.',
-    approach: [
-      'Built a modular RAG pipeline with swappable retrievers (dense, sparse, hybrid) and swappable NLI models (5+ from HuggingFace).',
-      'Evaluated on MedQA-USMLE, a public medical QA benchmark, measuring exact-match accuracy and semantic similarity.',
-      'Compared three retrieval strategies: BM25 sparse, MPNet dense, and a hybrid fusion ensemble.',
-      'Everything is gated by Pytest, type-checked, and packaged in Docker so the benchmark is reproducible.',
-    ],
-    architecture: [
-      { tier: 'Data', parts: ['MedQA-USMLE', 'PubMed abstracts', 'Vector store (FAISS)'] },
-      { tier: 'Retrieval', parts: ['BM25 (Whoosh)', 'MPNet dense', 'RRF hybrid fusion'] },
-      { tier: 'NLI', parts: ['RoBERTa-MNLI', 'DeBERTa-MedNLI', 'BioLinkBERT', 'MedAlpaca', 'Flan-T5'] },
-      { tier: 'API', parts: ['FastAPI', 'LangChain', 'HuggingFace Transformers'] },
-    ],
-    results: [
-      { label: 'Test accuracy', value: '60%', color: 'var(--a)' },
-      { label: 'NLI models', value: '5+', color: 'var(--p)' },
-      { label: 'Strategies', value: '3', color: 'var(--s)' },
-      { label: 'Coverage', value: 'MedQA-USMLE', color: '#22c55e' },
-    ],
-    technicalNotes: [
-      'The 60% figure is on unseen MedQA test data — the dataset is hard, and the baseline without retrieval is ~35%.',
-      'Hybrid retrieval (BM25 + dense with RRF) consistently outperformed either alone by 8–12 points.',
-      'All model weights are cached inside the Docker image so the container starts cold with no downloads.',
-    ],
-  },
-
-  wind: {
-    problem:
-      'Wind turbines operate in remote locations for 20+ years. Scheduled maintenance is expensive and reactive — the goal is to flag degradation from SCADA sensor data before a failure forces an unplanned shutdown.',
-    approach: [
-      'Ingested multi-channel SCADA time-series: vibration RMS, gearbox temperature, generator speed, power output, wind speed.',
-      'Engineered a fused health index that combines anomaly scores from all channels — the index crosses an alarm band before any individual sensor looks alarming.',
-      'Benchmarked 8 regression algorithms (from linear to gradient boosting) using the CARE framework for multi-output regression.',
-      'The best model predicts both fault state and expected power output from the same feature set, giving two actionable signals from one pipeline.',
-    ],
-    architecture: [
-      { tier: 'Ingest', parts: ['SCADA CSV exports', '10-minute aggregates', 'Pandas / NumPy'] },
-      { tier: 'Features', parts: ['Rolling statistics', 'Spectral bands', 'CARE framework'] },
-      { tier: 'Models', parts: ['Random Forest', 'XGBoost', 'SVR', 'ElasticNet', 'KNN', 'MLP', 'CART', 'AdaBoost'] },
-      { tier: 'Output', parts: ['Health index', 'Fault probability', 'Power forecast'] },
-    ],
-    results: [
-      { label: 'Algorithms', value: '8', color: 'var(--a)' },
-      { label: 'Channels', value: '5+', color: 'var(--p)' },
-      { label: 'Lead time', value: 'Condition-based', color: 'var(--s)' },
-      { label: 'Framework', value: 'CARE', color: '#22c55e' },
-    ],
-    technicalNotes: [
-      'The CARE framework handles multi-output regression natively — fault state and power output are trained jointly.',
-      'Feature engineering was the biggest lever: lagged correlations between temperature and vibration exposed bearing wear signatures.',
-      'All preprocessing is deterministic and versioned; the notebook-to-pipeline path is fully reproducible.',
     ],
   },
 
@@ -181,31 +207,4 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
     ],
   },
 
-  'smart-home': {
-    problem:
-      'Smart home and city IoT networks generate large volumes of sensor data but rarely use it for optimisation. The goal was an end-to-end pipeline from sensor ingestion to automated decision-making, with ML-driven energy scheduling.',
-    approach: [
-      'Deployed MQTT brokers as the backbone for home and city sensor networks, with topic hierarchies for room/zone granularity.',
-      'Stored all time-series data in InfluxDB with retention policies and continuous queries for downsampling.',
-      'Built a scheduling model that predicts occupancy patterns from historical data and pre-heats/cools spaces only when needed.',
-      'Containerised the whole stack (MQTT, InfluxDB, Grafana, Python scheduler) with Docker Compose for reproducible deployment.',
-    ],
-    architecture: [
-      { tier: 'Edge', parts: ['Arduino sensors', 'BLE beacons', 'MQTT pub'] },
-      { tier: 'Broker', parts: ['Mosquitto MQTT', 'Topic hierarchies', 'QoS 1'] },
-      { tier: 'Storage', parts: ['InfluxDB', 'Grafana dashboards', 'Retention policies'] },
-      { tier: 'Optimisation', parts: ['Python scheduler', 'Scikit-learn', '20% energy reduction'] },
-    ],
-    results: [
-      { label: 'Energy saved', value: '20%', color: 'var(--a)' },
-      { label: 'Protocol', value: 'MQTT', color: 'var(--p)' },
-      { label: 'Database', value: 'InfluxDB', color: 'var(--s)' },
-      { label: 'Deploy', value: 'Docker', color: '#22c55e' },
-    ],
-    technicalNotes: [
-      'The 20% figure comes from comparing pre- and post-deployment bills over a 3-month winter period.',
-      'Occupancy prediction used a simple Random Forest on time-of-day, day-of-week, and recent motion history.',
-      'All sensor nodes publish on a 10-second cadence; the scheduler re-evaluates every 5 minutes.',
-    ],
-  },
 };

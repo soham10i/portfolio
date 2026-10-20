@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { loadMazeEngine } from '@/features/factory-twin/lib/twin';
+import { loadMazeEngine } from '@/features/robot/lib/engine';
 
 /* React wrapper for the <webots-world-3d> custom element.
    The engine (public/webots-world-3d.js) owns all rendering, the exploration

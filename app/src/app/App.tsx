@@ -1,15 +1,12 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Home from '@/features/home/Home';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import StoryHome from '@/features/story/StoryHome';
 import ProjectDetail from '@/features/projects/ProjectDetail';
-import FactoryDemo from '@/features/factory-twin/FactoryDemo';
 import ChatLauncher from '@/features/chat/components/ChatLauncher';
 
-/* The 3D viewers pull a runtime engine and a lot of geometry; the notes pages
-   pull KaTeX and a Markdown parser. Neither belongs in the first paint, so
-   every route below the first three is loaded on demand. */
-const FactoryTwin3D = lazy(() => import('@/features/factory-twin/FactoryTwin3D'));
-const StfLayout3D = lazy(() => import('@/features/stf-layout/StfLayout3D'));
+/* The demos pull runtime engines and model weights; the notes pages pull
+   KaTeX and a Markdown parser. Neither belongs in the first paint, so every
+   route below the first two is loaded on demand. */
 const AutonomousRobot = lazy(() => import('@/features/robot/AutonomousRobot'));
 const SceneLab = lazy(() => import('@/features/scene-lab/SceneLab'));
 const Notes = lazy(() => import('@/features/notes/Notes'));
@@ -30,11 +27,14 @@ export default function App() {
     <>
       <Suspense fallback={<ViewerFallback />}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<StoryHome />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
-          <Route path="/factory" element={<FactoryDemo />} />
-          <Route path="/factory-twin" element={<FactoryTwin3D />} />
-          <Route path="/stf-layout" element={<StfLayout3D />} />
+          {/* The STF twin now runs on Cloud Run, not in this app. Old links
+              land on its project page, which frames the live site. */}
+          <Route path="/factory" element={<Navigate to="/project/digital-twin" replace />} />
+          <Route path="/factory-twin" element={<Navigate to="/project/digital-twin" replace />} />
+          <Route path="/stf-layout" element={<Navigate to="/project/digital-twin" replace />} />
+          <Route path="/classic" element={<Navigate to="/" replace />} />
           <Route path="/robot" element={<AutonomousRobot />} />
           <Route path="/scene" element={<SceneLab />} />
           <Route path="/notes" element={<Notes />} />

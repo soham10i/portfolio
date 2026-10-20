@@ -12,9 +12,12 @@ document.addEventListener('click', (e) => {
   const anchor = target.closest('a[href^="#"]')
   if (anchor) {
     const id = anchor.getAttribute('href')?.slice(1)
-    if (id && document.getElementById(id)) {
+    const el = id ? document.getElementById(id) : null
+    if (el) {
       e.preventDefault()
-      lenis.scrollTo(`#${id}`, { offset: -80 })
+      // Sections that already pad for the fixed header opt out of the
+      // default 80px clearance with data-anchor-offset="0".
+      lenis.scrollTo(el, { offset: Number(el.dataset.anchorOffset ?? -80) })
     }
   }
 })
