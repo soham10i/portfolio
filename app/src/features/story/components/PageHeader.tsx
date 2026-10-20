@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Github } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 interface Props {
   back: { to: string; label: string };
@@ -28,6 +29,7 @@ export default function PageHeader({ back, liveUrl, githubUrl }: Props) {
         </Link>
 
         <div className="flex items-center gap-1.5">
+          <ThemeToggle className="!h-10 !w-10" />
           {githubUrl && (
             <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="lg-btn !h-10">
               <Github className="h-4 w-4" /> <span className="max-sm:hidden">Code</span>
@@ -38,7 +40,7 @@ export default function PageHeader({ back, liveUrl, githubUrl }: Props) {
               href={liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[color:var(--fg)] px-4 text-[13px] font-medium text-white"
+              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[color:var(--fg)] px-4 text-[13px] font-medium text-[color:var(--on-fg)]"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[#34d399]" /> Live site <ArrowUpRight className="h-3.5 w-3.5" />
             </a>

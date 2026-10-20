@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import './story.css';
 import TopBar from './components/TopBar';
 import BottomBar from './components/BottomBar';
+import CloudLayer from './components/CloudLayer';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Work from './sections/Work';
@@ -13,8 +14,8 @@ import { useScrollStory } from './lib/useScrollStory';
 
 /* The redesigned home page (docs/REDESIGN.md). Layering, back to front:
  *   .story ground     cool grey, showing between the chapter panels
- *   [Phase 1]         fixed WebGL canvas, lazy-loaded
- *   <main>            the chapters as rounded gallery panels — real DOM text
+ *   CloudLayer        fixed WebGL point cloud, lazy-loaded, morphing per chapter
+ *   <main>            the chapters as translucent gallery panels — real DOM text
  *   chrome            TopBar + BottomBar, fixed */
 export default function StoryHome() {
   const root = useRef<HTMLDivElement>(null);
@@ -24,6 +25,7 @@ export default function StoryHome() {
     <div ref={root} className="story">
       <a href="#about" className="story-skip">Skip to content</a>
 
+      <CloudLayer />
       <TopBar />
 
       <main className="relative z-[1]">

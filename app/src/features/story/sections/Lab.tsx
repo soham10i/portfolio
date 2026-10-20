@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Github } from 'lucide-react';
 import { PROJECTS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
-import LiveSiteFrame from '../components/LiveSiteFrame';
+import LiveShot from '../components/LiveShot';
 
 const DEMOS = [
   { to: '/scene', title: 'SceneLab', note: 'YOLOv8 in your browser — frames never leave the device' },
@@ -11,8 +11,9 @@ const DEMOS = [
   { to: '/robot', title: 'SLAM robot', note: 'LIDAR mapping and A* planning, replayed live' },
 ];
 
-/* 04 — Lab. The STF twin gets the stage: its live Cloud Run deployment in a
-   browser-window frame, with the code on GitHub. Then the in-site demos. */
+/* 04 — Lab. The STF twin gets the stage: a screenshot of its live Cloud Run
+   deployment, framed as a browser window that opens the real thing, with the
+   code on GitHub. Then the in-site demos. */
 export default function Lab() {
   const twin = PROJECTS.find((p) => p.id === 'digital-twin')!;
 
@@ -28,11 +29,9 @@ export default function Lab() {
         A factory, <span className="serif text-p">twinned</span> from its own PLC code.
       </h2>
 
-      {twin.liveUrl && (
-        <div data-reveal>
-          <LiveSiteFrame url={twin.liveUrl} title="Smart Tabletop Factory — live digital twin" previewVideo={twin.loopVideo} />
-        </div>
-      )}
+      <div data-reveal>
+        <LiveShot project={twin} />
+      </div>
 
       <article data-reveal className="lg-panel mt-3 grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
         <div>

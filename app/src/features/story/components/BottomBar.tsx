@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 import { PROJECTS } from '@/shared/data/portfolio';
 import { CHAPTERS } from '../lib/chapters';
+import ThemeToggle from './ThemeToggle';
 import { useStory } from '../lib/store';
 
 /* One docked capsule, after Shape of Intelligence's bottom bar: where you are
-   (chapter, progress, projects explored), JARVIS, and the motion switch.
-   No theme picker: the site has one art direction (story.css). */
+   (chapter, progress, projects explored), JARVIS, motion, and light/dark. */
 export default function BottomBar() {
   const chapter = useStory((s) => s.chapter);
   const motion = useStory((s) => s.motion);
@@ -59,6 +59,7 @@ export default function BottomBar() {
         >
           <span className="mono whitespace-nowrap !text-[10px]">Motion {motion ? 'on' : 'off'}</span>
         </button>
+        <ThemeToggle />
       </div>
     </div>
   );

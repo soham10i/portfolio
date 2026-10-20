@@ -15,6 +15,7 @@ const {
   buildMessages, callLLMWithFallback, extractText, extractDelta,
   isUnreachable, friendlyError, budgetFor, UNREACHABLE_MSG,
 } = require('../services/llm');
+const chatStore = require('../services/chatStore');
 
 const router = express.Router();
 const limit = createLimiter({
@@ -25,7 +26,7 @@ const limit = createLimiter({
 const NOT_CONFIGURED = 'Chat is not configured — the backend has no LLM_API_BASE pointing at a model server.';
 
 function validate(req) {
-  const { message, history = [], voice = false } = req.body || {};
+  const { message, history = [], voice = false, conversationId, page } = req.body || {};
   const { maxMessageChars, maxHistoryMessages } = config.limits;
   if (!message || typeof message !== 'string' || !message.trim()) {
     return { error: 'Message is required' };
@@ -37,7 +38,24 @@ function validate(req) {
     .filter((h) => h && typeof h.content === 'string' && (h.role === 'user' || h.role === 'assistant'))
     .slice(-maxHistoryMessages)
     .map((h) => ({ role: h.role, content: h.content.slice(0, maxMessageChars) }));
-  return { message: message.trim(), history: cleanHistory, voice: voice === true };
+  return {
+    message: message.trim(), history: cleanHistory, voice: voice === true,
+    conversationId: chatStore.isConversationId(conversationId) ? conversationId : null,
+    page: typeof page === 'string' ? page : null,
+  };
+}
+
+/* Fire-and-forget: storing a turn must never delay or fail the reply. */
+function store(req, parsed, reply) {
+  if (!parsed.conversationId) return;
+  chatStore.saveTurn({
+    conversationId: parsed.conversationId,
+    page: parsed.page,
+    userAgent: req.get('user-agent'),
+    message: parsed.message,
+    reply,
+    voice: parsed.voice,
+  });
 }
 
 router.post('/', limit, async (req, res) => {
@@ -67,6 +85,7 @@ router.post('/', limit, async (req, res) => {
 
     if (!text) return res.status(502).json({ error: 'The AI returned an empty response. Try rephrasing?' });
     res.json({ response: text });
+    store(req, parsed, text);
   } catch (err) {
     console.error('Chat error:', err.message || err);
     if (isUnreachable(err)) return res.status(503).json({ error: UNREACHABLE_MSG });
@@ -106,7 +125,7 @@ router.post('/stream', limit, async (req, res) => {
     const reader = upstream.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    let sentAny = false;
+    let reply = '';
     const send = (event) => res.write(`data: ${JSON.stringify(event)}\n\n`);
 
     for (;;) {
@@ -123,16 +142,17 @@ router.post('/stream', limit, async (req, res) => {
         if (!payload || payload === '[DONE]') continue;
         try {
           const text = extractDelta(JSON.parse(payload));
-          if (text) { sentAny = true; send({ delta: text }); }
+          if (text) { reply += text; send({ delta: text }); }
         } catch {
           // partial JSON across chunk boundaries — rare with line-based SSE
         }
       }
     }
 
-    if (!sentAny) send({ error: 'The AI returned an empty response. Try rephrasing?' });
+    if (!reply) send({ error: 'The AI returned an empty response. Try rephrasing?' });
     send({ done: true });
     res.end();
+    if (reply) store(req, parsed, reply);
   } catch (err) {
     console.error('Stream error:', err.message || err);
     if (!res.headersSent) {
@@ -146,6 +166,16 @@ router.post('/stream', limit, async (req, res) => {
       res.end();
     }
   }
+});
+
+/* The stored turns of one conversation, so a visitor who reloads the page
+   picks up where they left off. The conversation id is a random UUID only the
+   visitor's browser holds; it is the whole of the access check. */
+router.get('/history', limit, async (req, res) => {
+  const id = String(req.query.conversation || '');
+  if (!chatStore.isConversationId(id)) return res.status(400).json({ error: 'Invalid conversation id' });
+  res.set('Cache-Control', 'no-store');
+  res.json({ messages: await chatStore.loadConversation(id) });
 });
 
 module.exports = router;

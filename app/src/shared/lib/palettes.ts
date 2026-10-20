@@ -136,7 +136,9 @@ export function readStoredPalette(): PaletteKey {
   } catch {
     /* private mode / blocked storage — fall through to the default */
   }
-  return DEFAULT_PALETTE;
+  /* No stored palette: match the site theme index.html chose (stored choice
+     or OS preference), so a dark-mode visitor's demos are dark too. */
+  return document.documentElement.dataset.theme === 'dark' ? 'midnight' : DEFAULT_PALETTE;
 }
 
 export function storePalette(key: PaletteKey) {

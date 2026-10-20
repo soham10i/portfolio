@@ -311,6 +311,26 @@ project page frames the Cloud Run deployment and links to
 github.com/soham10i/stf-hw; the old `/factory`, `/factory-twin` and
 `/stf-layout` routes redirect to that page.
 
+## 6c. Dark mode, JARVIS, chat storage, project visuals (2026-10-20)
+
+- **Dark mode.** The gallery tokens have a dark variant under
+  `html[data-theme="dark"]` (set before first paint by index.html: stored
+  choice, else the OS). The sun/moon switch lives in the bottom bar and the
+  project-page header; choosing a theme also moves the demos' palette
+  (Midnight / Daylight) so every page agrees.
+- **JARVIS** is rebuilt in the same system (`.jarvis` scope shares the
+  tokens): an animated conic orb, an editorial transcript with ink bubbles for
+  the visitor, suggestion rows, and a capsule composer; voice is unchanged.
+- **Chat storage.** The backend stores each turn in Supabase
+  (`backend/src/services/chatStore.js`, schema in
+  `supabase/migrations/20261020_jarvis_chat.sql`) under a random conversation
+  id the browser keeps, and `GET /api/chat/history` restores it on reload.
+  Server-side only, best-effort: a Supabase failure never breaks the chat.
+- **No iframe.** The STF service forbids framing, so the live twin is shown
+  as a real screenshot in a browser-window frame that opens the site
+  (`LiveShot`). Projects without a screenshot get generative cover art
+  (`ProjectCover`); cards and covers tilt toward the pointer (`useTilt`).
+
 ### Live twin embedding
 
 The STF service currently sends `X-Frame-Options: DENY` and

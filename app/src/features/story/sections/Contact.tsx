@@ -43,7 +43,7 @@ export default function Contact() {
           <button
             type="button"
             onClick={copy}
-            className="inline-flex h-14 items-center gap-3 rounded-full bg-[color:var(--fg)] px-6 text-[15px] font-medium text-[color:var(--bg)]"
+            className="inline-flex h-14 items-center gap-3 rounded-full bg-[color:var(--fg)] px-6 text-[15px] font-medium text-[color:var(--on-fg)]"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? 'Copied to clipboard' : CONTACT.email}

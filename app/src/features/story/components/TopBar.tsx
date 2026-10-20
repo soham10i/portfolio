@@ -114,7 +114,7 @@ export default function TopBar() {
             {STF_LIVE_URL && (
               <a
                 href="#lab"
-                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[color:var(--fg)] px-4 text-[13px] font-medium text-[color:var(--bg)]"
+                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[color:var(--fg)] px-4 text-[13px] font-medium text-[color:var(--on-fg)]"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--a)]" />
                 Live twin

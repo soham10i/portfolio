@@ -24,7 +24,7 @@ export default function Hero() {
       data-anchor-offset="0"
       aria-label="Introduction"
       className="panel relative flex min-h-[calc(100svh-var(--inset)*2)] flex-col justify-between overflow-hidden px-[var(--gutter)] pb-28 pt-[132px]"
-      style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)' } as React.CSSProperties}
+      style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)', '--panel-opacity': '38%' } as React.CSSProperties}
     >
       <div data-hero-stage aria-hidden className="pointer-events-none absolute inset-0" />
 
@@ -63,7 +63,7 @@ export default function Hero() {
           className="lg-pill flex h-14 items-center gap-3 pl-5 pr-2 text-[14px]"
         >
           Begin the story
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--bg)]">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)]">
             <ArrowDown className="h-4 w-4" />
           </span>
         </a>

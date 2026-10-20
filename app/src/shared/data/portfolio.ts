@@ -27,10 +27,13 @@ export interface Project {
   featured?: boolean;
   /** External live deployment (the STF twin on Google Cloud). */
   liveUrl?: string;
-  /** Muted looping preview shown on the card / Lab section. */
-  loopVideo?: string;
-  /** Per-card accent; drives the card's rim light in the 3D deck. */
+  /** Per-card accent; drives the card's colour field and cover art. */
   tint?: string;
+  /** Cover photo (a real screenshot of the running system). Without one the
+      card draws generative cover art from the tint and category. */
+  image?: string;
+  /** Extra images for the project page, shown as a captioned strip. */
+  gallery?: { src: string; caption: string }[];
   description?: string;
   impact?: string;
   tech?: string[];
@@ -48,7 +51,7 @@ export const PROJECTS: Project[] = [
     githubUrl: 'https://github.com/soham10i/stf-hw',
     featured: true,
     liveUrl: STF_LIVE_URL,
-    loopVideo: '/media/stf-cycle.mp4',
+    image: '/media/work/stf-live.jpg',
     tint: '#4d8dff',
     description: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays. Includes a predictive-maintenance dashboard for warehouse automation subsystems driven by MQTT sensor pipelines at 10 Hz, time-series storage in InfluxDB, and interactive Streamlit dashboards.',
     impact: '56/56 checks passed · 85% failure-prediction accuracy',
@@ -82,6 +85,7 @@ export const PROJECTS: Project[] = [
     tech: ['ROS', 'Webots', 'SLAM', 'LIDAR', 'A*'],
     demoUrl: '/robot',
     githubUrl: 'https://github.com/soham10i/autonomouse_robots',
+    image: '/media/work/slam-robot.jpg',
     tint: '#8b7bff',
   },
   {
@@ -102,6 +106,13 @@ export const PROJECTS: Project[] = [
     title: 'Unsupervised Brain-MRI Lesion Segmentation (BraTS-PEDs)',
     category: 'Computer Vision', timeline: '2026',
     githubUrl: 'https://github.com/soham10i/cv-project',
+    image: '/media/brats-anomaly.webp',
+    gallery: [
+      { src: '/media/brats-input.webp', caption: 'Input slice' },
+      { src: '/media/brats-noised.webp', caption: 'Partially noised' },
+      { src: '/media/brats-healthy.webp', caption: 'Healthy reconstruction' },
+      { src: '/media/brats-anomaly.webp', caption: 'Anomaly map' },
+    ],
     tint: '#a78bfa',
     versions: [
       {
