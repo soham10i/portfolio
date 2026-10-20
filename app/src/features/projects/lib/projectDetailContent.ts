@@ -1,6 +1,6 @@
-/* Rich project detail content for non-digital-twin projects.
- * Each entry mirrors the structure of the twin detail so the page can render
- * a consistent layout: problem → approach → architecture → results → timeline. */
+/* Project write-ups: problem → approach → architecture → results → notes.
+ * Same tone as shared/data/portfolio.ts: what was built, how it was
+ * measured, and what did not work. */
 
 export interface ProjectDetailContent {
   problem: string;
@@ -15,7 +15,7 @@ export interface ProjectDetailContent {
 export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
   'digital-twin': {
     problem:
-      'A tabletop factory cell runs a full warehouse workflow — storage, retrieval, sorting, a vacuum gripper robot — but its controllers expose nothing a maintenance team can read. Faults show up as a stopped belt, not as a signal you could have acted on an hour earlier.',
+      'The fischertechnik training factory runs a full warehouse cycle — storage, retrieval, sorting, a vacuum gripper — but the only description of how it moves is in its PLC programs. A useful twin has to reproduce that behaviour closely enough to test against, not just look like the cell.',
     approach: [
       'Modelled all four stations of the fischertechnik 536634 cell from the controller rather than from photographs: the manufacturer’s PLC step tables, TON timer literals and component datasheets.',
       'Solved the suction gripper’s three pulse-to-metre scales from the sorting line’s three collinear bays, because the PLC gives it no soft limits to read them from.',
@@ -95,6 +95,36 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
     ],
     githubNote: 'Modular Python pipeline with unit tests per stage.',
   },
+  'embedded-intelligence': {
+    problem:
+      'GPS does not work indoors, and a single BLE beacon reading is a poor ruler: walls and bodies shadow the signal by 4–8 dB, which at a few metres is a couple of metres of range error. The aim was a low-cost wearable that tracks a walker through a room by fusing three beacons with its own motion sensors.',
+    approach: [
+      'Recorded RSSI from three BLE beacons and the BMI270/BMM150 IMU on an Arduino Nano 33 BLE Sense while walking a 10 × 10 m room.',
+      'A particle filter scores every hypothesis directly in RSSI space under a log-distance path-loss model, enforces the walls in the same log-weight update, resamples systematically only when the effective sample size drops, and recovers from wrong lock-ons with Augmented MCL.',
+      'The motion model follows the data: pedestrian dead reckoning from detected steps when the IMU runs fast enough, a velocity random walk for slow logs like the original 1 Hz recording.',
+      'A simulator with ground truth reproduces the room, beacons, sensor noise and logging, so the original and the new pipeline are scored on identical walks instead of being judged by eye.',
+    ],
+    architecture: [
+      { tier: 'Device', parts: ['Arduino Nano 33 BLE Sense', 'BMI270 / BMM150', 'BLE scan · 50 Hz logger'] },
+      { tier: 'Filters', parts: ['RSSI Kalman', 'Wrap-safe heading Kalman', 'Particle filter · AMCL'] },
+      { tier: 'Evaluation', parts: ['Ground-truth simulator', 'RMSE · CEP50 · CEP95', 'pytest'] },
+      { tier: 'Viewer', parts: ['<ei-viewer> web component', 'Particles · RSSI · error charts'] },
+    ],
+    results: [
+      { label: 'RMSE · v2, 50 Hz', value: '1.79 m', color: '#16a34a' },
+      { label: 'RMSE · original', value: '11.13 m', color: '#ef4444' },
+      { label: 'CEP95 · v2', value: '3.37 m', color: 'var(--a)' },
+      { label: 'Bugs fixed', value: '11', color: 'var(--p)' },
+    ],
+    technicalNotes: [
+      'The original wall constraint never took effect: particles outside the room were weighted 1e-100 in predict(), then every weight was reset to 1 in update().',
+      'Its step detector compared the raw accelerometer magnitude (~9.8 m/s² with gravity) against 1.2 m/s², so nearly every sample counted as a step — and at 1 Hz steps cannot be resolved at all.',
+      'Compass headings were used as maths angles, swapping x and y; the heading filter also averaged 359° and 1° to 180°. Both are fixed and covered by tests.',
+      'The recorded walk has no ground truth, so accuracy is quoted from simulation; at the recorded 1 Hz rate v2 reaches 2.4 m RMSE against 5.3 m for the original.',
+    ],
+    githubNote: 'Course project with Vinay Kumar (OTH Amberg-Weiden, Embedded Intelligence). Code, simulator and benchmark are being prepared for publication.',
+  },
+
   scene: {
     problem:
       'Most scene-understanding systems either run in the cloud (privacy risk, latency) or are limited to fixed object lists (no open-vocabulary description). The goal was a pipeline that detects objects in real time on the device, narrates what is happening in natural language, and does so without sending every frame to a server.',
@@ -102,7 +132,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
       'YOLOv8n-seg runs in the browser through ONNX Runtime Web, so camera frames never leave the visitor\'s device. Detection happens at ~30 FPS on a modern laptop.',
       'A lightweight scene-change detector samples keyframes only when the visual content has actually changed, rate-limiting captions to avoid flooding the backend.',
       'Sampled keyframes are sent to a self-hosted BLIP / VLM service for open-vocabulary captioning. If the service is offline, the detector writes its own factual descriptions from the label set.',
-      'The whole pipeline is containerised and deployable anywhere — no reliance on commercial vision APIs.',
+      'Everything runs in containers with self-hosted models; no commercial vision API is involved.',
     ],
     architecture: [
       { tier: 'Edge', parts: ['YOLOv8n-seg ONNX', 'ONNX Runtime Web', 'WebGPU / WASM backend'] },
@@ -151,32 +181,22 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
     githubNote: 'The recorded runs and the browser re-implementation are both derived from the same controller source in the repository.',
   },
 
-  ble: {
+  'smart-home': {
     problem:
-      'GPS does not work indoors. BLE beacons are cheap and ubiquitous, but RSSI alone is noisy and non-linear. The goal was sub-meter accuracy for indoor asset tracking using only an Arduino Nano BLE Sense — no external infrastructure beyond a few fixed beacons.',
+      'A smart-home course project needed one backend that devices and a dashboard could both talk to: sensors posting readings, users signing in, and commands going back out to devices.',
     approach: [
-      'Fused IMU accelerometer + gyroscope data with BLE RSSI measurements in a Kalman filter for smooth position tracking.',
-      'Added a particle filter as a fallback for non-linear regions where the Kalman linearity assumption breaks down.',
-      'Ran the full pipeline on the Arduino Nano BLE Sense (nRF52840) at 50 Hz, with all filtering done on-device.',
-      'Calibrated beacon RSSI-to-distance models per-environment to account for multipath and wall attenuation.',
+      'A FastAPI service with three modules: sensor data, user management and device control.',
+      'Sensor readings (temperature, humidity, pressure, electricity, gas) are posted and queried as JSON over /sensor_data.',
+      'Users register and log in; login returns a JWT bearer token that protects the other endpoints.',
+      'Device commands such as turn_on go through /device_control. The API is documented in the repository, runs locally with Docker Compose and was deployed on Railway.',
     ],
     architecture: [
-      { tier: 'Hardware', parts: ['Arduino Nano BLE Sense', 'nRF52840', 'IMU + BLE'] },
-      { tier: 'Sensors', parts: ['Accelerometer', 'Gyroscope', 'BLE RSSI'] },
-      { tier: 'Fusion', parts: ['Kalman filter', 'Particle filter', '50 Hz update'] },
-      { tier: 'Output', parts: ['Sub-metre position', 'Velocity estimate', 'Confidence ellipse'] },
+      { tier: 'Clients', parts: ['Sensors (JSON over HTTP)', 'Dashboard'] },
+      { tier: 'API', parts: ['FastAPI', 'JWT auth', 'Sensor · user · device modules'] },
+      { tier: 'Data', parts: ['SQLite database'] },
+      { tier: 'Deploy', parts: ['Docker Compose', 'Railway'] },
     ],
-    results: [
-      { label: 'Update rate', value: '50 Hz', color: 'var(--a)' },
-      { label: 'Accuracy', value: 'Sub-metre', color: 'var(--p)' },
-      { label: 'Platform', value: 'Arduino Nano', color: 'var(--s)' },
-      { label: 'Filters', value: 'Kalman + PF', color: '#22c55e' },
-    ],
-    technicalNotes: [
-      'The Kalman filter uses a constant-velocity motion model; the particle filter resamples 200 particles.',
-      'RSSI-to-distance was calibrated per room using a least-squares fit to ground-truth measurements.',
-      'All computation is on-device; no cloud or phone tethering is required after calibration.',
-    ],
+    githubNote: 'Source, API documentation and deployment config are in the repository. Readings in the examples are sample values; no hardware is bundled.',
   },
 
   'cv-uad': {
@@ -201,7 +221,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
       { label: 'Objective', value: 'DDPM', color: '#22c55e' },
     ],
     technicalNotes: [
-      'The DICE score looks low but is calibrated — BraTS-PEDs lesion masks are small, and pixel-wise AUROC is the fairer metric.',
+      'DICE 0.076 means the masks do not yet segment lesions usefully. Pixel-wise AUROC of 0.713 shows the anomaly map does carry signal, which is why the approach was kept rather than dropped.',
       'EMA was critical: without it, sampling variance produced false positives at patch boundaries.',
       'The negative result (latent diffusion underperforming) is documented in the repository as `brats-uad`.',
     ],

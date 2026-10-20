@@ -24,10 +24,10 @@ export default function SessionLibrary({ activeId, onOpen, onRemove, onClear, ac
   const total = items.reduce((n, v) => n + v.bytes, 0);
 
   return (
-    <section className="glass-card overflow-hidden rounded-[18px]">
+    <section className="lg-panel overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-        <p className="font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">
-          This session · {items.length} clip{items.length === 1 ? '' : 's'}
+        <p className="mono text-fg3">
+          Clips in this tab · {items.length}
           {items.length > 0 && <span className="ml-2 normal-case tracking-normal">{session.formatBytes(total)} in memory</span>}
         </p>
         {items.length > 0 && (

@@ -8,7 +8,7 @@ import LiveShot from '../components/LiveShot';
 const DEMOS = [
   { to: '/scene', title: 'SceneLab', note: 'YOLOv8 in your browser — frames never leave the device' },
   { to: '/medqa', title: 'MedQA', note: 'Retrieval-augmented answers, checked by an NLI verifier' },
-  { to: '/robot', title: 'SLAM robot', note: 'LIDAR mapping and A* planning, replayed live' },
+  { to: '/robot', title: 'SLAM robot', note: 'LIDAR mapping and A* planning, in the browser' },
 ];
 
 /* 04 — Lab. The STF twin gets the stage: a screenshot of its live Cloud Run
@@ -24,9 +24,9 @@ export default function Lab() {
 
       <h2
         data-reveal
-        className="mb-[clamp(40px,6vh,72px)] max-w-[20ch] text-[clamp(40px,7vw,112px)] font-medium leading-[.92] tracking-[-.05em]"
+        className="mb-[clamp(40px,6vh,72px)] max-w-[20ch] t-h2"
       >
-        A factory, <span className="serif text-p">twinned</span> from its own PLC code.
+        A factory cell, <span className="serif text-p">simulated</span> from its PLC code.
       </h2>
 
       <div data-reveal>
@@ -36,9 +36,10 @@ export default function Lab() {
       <article data-reveal className="lg-panel mt-3 grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
         <div>
           <p className="mono mb-3 text-fg3">Featured · {twin.timeline}</p>
-          <p className="max-w-[60ch] text-[15px] leading-relaxed text-fg2">
-            Four stations of the fischertechnik 536634 cell, simulated from the manufacturer’s PLC step tables,
-            timer literals and datasheets — served live from Google Cloud Run.
+          <p className="t-body max-w-[60ch]">
+            The twin models all four stations of the fischertechnik 536634 training factory from its PLC programs
+            and datasheets, and is checked against them. It runs on Google Cloud Run, so you can start a production
+            cycle yourself.
           </p>
           <ul className="mt-4 flex flex-wrap gap-1.5">
             {twin.tech?.map((t) => (

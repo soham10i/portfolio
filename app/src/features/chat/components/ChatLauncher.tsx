@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import '@/features/story/story.css';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
 
 /* The floating JARVIS button and its panel.
  *
@@ -45,7 +46,7 @@ export default function ChatLauncher() {
             aria-label="Ask JARVIS"
             className="lg-pill lg-chrome flex h-12 items-center gap-2.5 pl-1.5 pr-1.5 text-[13.5px] font-medium transition-transform duration-300 hover:-translate-y-0.5 sm:pr-4"
           >
-            <span className="jarvis-orb" style={{ width: 36, height: 36 }} aria-hidden />
+            <JarvisOrb size={36} />
             <span className="hidden sm:inline">Ask JARVIS</span>
           </button>
         </div>

@@ -41,9 +41,9 @@ export default function VlmInspector({ sheet, inspection, loading, accent }: Pro
   const hasImage = !!sheet || (img?.present ?? false);
 
   return (
-    <section className="glass-card overflow-hidden rounded-[18px]">
+    <section className="lg-panel overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <p className="inline-flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">
+        <p className="inline-flex items-center gap-2 mono text-fg3">
           <Eye className="h-3.5 w-3.5" style={{ color: accent }} />
           Sent to the model
         </p>
@@ -135,11 +135,11 @@ export default function VlmInspector({ sheet, inspection, loading, accent }: Pro
             <div className="px-4 py-3">
               {inspection ? (
                 <>
-                  <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">System</p>
+                  <p className="mb-1.5 mono text-fg3">System</p>
                   <pre className="mb-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-[9px] border border-line bg-bg2 px-3 py-2.5 text-[11.5px] leading-relaxed text-fg2">
                     {inspection.systemPrompt}
                   </pre>
-                  <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">
+                  <p className="mb-1.5 mono text-fg3">
                     User{inspection.historyTurns > 0 && ` · after ${inspection.historyTurns} earlier turn${inspection.historyTurns === 1 ? '' : 's'}`}
                   </p>
                   <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-[9px] border border-line bg-bg2 px-3 py-2.5 text-[11.5px] leading-relaxed text-fg2">

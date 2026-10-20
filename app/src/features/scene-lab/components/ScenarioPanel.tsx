@@ -70,9 +70,9 @@ export default function ScenarioPanel({
   const remaining = maxChars - value.length;
 
   return (
-    <section className="glass-card overflow-hidden rounded-[18px]">
+    <section className="lg-panel overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <p className="inline-flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.13em] text-fg3">
+        <p className="inline-flex items-center gap-2 mono text-fg3">
           <Target className="h-3.5 w-3.5" style={{ color: accent }} />
           Your scenario
         </p>

@@ -1,8 +1,9 @@
 import { STF_LIVE_URL } from '@/shared/lib/env';
 
-/* Content for the redesigned pages, transcribed from the design source
-   (portfolio_source/pages/Portfolio Home v2.dc.html). Single source of truth —
-   Home, Project Detail and the mobile frames all read from here. */
+/* Site content — the single source of truth for the home page, the project
+   pages and (mirrored by hand) JARVIS's prompt in backend/src/prompts.
+   Tone: plain engineering writing. State what was built and how it was
+   measured; no adjectives doing the work a number should do. */
 
 export type Tier = 'Production' | 'Strong' | 'Explored';
 
@@ -34,26 +35,29 @@ export interface Project {
   image?: string;
   /** Extra images for the project page, shown as a captioned strip. */
   gallery?: { src: string; caption: string }[];
+  /** A live 3-D cover instead of the photo: 'lidar' runs the SLAM controller
+      in the robot engine's point-cloud mode (LidarCover). */
+  cover3d?: 'lidar';
+  /** Interactive run viewer (the <ei-viewer> web component) on the project page. */
+  viewer?: { runs: { label: string; src: string }[] };
   description?: string;
   impact?: string;
   tech?: string[];
   versions?: ProjectVersion[];
 }
 
-export const CATEGORIES = ['All', 'AI/ML', 'Computer Vision', 'NLP', 'Robotics', 'Fullstack', 'Embedded'];
-
 export const PROJECTS: Project[] = [
   {
     id: 'digital-twin',
     title: 'Smart Tabletop Factory — Physics Digital Twin',
-    category: 'AI/ML',
+    category: 'Simulation',
     timeline: 'Oct 2025 – Mar 2026',
     githubUrl: 'https://github.com/soham10i/stf-hw',
     featured: true,
     liveUrl: STF_LIVE_URL,
     image: '/media/work/stf-live.jpg',
     tint: '#4d8dff',
-    description: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays. Includes a predictive-maintenance dashboard for warehouse automation subsystems driven by MQTT sensor pipelines at 10 Hz, time-series storage in InfluxDB, and interactive Streamlit dashboards.',
+    description: 'A digital twin of the fischertechnik 536634 training factory, built in three versions. v1 streamed the cell\'s sensors over MQTT into InfluxDB with a failure predictor on top. v2 drew the cell in the browser and drove it from the real PLC process image. v3 simulates all four stations in MuJoCo from the manufacturer\'s PLC step tables, timer values and datasheets, and checks the simulation against the controller.',
     impact: '56/56 checks passed · 85% failure-prediction accuracy',
     tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MQTT', 'InfluxDB', 'Streamlit'],
     versions: [
@@ -80,22 +84,23 @@ export const PROJECTS: Project[] = [
   {
     id: 'slam', title: 'Autonomous Robots — SLAM Navigation',
     category: 'Robotics', timeline: 'Oct 2024 – Mar 2025', hasVideo: true,
-    description: 'SLAM with LIDAR + odometry fusion, log-odds occupancy mapping and A* planning, driving a ROSBot through five Webots maps. The controller pipeline is re-implemented in the browser, so the runs are live rather than recorded.',
-    impact: 'Five maps, live in-browser re-implementation',
+    description: 'A ROSBot in Webots that maps unknown mazes with 2-D LIDAR and wheel odometry (log-odds occupancy grid), plans with A* and follows the path with pure pursuit. The controller is ported to the browser, and the card replays a recorded run: 27,612 LIDAR points along 831 poses.',
+    impact: 'Five maze worlds · recorded run replayed in 3D',
     tech: ['ROS', 'Webots', 'SLAM', 'LIDAR', 'A*'],
     demoUrl: '/robot',
     githubUrl: 'https://github.com/soham10i/autonomouse_robots',
     image: '/media/work/slam-robot.jpg',
+    cover3d: 'lidar',
     tint: '#8b7bff',
   },
   {
     id: 'scene',
     title: 'Real-Time Multimodal Agentic Scene Understanding',
-    category: 'Computer Vision',
+    category: 'Perception',
     timeline: 'Oct 2024 – Apr 2025',
     hasVideo: true,
-    description: 'YOLOv8 detection fused with a vision-language model for scene narration. The live demo runs the same YOLOv8n weights in the browser through ONNX Runtime — camera frames never leave your device — and sends only scene-change keyframes to the FastAPI captioning service.',
-    impact: 'Try it live — detection runs in your browser',
+    description: 'Object detection plus a vision-language model that describes what is happening in a video. The demo runs YOLOv8n in the browser with ONNX Runtime, so camera frames stay on the device; only keyframes picked by a scene-change test go to a FastAPI captioning service.',
+    impact: 'Detection runs on-device in the browser',
     tech: ['YOLOv8', 'ONNX Runtime Web', 'BLIP', 'FastAPI', 'WebGPU', 'Docker'],
     demoUrl: '/scene',
     githubUrl: 'https://github.com/soham10i/Real-Time-Scene-Understanding',
@@ -104,7 +109,10 @@ export const PROJECTS: Project[] = [
   {
     id: 'cv-uad',
     title: 'Unsupervised Brain-MRI Lesion Segmentation (BraTS-PEDs)',
-    category: 'Computer Vision', timeline: '2026',
+    category: 'Medical imaging', timeline: '2026',
+    description: 'Finds tumours in paediatric brain MRI without labels: a diffusion model learns only healthy tissue, and the parts it cannot reconstruct are flagged as anomalies.',
+    impact: 'DICE 0.076 · AUROC 0.713 — weak, reported as a baseline',
+    tech: ['PyTorch', 'DDPM / DDIM', 'Patch diffusion', 'dense-CRF'],
     githubUrl: 'https://github.com/soham10i/cv-project',
     image: '/media/brats-anomaly.webp',
     gallery: [
@@ -130,20 +138,20 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    id: 'ble', title: 'Indoor Localization System — Embedded BLE',
-    category: 'Embedded', timeline: 'May 2025 – Jun 2025',
-    description: 'IMU + BLE beacon sensor fusion with Kalman and Particle filters on an Arduino Nano BLE Sense, tracking at a 50 Hz update rate.',
-    impact: 'Sub-meter accuracy on embedded hardware',
-    tech: ['Arduino', 'Kalman Filter', 'Particle Filter', 'IMU', 'BLE'],
+    id: 'smart-home', title: 'Smart Home & City — Sensor and Device API',
+    category: 'Backend · IoT', timeline: 'Oct 2024 – Mar 2025',
+    description: 'The backend for a smart-home course project: a FastAPI service that stores sensor readings (temperature, humidity, pressure, electricity, gas), authenticates users with JWT and accepts device-control commands. Documented API, Docker Compose for local runs, deployed on Railway.',
+    impact: 'Sensor ingest, JWT auth and device control in one service',
+    tech: ['Python', 'FastAPI', 'JWT', 'SQLite', 'Docker', 'Railway'],
     githubUrl: 'https://github.com/soham10i/oth_ai_sem_01_mdne',
     tint: '#7fb2ff',
   },
   {
     id: 'wind-pdm',
     title: 'Predictive Maintenance for Wind Turbines',
-    category: 'AI/ML', timeline: '2025 – 2026',
-    description: 'Failure prediction on SCADA data from the CARE-to-Compare benchmark (Wind Farm C). Healthy operation is isolated first — DBSCAN on wind speed and power, a fitted piecewise ideal power curve and a 3σ tolerance band — then a two-level system flags failures early: an XGBoost triage model validated with leave-one-out CV, and timestamp-level unsupervised scoring from model residuals and an Isolation Forest that turns a verdict into concrete alarm times.',
-    impact: 'Scored on the full CARE metric, with early-detection lead time per failure',
+    category: 'Predictive maintenance', timeline: '2025 – 2026',
+    description: 'Early failure detection on wind-turbine SCADA data (CARE-to-Compare benchmark, Wind Farm C). Healthy operation is separated out first with DBSCAN, a fitted power curve and a 3σ band. An XGBoost model then flags which events are failures (leave-one-out CV), and residual scoring with an Isolation Forest turns that into alarm timestamps.',
+    impact: 'Evaluated with the CARE score, including detection lead time',
     tech: ['Python', 'XGBoost', 'Isolation Forest', 'DBSCAN', 'scikit-learn', 'pandas'],
     githubUrl: 'https://github.com/soham10i/preventive--maintenance',
     tint: '#34d399',
@@ -151,9 +159,9 @@ export const PROJECTS: Project[] = [
   {
     id: 'co2-tracker',
     title: 'CO₂ Footprint Tracker',
-    category: 'Fullstack', timeline: 'WS 2024/25',
-    description: 'A team-built web application for tracking personal CO₂ emissions from transport and household energy. Spring Boot REST API with JWT sign-up, sign-in and token refresh, per-activity emission calculators (car, flight, household), and a dashboard front end. Delivered in two iterations as the OTH software-engineering team project.',
-    impact: 'Two delivered iterations, JWT-secured REST API',
+    category: 'Full-stack', timeline: 'WS 2024/25',
+    description: 'A team web app for tracking personal CO₂ emissions from transport and household energy: a Spring Boot REST API with JWT sign-up, sign-in and token refresh, emission calculators per activity, and a dashboard. Built in two iterations for the OTH software-engineering course.',
+    impact: 'Team project · two iterations · JWT REST API',
     tech: ['Java', 'Spring Boot', 'Maven', 'JWT', 'SQL', 'JavaScript'],
     githubUrl: 'https://github.com/soham10i/CO2-racking-System',
     tint: '#a3e635',
@@ -162,8 +170,8 @@ export const PROJECTS: Project[] = [
     id: 'medqa-nlp',
     title: 'Medical Question Answering over Wikipedia',
     category: 'NLP', timeline: '2025',
-    description: 'Answers USMLE-style multiple-choice questions from the MedQA dataset using Wikipedia as a live knowledge source. Biomedical NER with SciSpacy picks the articles to fetch, Sentence-Transformers embeds the passages, a FAISS index (CPU or GPU) retrieves evidence for every option, and an answer selector scores the candidates. Modular pipeline with unit tests per stage; the /medqa demo on this site is its retrieval-and-verification successor.',
-    impact: 'End-to-end RAG pipeline with tested, swappable stages',
+    description: 'Answers USMLE-style multiple-choice questions (MedQA) using Wikipedia as the knowledge source. SciSpacy entity recognition picks the articles, Sentence-Transformers embeds the passages, FAISS retrieves evidence for each option and a selector scores the candidates. Each stage is a tested module; the /medqa demo here is the follow-up with NLI verification.',
+    impact: 'Retrieval pipeline with a unit-tested module per stage',
     tech: ['Python', 'Sentence-Transformers', 'FAISS', 'SciSpacy', 'PyTorch'],
     demoUrl: '/medqa',
     githubUrl: 'https://github.com/soham10i/natural-language-processing-project',
@@ -171,12 +179,16 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'embedded-intelligence',
-    title: 'Embedded Intelligence',
-    category: 'Embedded', timeline: '2026',
-    description: 'On-device machine learning for microcontrollers. Write-up and source code are being prepared.',
-    impact: 'Source code coming soon',
-    tech: ['Embedded ML', 'C/C++'],
+    title: 'Indoor Localization — BLE + IMU Particle Filter',
+    category: 'State estimation', timeline: 'Jul 2025 · v2 2026',
+    description: 'Tracks a person walking through a 10 × 10 m room by fusing three BLE beacons with the IMU of an Arduino Nano 33 BLE Sense in a particle filter. The course version was a notebook; v2 is a tested Python package with a ground-truth simulator, a benchmark, a fixed 50 Hz data logger and the run viewer on this page.',
+    impact: '1.8 m RMSE vs 11.1 m for the course version (10 simulated walks)',
+    tech: ['Python', 'NumPy', 'Particle filter', 'Kalman filter', 'Arduino', 'BLE', 'IMU'],
     tint: '#fbbf24',
+    viewer: { runs: [
+      { label: 'Recorded walk', src: '/media/work/ei-recorded.json' },
+      { label: 'Simulated · 50 Hz', src: '/media/work/ei-sim-50hz.json' },
+    ] },
   },
 ];
 
@@ -194,51 +206,46 @@ export const EXPERIENCES: Experience[] = [
   {
     period: 'Mar 2025 – Aug 2025', type: 'Part-time', role: 'Teaching Assistant — Decision Modelling & Data Analysis',
     company: 'OTH Amberg-Weiden', location: 'Weiden, Germany',
-    description:
-      'Taught the applied data-analysis strand of a Master\u2019s module to a cohort of 30, alongside my own graduate coursework.',
+    description: 'Ran lab sessions for the data-analysis part of a Master\u2019s module with 30 students.',
     highlights: [
-      'Designed and delivered lab sessions on SQL, statistical modelling and supervised learning, translating lecture theory into exercises students could run on real industrial datasets.',
-      'Built and maintained KNIME workflows used as the module\u2019s reference implementations, covering data cleaning, feature engineering and model evaluation.',
-      'Held weekly office hours and reviewed submitted work, which meant explaining the same idea several different ways until it landed — the single most useful thing I have done for my own clarity as an engineer.',
+      'Taught SQL, statistical modelling and supervised learning in weekly labs.',
+      'Built the KNIME workflows used as reference solutions.',
+      'Held office hours and reviewed student work.',
     ],
-    technologies: ['SQL', 'Machine Learning', 'KNIME', 'Python', 'Statistics', 'Data Visualisation'],
+    technologies: ['SQL', 'Machine Learning', 'KNIME', 'Python', 'Statistics'],
   },
   {
     period: 'Feb 2023 – Feb 2024', type: 'Full-time', role: 'Software Engineer — Data Systems',
     company: 'Altera Digital Health', location: 'Remote / Pune, India',
-    description:
-      'Owned backend data infrastructure for a clinical platform, where the data is regulated, the volume is large and downtime is not an option.',
+    description: 'Backend data pipelines for a clinical software platform.',
     highlights: [
-      'Architected high-throughput ETL pipelines on Microsoft Azure for healthcare audit logs, cutting retrieval latency by 30% against the previous implementation.',
-      'Brought the pipeline to full compliance with HIPAA-aligned data-handling standards — encryption in transit and at rest, access auditing, and retention rules enforced in code rather than by convention.',
-      'Refactored legacy C#/.NET services and added a pytest suite that gates every deployment, turning a manual release checklist into an automated one.',
-      'Worked across time zones in a distributed team, which is where I learned that a clear written handover is worth more than a long meeting.',
+      'Built ETL pipelines on Azure for healthcare audit logs; data retrieval became about 30% faster.',
+      'Implemented the encryption, access logging and retention rules required for health data.',
+      'Refactored older C#/.NET services and added pytest checks that run before each deployment.',
     ],
-    technologies: ['C#', '.NET', 'Azure', 'Blob Storage', 'ETL', 'CI/CD', 'pytest', 'SQL'],
+    technologies: ['C#', '.NET', 'Azure', 'ETL', 'CI/CD', 'pytest', 'SQL'],
   },
   {
     period: 'Aug 2022 – Jan 2023', type: 'Full-time', role: 'Python Backend Engineer',
     company: 'Electrum IT Solutions', location: 'Vadodara, India',
-    description:
-      'Built and ran the API layer of a fintech platform where a failed request is a failed payment.',
+    description: 'REST APIs for a payments platform.',
     highlights: [
-      'Designed RESTful services in FastAPI and Django handling 2,000+ transactions a day at 99.9% uptime.',
-      'Implemented JWT authentication and role-based access control across the service boundary, and multithreaded the settlement path to keep response times flat under load.',
-      'Instrumented the stack so failures surfaced as alerts rather than as customer complaints.',
+      'Built FastAPI and Django services handling about 2,000 transactions a day.',
+      'Added JWT authentication and role-based access control.',
+      'Added central logging for failed payments, which made debugging about 25% faster.',
     ],
-    technologies: ['Python', 'FastAPI', 'Django', 'JWT', 'REST', 'Multithreading', 'PostgreSQL'],
+    technologies: ['Python', 'FastAPI', 'Django', 'JWT', 'REST', 'PostgreSQL'],
   },
   {
     period: 'Dec 2021 – Apr 2022', type: 'Internship', role: 'Full Stack Engineering Intern',
     company: 'Promact Infotech Pvt. Ltd.', location: 'Vadodara, India',
-    description:
-      'First professional role: a full-stack expense management product, taken from requirements to a working deployment.',
+    description: 'A full-stack expense-sharing app.',
     highlights: [
-      'Built the application end to end — Angular 8 front end, ASP.NET Core 5.0 API, MSSQL schema — with JWT auth and WebSocket updates for live balances.',
-      'Designed a debt-simplification algorithm from graph theory that reduced the number of transfers needed to settle a group by up to 33%, which remains the piece of work I most enjoyed reasoning about.',
-      'Worked in two-week Agile cycles with code review, which is where the habit of writing for the next reader started.',
+      'Built the app with Angular, ASP.NET Core and MSSQL, including login and live updates over WebSocket.',
+      'Wrote a graph-based algorithm that reduces the payments needed to settle a group (up to 33% fewer).',
+      'Worked in two-week sprints with code review.',
     ],
-    technologies: ['Angular 8', 'ASP.NET Core', 'MSSQL', 'JWT', 'WebSocket', 'Agile'],
+    technologies: ['Angular', 'ASP.NET Core', 'MSSQL', 'JWT', 'WebSocket'],
   },
 ];
 
@@ -246,69 +253,29 @@ export interface Domain { no: string; title: string; claim: string; items: strin
 
 export const DOMAINS: Domain[] = [
   {
-    no: '01', title: 'Industrial AI & Digital Twins',
-    claim: 'A rigid-body twin of a four-station factory cell derived from its own PLC sources \u2014 step tables, timer literals, I/O map and per-axis PWM \u2014 verified against 56 checks, on top of a live browser twin and an MQTT/OPC-UA telemetry stack.',
-    items: ['MuJoCo', 'Siemens SCL', 'MQTT', 'OPC-UA', 'Three.js', 'InfluxDB'],
-    proof: ['Smart Tabletop Factory v1, v2 & v3'],
+    no: '01', title: 'Sensing & state estimation',
+    claim: 'Kalman and particle filters for BLE and IMU data, and LIDAR mapping with odometry. A simulator with ground truth shows how large the error really is.',
+    items: ['Particle filter', 'Kalman filter', 'SLAM', 'LIDAR', 'IMU', 'BLE'],
+    proof: ['Indoor Localization v2', 'SLAM Navigation'],
   },
   {
-    no: '02', title: 'Computer Vision & Perception',
-    claim: 'Real-time YOLOv8 detection and multimodal agentic scene understanding, unsupervised lesion segmentation by patch diffusion on brain MRI, and SLAM navigation with LIDAR and odometry fusion.',
-    items: ['PyTorch', 'YOLOv8', 'VLM', 'DDPM / DDIM', 'SLAM', 'LIDAR'],
-    proof: ['Scene Understanding', 'Brain-MRI UAD', 'SLAM Navigation', 'Indoor BLE Localization'],
+    no: '02', title: 'Perception',
+    claim: 'Object detection in the browser with YOLOv8 and ONNX Runtime, image captioning, and diffusion-based anomaly detection on brain MRI (a weak result, reported as such).',
+    items: ['PyTorch', 'YOLOv8', 'ONNX Runtime', 'VLM', 'DDPM / DDIM'],
+    proof: ['Scene Understanding', 'Brain-MRI UAD'],
   },
   {
-    no: '03', title: 'Embedded & Sensor Fusion',
-    claim: 'IMU and BLE beacon fusion with Kalman and Particle filters running at 50 Hz on an Arduino Nano BLE Sense, to sub-metre accuracy.',
-    items: ['Arduino', 'Kalman Filter', 'Particle Filter', 'IMU', 'BLE'],
-    proof: ['Indoor BLE Localization', 'Cor2Vox keynote'],
+    no: '03', title: 'Modelling & simulation',
+    claim: 'A MuJoCo model of a factory cell built from its PLC code and checked against it. Anomaly detection on wind-turbine sensor data.',
+    items: ['MuJoCo', 'Siemens SCL', 'MQTT', 'OPC-UA', 'XGBoost', 'Three.js'],
+    proof: ['Smart Tabletop Factory', 'Wind-turbine PdM'],
   },
   {
-    no: '04', title: 'Backend & Production Delivery',
-    claim: '2.5 years shipping APIs and ETL in healthcare and fintech — Azure pipelines, Docker, CI/CD and test suites that gate every deploy.',
+    no: '04', title: 'Production software',
+    claim: 'Backend and data work in healthcare and payments: Python and .NET services, Azure pipelines, Docker and tests in CI.',
     items: ['Python', 'FastAPI', 'SQL', 'Docker', 'CI/CD', 'Azure', 'C# / .NET'],
     proof: ['Altera Digital Health', 'Electrum IT Solutions'],
   },
-];
-
-export const MATRIX: { skill: string; tier: Tier; where: string }[] = [
-  { skill: 'Python', tier: 'Production', where: 'ETL pipelines at Altera · fintech APIs at Electrum · every AI project' },
-  { skill: 'FastAPI', tier: 'Production', where: 'Fintech API layer (2,000+ daily txns) \u00b7 twin telemetry and inference services' },
-  { skill: 'Docker / CI/CD', tier: 'Production', where: 'Azure DevOps at Altera · multi-cloud deploys (fly.io, Railway, Render)' },
-  { skill: 'SQL', tier: 'Production', where: 'Healthcare data migration · taught to 30 M.Sc. students at OTH' },
-  { skill: 'Azure / ETL', tier: 'Production', where: 'HIPAA-aligned healthcare log pipelines — 30% latency reduction' },
-  { skill: 'PyTorch / HuggingFace', tier: 'Strong', where: 'NLI benchmarking · diffusion research for Cor2Vox keynote' },
-  { skill: 'MQTT / InfluxDB', tier: 'Strong', where: 'Smart Tabletop Factory telemetry at 10 Hz · Smart Home & City' },
-  { skill: 'YOLOv8 / OpenCV', tier: 'Strong', where: 'Real-time agentic scene understanding at 30 FPS' },
-  { skill: 'C# / .NET', tier: 'Strong', where: 'Legacy backend refactor at Altera · ASP.NET Core at Promact' },
-  { skill: 'Three.js / WebSockets', tier: 'Strong', where: 'Digital Twin 2.0 live 3D visualisation' },
-  { skill: 'React / TypeScript', tier: 'Explored', where: 'This portfolio · factory dashboard front-end' },
-  { skill: 'SLAM / Webots / ROS', tier: 'Explored', where: 'Autonomous ROSBot navigation coursework project' },
-];
-
-export const HIGHLIGHTS = [
-  {
-    title: 'Production engineering, not prototypes',
-    desc: 'Two and a half years shipping systems other people depend on — regulated healthcare data at Altera, payment APIs at Electrum. FastAPI and .NET services, Azure ETL, Docker, CI/CD, and test suites that block a bad deploy rather than documenting one.',
-  },
-  {
-    title: 'Industrial AI and digital twins',
-    desc: 'A browser-native 3D twin of a fischertechnik Industry 4.0 cell, modelled on the real 15 mm construction grid and driven by the actual PLC process image — 9 digital inputs and 14 digital outputs from the Belegungsplan, over MQTT and OPC-UA. Predictive maintenance on turbine sensor time-series alongside it.',
-  },
-  {
-    title: 'Computer vision and autonomy',
-    desc: 'YOLOv8 exported to ONNX and run in the browser so camera frames never leave the visitor\u2019s device, paired with a self-hosted vision-language model for narration. LIDAR SLAM with an occupancy grid, A* planning and pure-pursuit control, ported from a Python Webots controller to the web.',
-  },
-  {
-    title: 'Depth, honestly reported',
-    desc: 'M.Sc. IT as Gold Medalist, Rank 1 of the cohort (9.55/10), followed by graduate AI coursework at OTH Amberg-Weiden. Keynote speaker at the 2025 AI Research Conference on Brownian Bridge diffusion for 3D medical image synthesis, graded 1.0. Where a result was negative — the unsupervised brain-MRI work reached DICE 0.076 — the site says so, because a portfolio that only reports wins tells you nothing about judgement.',
-  },
-];
-
-export const INTERESTS = [
-  { tag: 'Generative', title: 'Diffusion Models', desc: '3D shape-to-image generation using Brownian Bridge Diffusion for medical imaging.' },
-  { tag: 'Retrieval', title: 'RAG Systems', desc: 'Retrieval-augmented generation for domain-specific question answering.' },
-  { tag: 'Robotics', title: 'Autonomous Systems', desc: 'SLAM algorithms and sensor fusion for robust indoor navigation.' },
 ];
 
 export const EDUCATION = [
@@ -318,7 +285,7 @@ export const EDUCATION = [
     institution: 'Paderborn University',
     location: 'Paderborn, Germany',
     grade: 'In progress',
-    focus: 'Graduate study in computer engineering, building on the industrial-AI coursework at OTH Amberg-Weiden.',
+    focus: 'Focus on Physical AI: robotics, embedded systems and the software that connects sensing to action.',
   },
   {
     period: 'Oct 2024 – Aug 2026',
@@ -334,7 +301,7 @@ export const EDUCATION = [
     institution: 'Charutar Vidya Mandal University',
     location: 'Gujarat, India',
     grade: 'Gold Medalist · Rank 1 of cohort · 9.55/10',
-    focus: 'Software engineering, databases and distributed systems, with the thesis work in applied machine learning. Graduated first in the cohort.',
+    focus: 'Software engineering, databases and distributed systems; thesis in applied machine learning.',
   },
   {
     period: '2017 – 2020',
@@ -354,15 +321,13 @@ export const LANGUAGES = [
 ];
 
 export const HERO_STATS = [
-  { value: '2.5 yrs', label: 'Production experience' },
-  { value: '9', label: 'Projects, end to end' },
-  { value: 'Rank 1', label: 'M.Sc. — Gold Medalist' },
-  { value: '1.0', label: 'Keynote grade, AI Conference' },
+  { value: '2.5 years', label: 'Industry experience' },
+  { value: '4', label: 'Roles in software teams' },
+  { value: '9', label: 'Projects with write-ups' },
+  { value: 'Sept 2026', label: 'Available from' },
 ];
 
 export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azure', 'Three.js'];
-
-export const ROLES = ['Software Engineer', 'Industrial AI Engineer', 'Digital Twin Developer', 'Computer Vision Engineer'];
 
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',

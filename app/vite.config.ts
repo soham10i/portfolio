@@ -19,11 +19,6 @@ export default defineConfig(() => ({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/stf': {
-        target: 'http://localhost:5173',
-        changeOrigin: true,
-        ws: true,
-      },
     },
   },
   resolve: {

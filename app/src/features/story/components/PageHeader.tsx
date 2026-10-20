@@ -29,7 +29,7 @@ export default function PageHeader({ back, liveUrl, githubUrl }: Props) {
         </Link>
 
         <div className="flex items-center gap-1.5">
-          <ThemeToggle className="!h-10 !w-10" />
+          <ThemeToggle className="!h-10 !w-10" placement="down" />
           {githubUrl && (
             <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="lg-btn !h-10">
               <Github className="h-4 w-4" /> <span className="max-sm:hidden">Code</span>

@@ -9,23 +9,22 @@ const STEPS = [
   },
   {
     no: '02', title: 'Simulate',
-    text: 'Make it run before making it pretty. A model earns trust when it predicts something you can check.',
+    text: 'Make it run before making it look good. A model is useful once it predicts something you can check.',
     proof: 'MuJoCo cell: 56/56 checks, 1.2 mm RMS prediction',
   },
   {
     no: '03', title: 'Deploy',
-    text: 'Containers, CI that blocks a bad build, and compute placed where privacy and latency want it.',
+    text: 'Containers, CI that blocks a bad build, and compute placed where privacy and latency need it.',
     proof: 'SceneLab: detection in the visitor’s browser, captions server-side',
   },
   {
     no: '04', title: 'Measure',
-    text: 'Report the number, including when it is bad. A negative result is still a result.',
-    proof: 'Brain-MRI UAD: DICE 0.076, published as the baseline it is',
+    text: 'Report the number, including when it is bad, and say what it does not cover.',
+    proof: 'Brain-MRI UAD: DICE 0.076, reported as a weak baseline',
   },
 ];
 
-/* 06 — Method. The four-step phase navigator from weevolveit, filled with
-   evidence from the projects rather than agency adjectives. */
+/* 06 — Method. Four steps, each with an example from the projects. */
 export default function Method() {
   return (
     <section id="method" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
@@ -34,9 +33,9 @@ export default function Method() {
 
       <h2
         data-reveal
-        className="mb-[clamp(40px,6vh,72px)] max-w-[16ch] text-[clamp(40px,7vw,112px)] font-medium leading-[.92] tracking-[-.05em]"
+        className="mb-[clamp(40px,6vh,72px)] max-w-[16ch] t-h2"
       >
-        How the work <span className="serif text-p">gets done.</span>
+        How I <span className="serif text-p">work.</span>
       </h2>
 
       <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -45,7 +44,7 @@ export default function Method() {
             <div>
               <p className="mono text-fg3">{s.no}</p>
               <h3 className="mt-6 text-[clamp(34px,3vw,46px)] font-medium tracking-[-.04em]">{s.title}</h3>
-              <p className="mt-4 text-[15px] leading-relaxed text-fg2">{s.text}</p>
+              <p className="t-body mt-4">{s.text}</p>
             </div>
             <p className="mt-8 border-t border-[color:var(--line)] pt-4 text-[13px] leading-relaxed text-fg">
               <span className="serif mr-1 text-a">e.g.</span> {s.proof}
