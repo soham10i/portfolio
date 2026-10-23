@@ -198,7 +198,12 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Could not reach the assistant.');
+        /* A non-JSON error page (the Vite proxy with no backend behind it,
+           a proxy 502) has no `error` field — say what is actually wrong. */
+        const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        throw new Error(data.error || (local
+          ? 'Could not reach the assistant — the local backend is not answering on :3001. Restart the dev server: `npm run dev` starts it too.'
+          : 'Could not reach the assistant — the backend did not answer. Try again in a moment.'));
       }
 
       const reader = res.body.getReader();
