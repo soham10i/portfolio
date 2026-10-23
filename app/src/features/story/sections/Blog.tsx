@@ -25,7 +25,7 @@ export default function Blog() {
   return (
     <section id="blog" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(37,99,235,.10)', '--t2': 'rgba(14,143,176,.08)' } as React.CSSProperties}>
-      <SectionHead no="07" label="Blog" aside={posts ? `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}` : undefined} />
+      <SectionHead no="08" label="Blog" aside={posts ? `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}` : undefined} />
 
       <div className="mb-[clamp(28px,4vh,48px)] flex flex-wrap items-end justify-between gap-6">
         <h2 data-reveal className="t-h2 max-w-[16ch]">

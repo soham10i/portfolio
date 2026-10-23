@@ -19,9 +19,8 @@ export default function Hero() {
       data-anchor-offset="0"
       aria-label="Introduction"
       className="panel relative flex min-h-[calc(100svh-var(--inset)*2)] flex-col justify-between gap-12 overflow-hidden px-[var(--gutter)] pb-28 pt-[132px]"
-      style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)', '--panel-opacity': '38%' } as React.CSSProperties}
+      style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)' } as React.CSSProperties}
     >
-      <div data-hero-stage aria-hidden className="pointer-events-none absolute inset-0" />
 
       <div className="relative flex items-start justify-between gap-6 text-[13px] leading-snug text-fg2">
         <p data-reveal className="mono !text-[10.5px] text-fg3">

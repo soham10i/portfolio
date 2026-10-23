@@ -2,22 +2,23 @@ import { useRef } from 'react';
 import './story.css';
 import TopBar from './components/TopBar';
 import BottomBar from './components/BottomBar';
-import CloudLayer from './components/CloudLayer';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Work from './sections/Work';
 import Lab from './sections/Lab';
-import Path from './sections/Path';
+import Experience from './sections/Experience';
+import Education from './sections/Education';
 import Method from './sections/Method';
 import Blog from './sections/Blog';
 import Contact from './sections/Contact';
 import { useScrollStory } from './lib/useScrollStory';
 
-/* The redesigned home page (docs/REDESIGN.md). Layering, back to front:
- *   .story ground     cool grey, showing between the chapter panels
- *   CloudLayer        fixed WebGL point cloud, lazy-loaded, morphing per chapter
- *   <main>            the chapters as translucent gallery panels — real DOM text
- *   chrome            TopBar + BottomBar, fixed */
+/* The home page. Layering, back to front:
+ *   .story ground     static gradient, showing between the chapter panels
+ *   <main>            the chapters as liquid-glass gallery panels — real DOM text
+ *   chrome            TopBar + BottomBar, fixed
+ * (The WebGL point cloud was retired: it read as visual noise. CloudLayer
+ *  still exists for the MedQA demo's pipeline visualisation.) */
 export default function StoryHome() {
   const root = useRef<HTMLDivElement>(null);
   useScrollStory(root);
@@ -26,7 +27,6 @@ export default function StoryHome() {
     <div ref={root} className="story">
       <a href="#about" className="story-skip">Skip to content</a>
 
-      <CloudLayer />
       <TopBar />
 
       <main className="relative z-[1]">
@@ -34,7 +34,8 @@ export default function StoryHome() {
         <About />
         <Work />
         <Lab />
-        <Path />
+        <Experience />
+        <Education />
         <Method />
         <Blog />
         <Contact />
