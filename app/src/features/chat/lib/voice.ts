@@ -1,9 +1,10 @@
 /* Voice helpers for JARVIS — speech-to-text and text-to-speech.
  *
- * Both sides use the browser's built-in Web Speech API, so voice costs
- * nothing and needs no API key: SpeechRecognition transcribes the mic,
- * speechSynthesis reads the reply aloud. The LLM in between stays the
- * existing /api/chat/stream backend.
+ * STT uses the browser's built-in SpeechRecognition (free, no key). TTS is
+ * server-side through ElevenLabs (/api/tts) when the deployment has a key —
+ * browser speechSynthesis has no voices at all on some platforms — and falls
+ * back to that browser voice per session and again per failed call. The LLM
+ * in between stays the existing /api/chat/stream backend.
  *
  * Browser support: Chrome and Edge have full SpeechRecognition; Safari's is
  * partial (needs webkit prefix, on-device only); Firefox has none — callers
@@ -255,6 +256,115 @@ export function createSpeaker(opts: SpeakerOptions = {}): Speaker {
     },
     get speaking() {
       return playing || queue.length > 0;
+    },
+  };
+}
+
+/* ── Cloud TTS (ElevenLabs via /api/tts), browser voice as fallback ── */
+
+/** One probe per session: is server-side TTS configured on this deployment? */
+let cloudStatus: Promise<boolean> | null = null;
+export function cloudTtsReady(apiBase: string): Promise<boolean> {
+  if (!cloudStatus) {
+    cloudStatus = fetch(`${apiBase}/tts/status`)
+      .then((r) => (r.ok ? r.json() : { ready: false }))
+      .then((j) => j.ready === true)
+      .catch(() => false);
+  }
+  return cloudStatus;
+}
+
+/* Same queue-and-stream contract as createSpeaker, but each sentence is
+ * synthesised by the backend and played as audio. The first failed call —
+ * unconfigured, over quota, offline — hands the current sentence and every
+ * later one to the browser voice, so a cloud outage never silences JARVIS. */
+export function createCloudSpeaker(opts: SpeakerOptions & { apiBase: string }): Speaker {
+  const fallback = createSpeaker(opts);
+  let buffer = '';
+  const queue: string[] = [];
+  let playing = false;
+  let cancelled = false;
+  let cloudDead = false;
+  let audio: HTMLAudioElement | null = null;
+
+  const finishIfDrained = () => {
+    if (cloudDead) return;                      // the fallback owns onDone now
+    if (!playing && queue.length === 0 && !cancelled) opts.onDone?.();
+  };
+
+  const handToFallback = (first: string) => {
+    cloudDead = true;
+    playing = false;
+    fallback.push(`${first} `);
+    for (const s of queue.splice(0)) fallback.push(`${s} `);
+    fallback.flush();
+  };
+
+  const playNext = async () => {
+    if (cancelled || playing || cloudDead) return;
+    const text = queue.shift();
+    if (!text) { finishIfDrained(); return; }
+    playing = true;
+    try {
+      const r = await fetch(`${opts.apiBase}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: speakable(text) }),
+      });
+      if (!r.ok) throw new Error(`tts ${r.status}`);
+      const blob = await r.blob();
+      if (cancelled) return;
+      const url = URL.createObjectURL(blob);
+      const el = new Audio(url);
+      audio = el;
+      const done = () => {
+        URL.revokeObjectURL(url);
+        if (audio === el) audio = null;
+        playing = false;
+        playNext();
+      };
+      el.onended = done;
+      el.onerror = done;
+      opts.onStart?.();
+      await el.play();
+    } catch {
+      if (!cancelled) handToFallback(text);
+      else playing = false;
+    }
+  };
+
+  return {
+    push(delta: string) {
+      if (cancelled) return;
+      if (cloudDead) { fallback.push(delta); return; }
+      buffer += delta;
+      const { sentences, rest } = takeSentences(buffer);
+      buffer = rest;
+      if (sentences.length) {
+        queue.push(...sentences);
+        void playNext();
+      }
+    },
+    flush() {
+      if (cancelled) return;
+      if (cloudDead) { fallback.flush(); return; }
+      const rest = buffer.trim();
+      buffer = '';
+      if (rest) queue.push(rest);
+      void playNext();
+      finishIfDrained();
+    },
+    cancel() {
+      cancelled = true;
+      queue.length = 0;
+      buffer = '';
+      audio?.pause();
+      audio = null;
+      fallback.cancel();
+      playing = false;
+    },
+    get speaking() {
+      return cloudDead ? fallback.speaking : playing || queue.length > 0;
     },
   };
 }
