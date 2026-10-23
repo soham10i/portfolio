@@ -30,8 +30,11 @@
     RES: 0.05, GOAL_TOL: 0.16, FRONTIER_MIN_DIST: 0.30,
     CARROT: 0.42, PIVOT_BEARING: 0.6, REPLAN_S: 3.0,
   };
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  /* Pure nav math lives in nav-core.js (loaded before this script, see
+     app/src/features/robot/lib/engine.ts) so the functions the site runs are
+     the same functions the unit tests run (app/test/nav-core.test.mjs). */
+  const NC = window.NavCore;
+  const clamp = NC.clamp, wrapPi = NC.wrapPi;
 
   class WebotsWorld3D extends HTMLElement {
     static get observedAttributes() { return ['src', 'playing', 'speed', 'lidar', 'fpv', 'path', 'accent', 'reset']; }
@@ -394,13 +397,10 @@
     }
 
     _cell(x, y) {
-      const i = Math.floor((x - this._go[0]) / P.RES);
-      const j = Math.floor((y - this._go[1]) / P.RES);
-      return (i < 0 || j < 0 || i >= this._gn || j >= this._gn) ? -1 : j * this._gn + i;
+      return NC.cellOf(x, y, this._go, P.RES, this._gn);
     }
     _cellCenter(k) {
-      const i = k % this._gn, j = (k - i) / this._gn;
-      return [this._go[0] + (i + 0.5) * P.RES, this._go[1] + (j + 0.5) * P.RES];
+      return NC.cellCenter(k, this._go, P.RES, this._gn);
     }
 
     _scanNow() {
@@ -429,16 +429,7 @@
     }
 
     _integrate(a, d, hitWall) {
-      const step = P.RES * 0.7;
-      const free = Math.max(d - P.RES * 1.6, 0);
-      for (let t = 0.05; t < free; t += step) {
-        const k = this._cell(this._pose.x + Math.cos(a) * t, this._pose.y + Math.sin(a) * t);
-        if (k >= 0 && this._grid[k] <= 0.5) this._grid[k] = Math.max(this._grid[k] - 0.35, -3);  // occupied cells latch (OCC_CONFIRM)
-      }
-      if (hitWall && d < P.LIDAR_MAX) {
-        const k = this._cell(this._pose.x + Math.cos(a) * d, this._pose.y + Math.sin(a) * d);
-        if (k >= 0) this._grid[k] = Math.min(this._grid[k] + 1.3, 4);
-      }
+      NC.integrate(this._grid, this._gn, this._go, P.RES, this._pose, a, d, hitWall, P.LIDAR_MAX);
     }
 
     _rebuildCloud() {
@@ -462,15 +453,7 @@
        passable neighbour at all and A* can never expand. */
     _blocked(k, cells) {
       const inflate = cells === undefined ? Math.ceil(P.ROBOT_RADIUS / P.RES) : cells;
-      const i = k % this._gn, j = (k - i) / this._gn;
-      for (let dj = -inflate; dj <= inflate; dj++) {
-        for (let di = -inflate; di <= inflate; di++) {
-          const ii = i + di, jj = j + dj;
-          if (ii < 0 || jj < 0 || ii >= this._gn || jj >= this._gn) continue;
-          if (this._grid[jj * this._gn + ii] > 0.7) return true;
-        }
-      }
-      return false;
+      return NC.blocked(this._grid, this._gn, k, inflate);
     }
 
     /* The mission targets are the pillars themselves, and a pillar cell is
@@ -479,100 +462,21 @@
        controller does implicitly by driving to within GOAL_TOL of the post. */
     /* True when no 8-neighbour of k is passable at this inflation. */
     _boxedIn(k, inflate) {
-      const n = this._gn, i0 = k % n, j0 = (k - i0) / n;
-      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-        if (!di && !dj) continue;
-        const ii = i0 + di, jj = j0 + dj;
-        if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
-        if (!this._blocked(jj * n + ii, inflate)) return false;
-      }
-      return true;
+      return NC.boxedIn(this._grid, this._gn, k, inflate);
     }
 
     _freeNear(k0, maxCells, inflate) {
-      if (k0 < 0) return -1;
-      if (!this._blocked(k0, inflate)) return k0;
-      const n = this._gn, i0 = k0 % n, j0 = (k0 - i0) / n;
-      for (let r = 1; r <= maxCells; r++) {
-        let best = -1, bestKnown = -1;
-        for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) {
-          if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;   // ring only
-          const ii = i0 + di, jj = j0 + dj;
-          if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
-          const k = jj * n + ii;
-          if (this._blocked(k, inflate)) continue;
-          if (this._grid[k] < -0.7) { bestKnown = k; break; }         // known free — best
-          if (best === -1) best = k;
-        }
-        if (bestKnown !== -1) return bestKnown;
-        if (best !== -1) return best;
-      }
-      return -1;
+      return NC.freeNear(this._grid, this._gn, k0, maxCells, inflate);
     }
 
     _pickFrontier() {
-      const n = this._gn, best = { k: -1, d: Infinity };
       const half = Math.max(this._world.span || 6, 4) / 2 + 0.3;   // stay inside the arena
-      for (let k = 0; k < this._grid.length; k++) {
-        if (this._grid[k] >= -0.7) continue;                     // must be known-free
-        const i = k % n, j = (k - i) / n;
-        let unknown = 0;
-        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-          const ii = i + di, jj = j + dj;
-          if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
-          const g = this._grid[jj * n + ii];
-          if (g > -0.7 && g < 0.7) unknown++;
-        }
-        if (unknown < 2) continue;
-        const [x, y] = this._cellCenter(k);
-        if (Math.abs(x - this._center[0]) > half || Math.abs(y - this._center[1]) > half) continue;
-        const d = Math.hypot(x - this._pose.x, y - this._pose.y);
-        if (d < P.FRONTIER_MIN_DIST || d >= best.d) continue;
-        if (this._blocked(k)) continue;
-        best.k = k; best.d = d;
-      }
-      return best.k;
+      return NC.pickFrontier(this._grid, this._gn, this._go, P.RES, this._pose,
+        this._center, half, P.FRONTIER_MIN_DIST, Math.ceil(P.ROBOT_RADIUS / P.RES));
     }
 
     _astar(startK, goalK, inflate) {
-      const n = this._gn, total = n * n;
-      const g = new Float32Array(total).fill(Infinity);
-      const from = new Int32Array(total).fill(-1);
-      const open = [startK];
-      g[startK] = 0;
-      const [gx, gy] = this._cellCenter(goalK);
-      const h = (k) => { const [x, y] = this._cellCenter(k); return Math.hypot(x - gx, y - gy); };
-      const f = new Float32Array(total).fill(Infinity);
-      f[startK] = h(startK);
-      const seen = new Uint8Array(total);
-      let guard = 0;
-      while (open.length && guard++ < 60000) {
-        let bi = 0;
-        for (let i = 1; i < open.length; i++) if (f[open[i]] < f[open[bi]]) bi = i;
-        const cur = open.splice(bi, 1)[0];
-        if (cur === goalK) break;
-        seen[cur] = 1;
-        const ci = cur % n, cj = (cur - ci) / n;
-        for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-          if (!di && !dj) continue;
-          const ii = ci + di, jj = cj + dj;
-          if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
-          const nk = jj * n + ii;
-          if (seen[nk]) continue;
-          if (nk !== goalK && this._blocked(nk, inflate)) continue;
-          const step = (di && dj ? 1.414 : 1) * P.RES;
-          const ng = g[cur] + step;
-          if (ng < g[nk]) {
-            g[nk] = ng; from[nk] = cur; f[nk] = ng + h(nk);
-            if (open.indexOf(nk) === -1) open.push(nk);
-          }
-        }
-      }
-      if (from[goalK] === -1 && startK !== goalK) return null;
-      const pts = [];
-      let k = goalK, guard2 = 0;
-      while (k !== -1 && guard2++ < 5000) { pts.push(this._cellCenter(k)); k = from[k]; }
-      return pts.reverse();
+      return NC.astar(this._grid, this._gn, this._go, P.RES, startK, goalK, inflate);
     }
 
     _missionTarget() {
@@ -677,30 +581,17 @@
          * measures the lookahead from that projection. */
         const path = this._path;
 
-        // 1. nearest point on the path, searched forward only, so progress is
-        //    monotonic and a doubling-back route cannot drag the carrot back
-        let bestI = this._pathI, bestD = Infinity;
-        const upto = Math.min(path.length - 1, this._pathI + 60);
-        for (let i = this._pathI; i <= upto; i++) {
-          const d = Math.hypot(path[i][0] - pose.x, path[i][1] - pose.y);
-          if (d < bestD) { bestD = d; bestI = i; }
-        }
-        this._pathI = bestI;
-
-        // 2. walk forward from the projection by the lookahead distance
-        let acc = 0, carrot = path[path.length - 1];
-        for (let i = bestI; i < path.length - 1; i++) {
-          const a = path[i], b = path[i + 1];
-          acc += Math.hypot(b[0] - a[0], b[1] - a[1]);
-          if (acc >= P.CARROT) { carrot = b; break; }
-        }
+        /* 1+2. Project onto the path (forward only, so progress is monotonic)
+           and walk the lookahead from the projection — both in NavCore. */
+        const tracked = NC.trackAhead(path, this._pathI, pose.x, pose.y, P.CARROT);
+        this._pathI = tracked.pathI;
+        const carrot = tracked.carrot, bestD = tracked.bestD;
 
         const bearing = wrapPi(Math.atan2(carrot[1] - pose.y, carrot[0] - pose.x) - pose.th);
         const frontClear = this._frontClear();
-        this._w = clamp(2.0 * bearing, -P.W_MAX, P.W_MAX);
-        this._v = Math.abs(bearing) > P.PIVOT_BEARING ? 0
-          : P.V_MAX * Math.cos(bearing) * clamp((frontClear - 0.14) / 0.5, 0, 1);
-        if (frontClear < 0.16) { this._v = 0; this._w = P.W_MAX * 0.5; this._replanIn = 0; }
+        const cmd = NC.pursuitCommand(bearing, frontClear, P);
+        this._v = cmd.v; this._w = cmd.w;
+        if (cmd.replan) this._replanIn = 0;
 
         /* Drifted far off the route? The plan is stale — replan rather than
            chase a carrot on a path we are no longer following. */
