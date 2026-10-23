@@ -36,9 +36,20 @@ jobs:
           cd app && npm ci
           cd ../backend && npm ci --omit=dev
 
+      # Unit tests are blocking: the nav core is the same file the /robot demo
+      # runs, and the provider registry decides whether chat answers at all.
+      - name: Unit tests (frontend nav core)
+        run: cd app && npm test
+
+      - name: Unit tests (backend)
+        run: cd backend && npm test
+
       - name: Type-check and build frontend
         run: cd app && npm run build
 
+      # Advisory for now: 5 react-hooks v7 strictness findings (setState in
+      # effect, ref access during render) in SceneLab / notes / MazeWorld.
+      # Fix them deliberately, then drop the continue-on-error.
       - name: Lint frontend
         run: cd app && npm run lint
         continue-on-error: true

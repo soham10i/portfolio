@@ -1,27 +1,38 @@
-/* Loads the <webots-world-3d> engine (public/webots-world-3d.js) once, on
-   demand. It is a plain script that registers a custom element, so it is
-   injected as a <script> rather than imported. */
+/* Loads the maze engine on demand. The pure navigation math lives in
+   /nav-core.js (unit-tested in app/test/nav-core.test.mjs) and must be on
+   window before /webots-world-3d.js registers the custom element, so the two
+   plain scripts are injected in order. */
 
 let promise: Promise<void> | null = null;
+const CORE_SRC = '/nav-core.js';
 const SRC = '/webots-world-3d.js';
+
+function loadScript(src: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error(`failed to load ${src}`)));
+      return;
+    }
+    const s = document.createElement('script');
+    s.addEventListener('load', () => resolve());
+    s.addEventListener('error', () => reject(new Error(`failed to load ${src}`)));
+    s.src = src;
+    s.async = true;
+    document.head.appendChild(s);
+  });
+}
 
 export function loadMazeEngine(): Promise<void> {
   if (customElements.get('webots-world-3d')) return Promise.resolve();
   if (!promise) {
-    promise = new Promise<void>((resolve, reject) => {
-      const existing = document.querySelector<HTMLScriptElement>(`script[src="${SRC}"]`);
-      const s = existing ?? document.createElement('script');
-      s.addEventListener('load', () => resolve());
-      s.addEventListener('error', () => {
+    promise = loadScript(CORE_SRC)
+      .then(() => loadScript(SRC))
+      .catch((err) => {
         promise = null;
-        reject(new Error(`failed to load ${SRC}`));
+        throw err;
       });
-      if (!existing) {
-        s.src = SRC;
-        s.async = true;
-        document.head.appendChild(s);
-      }
-    });
   }
   return promise;
 }
