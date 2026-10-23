@@ -332,6 +332,7 @@ export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azu
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',
   github: 'https://github.com/soham10i',
+  linkedin: 'https://linkedin.com/in/soham10i',
   location: 'Paderborn, Germany — open to relocation across Germany and the EU',
   availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
 };

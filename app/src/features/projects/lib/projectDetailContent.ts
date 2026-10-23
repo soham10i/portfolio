@@ -141,7 +141,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
     ],
     results: [
       { label: 'Detection FPS', value: '~30', color: 'var(--a)' },
-      { label: 'Model size', value: '13 MB', color: 'var(--p)' },
+      { label: 'Model size', value: '14 MB', color: 'var(--p)' },
       { label: 'Caption latency', value: '~800 ms', color: 'var(--s)' },
       { label: 'Privacy mode', value: 'Frames on-device', color: '#22c55e' },
     ],

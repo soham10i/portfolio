@@ -72,7 +72,7 @@ export default function Work() {
           data-reveal
           className="max-w-[14ch] t-h2"
         >
-          Nine projects, <span className="serif text-s">with code.</span>
+          Nine projects, <span className="serif text-s">eight with public code.</span>
         </h2>
         <p data-reveal className="content-glass t-body max-w-[42ch]">
           Each card opens a short write-up: the problem, what I built, how I measured it and what did not work.

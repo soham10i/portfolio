@@ -5,7 +5,9 @@ real thing executing in front of the visitor: object detection runs in their
 browser, the digital twin steps a live simulation, the assistant streams tokens
 from a hosted model. Nothing on it is a screenshot of something that once worked.
 
-**Live:** _set the Render URL here once the service is created_
+**Live:** https://soham-portfolio.onrender.com — once the service is created from
+`render.yaml` (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). Free tier sleeps
+when idle, so the first visit can take up to a minute to wake.
 
 ---
 
