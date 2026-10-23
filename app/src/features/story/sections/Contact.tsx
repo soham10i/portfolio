@@ -28,7 +28,7 @@ export default function Contact() {
     <section id="contact" data-anchor-offset="0" className="chapter panel relative flex min-h-[100svh] flex-col justify-between !pb-28"
       style={{ '--t1': 'rgba(79,70,229,.16)', '--t2': 'rgba(37,99,235,.14)' } as React.CSSProperties}>
       <div className="px-[var(--gutter)]">
-        <SectionHead no="08" label="Contact" aside={CONTACT.location.split(' — ')[0]} />
+        <SectionHead no="09" label="Contact" aside={CONTACT.location.split(' — ')[0]} />
 
         <h2
           data-reveal

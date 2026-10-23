@@ -148,12 +148,11 @@ html[data-style="editorial"] :is(.story, .jarvis) .serif { letter-spacing: -.005
 }
 
 /* ---------------- gallery panels ----------------
-   Every chapter is a rounded panel inset from the window edge, with two
-   soft colour fields set per section through --t1 / --t2. */
+   Every chapter is a rounded liquid-glass panel inset from the window edge:
+   a blurred, saturated wash over the static ground gradient, a hairline
+   border with a lit top edge, and a deep, soft shadow stack for separation.
+   Two soft colour fields per section come through --t1 / --t2. */
 .story .panel {
-  /* Slightly see-through so the background point cloud (CloudLayer) shows;
-     the hero sets it lower to let the LIDAR scan lead. */
-  --panel-opacity: 64%;
   --t1: rgba(77, 141, 255, .16);
   --t2: rgba(139, 123, 255, .13);
   position: relative;
@@ -162,7 +161,14 @@ html[data-style="editorial"] :is(.story, .jarvis) .serif { letter-spacing: -.005
   background:
     radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
     radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
-    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
+    color-mix(in oklab, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--fg) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--fg) 8%, transparent),
+    0 32px 80px -32px color-mix(in oklab, var(--fg) 32%, transparent),
+    0 8px 28px -12px color-mix(in oklab, var(--fg) 14%, transparent);
   overflow: clip;
   transition: background-color .5s var(--ease-out);
 }
@@ -172,7 +178,14 @@ html[data-theme="dark"] .story .panel {
     radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
     radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 55%),
     radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
-    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
+    color-mix(in oklab, var(--bg) 72%, transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .story .panel {
+    background: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 /* Minimal: no 3D background, one ink colour and one muted accent, flat
    white cards with a hairline border and no shadows or glow. The quietest
@@ -200,6 +213,13 @@ html[data-style="minimal"] :is(.story, .jarvis) {
   --block-line: rgba(20, 20, 20, .1);
 }
 html[data-style="minimal"] .story { background: var(--ground) !important; }
+html[data-style="minimal"] .story .panel {
+  background: var(--bg2);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: var(--line);
+  box-shadow: none;
+}
 html[data-style="minimal"] .story .panel :is(.t-display, .t-h2, .t-statement, .t-closing) { text-shadow: none; }
 html[data-style="minimal"] :is(.story, .jarvis) .serif { color: var(--fg) !important; }
 html[data-style="minimal"] .story :is(.lg-panel, .lg-pill, .content-glass) { box-shadow: none; }
@@ -214,7 +234,7 @@ html[data-style="editorial"] .story .panel {
   background:
     radial-gradient(70vmax 40vmax at 85% 0%, rgba(176, 99, 42, .13), transparent 60%),
     radial-gradient(60vmax 40vmax at 0% 100%, rgba(154, 59, 28, .08), transparent 60%),
-    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
+    color-mix(in oklab, var(--bg) 78%, transparent);
 }
 .story .panel + .panel { margin-top: var(--inset); }
 .story .panel:first-child { margin-top: var(--inset); }
@@ -419,48 +439,18 @@ html[data-motion="off"] .jarvis-panel { animation: none; }
 .tilt:hover::after { opacity: 1; }
 .cq { container-type: inline-size; }
 
-/* ---------------- legibility over the point cloud ----------------
-   Text that sits directly on a translucent panel gets a halo in the panel's
-   own colour: invisible as a glow, but it clears the cloud's points out of
-   the letterforms' immediate surroundings. Surfaces with their own ground —
-   glass cards, pills, ink buttons, photos — opt out (text-shadow inherits,
-   so resetting the container resets everything inside it). */
-/* Only headings sit directly on the background now (reading text is in
-   boxes), so only they get a halo — two layers, not four. */
-.story .panel :is(.t-display, .t-h2, .t-statement, .t-closing) {
-  text-shadow: 0 0 2px var(--bg), 0 0 18px color-mix(in oklab, var(--bg) 80%, transparent);
-}
-
-/* ---------------- immersive background ----------------
-   While a point cloud is live (CloudLayer sets html[data-cloud]), panels turn
-   into frosted glass: more see-through, with a light blur and saturation lift.
-   The shapes read clearly through the whole page, soft under the content and
-   sharp in the gaps, while text keeps its contrast (plus the halo above). */
-html[data-cloud="on"] .story .panel {
-  --panel-opacity: 32%;
-  -webkit-backdrop-filter: blur(2px) saturate(150%);
-  backdrop-filter: blur(2px) saturate(150%);
-}
-html[data-cloud="on"][data-theme="dark"] .story .panel { --panel-opacity: 36%; }
-@media (prefers-reduced-transparency: reduce) {
-  html[data-cloud="on"] .story .panel { --panel-opacity: 90%; -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
-/* The hero is the stage for the scan itself: see-through, never blurred. */
-html[data-cloud="on"] .story #hey.panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* ---------------- immersive background (retired) ----------------
+   The scroll-morphing point cloud is gone from the home page; these hooks
+   (html[data-cloud], the text halo) are kept documented here so a future
+   static-art background knows what to re-add. Panels now carry their own
+   glass and shadow, so headings need no halo. */
 
 /* ---------------- open layout ----------------
-   The chapters stop being full-width slabs: their panels go clear, so the
-   point cloud reads through all the free space, and only the reading parts —
-   paragraphs, lists, the contact block — sit on frosted glass boxes (plus the
-   cards that already were glass). */
+   Reading parts — paragraphs, lists, the contact block — sit on frosted
+   glass boxes over the panel wash. */
 .story { --block-fill: rgba(255, 255, 255, .7); --block-line: rgba(255, 255, 255, .9); }
 html[data-theme="dark"] .story { --block-fill: rgba(13, 18, 29, .66); --block-line: rgba(255, 255, 255, .08); }
 html[data-style="editorial"] .story { --block-fill: rgba(255, 252, 246, .72); --block-line: rgba(255, 255, 255, .85); }
-.story .panel {
-  background: transparent !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
 .story {
   background:
     radial-gradient(60vmax 40vmax at 90% 0%, color-mix(in oklab, var(--p) 10%, transparent), transparent 60%),
@@ -474,7 +464,9 @@ html[data-style="editorial"] .story { --block-fill: rgba(255, 252, 246, .72); --
   padding: clamp(18px, 2.2vw, 30px);
   background: var(--card-fill);
   border: 1px solid var(--block-line);
-  box-shadow: var(--glass-shadow);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--fg) 5%, transparent),
+    var(--glass-shadow);
   text-shadow: none;
 }
 .story .content-glass.content-list { padding-block: 4px; border-top-color: var(--block-line); }
