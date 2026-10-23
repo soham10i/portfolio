@@ -5,7 +5,7 @@ import { CONTACT, HERO_TAGS, PROJECTS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 
 /* Role types the work maps to — phrased the way job postings name them. */
-const FIT = ['Robotics software', 'Physical AI / embodied systems', 'Simulation & digital twins', 'Perception / computer vision', 'Backend & data for industrial systems'];
+const FIT = ['Robotics software', 'Robotics & embedded systems', 'Simulation & digital twins', 'Perception / computer vision', 'Backend & data for industrial systems'];
 
 /* The stack, de-duplicated across every project, for the marquee band. */
 const STACK = Array.from(new Set([...HERO_TAGS, ...PROJECTS.flatMap((p) => p.tech ?? [])]));

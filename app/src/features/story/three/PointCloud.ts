@@ -133,13 +133,10 @@ export class PointCloud {
     this.scene.add(this.group);
   }
 
-  /** `tone`: 'warm' for the editorial theme's ink-and-terracotta points,
-      'signal' for Physical AI's orange-and-teal on graphite, 'scope' for
-      the HIL bench's blue traces with a yellow sweep. */
-  setDark(dark: boolean, tone?: 'warm' | 'signal' | 'scope') {
+  /** `tone`: 'warm' for the editorial theme's ink-and-terracotta points. */
+  setDark(dark: boolean, tone?: 'warm') {
     const u = this.material.uniforms;
-    const [base, glow] = tone === 'signal' ? ['#ff8a3d', '#5ff2d4'] : tone === 'scope' ? ['#4a8dff', '#ffd34d']
-      : dark ? ['#6f9dff', '#8af4ff'] : tone === 'warm' ? ['#6b3a22', '#c2652e'] : ['#2a4fb8', '#0a8fb3'];
+    const [base, glow] = dark ? ['#6f9dff', '#8af4ff'] : tone === 'warm' ? ['#6b3a22', '#c2652e'] : ['#2a4fb8', '#0a8fb3'];
     (u.uColor.value as Color).set(base);
     (u.uGlowColor.value as Color).set(glow);
     u.uAlpha.value = dark ? 1 : 0.8;

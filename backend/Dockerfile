@@ -9,7 +9,10 @@
 # `docker history`. That line is gone and must not come back.
 
 # ── build ────────────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+# node:*-slim (Debian/glibc), not alpine: onnxruntime-node (MedQA embeddings)
+# ships only glibc prebuilt binaries — on musl the native library fails to
+# load ("ld-linux-x86-64.so.2: No such file or directory") and /api/medqa 503s.
+FROM node:22-slim AS builder
 
 WORKDIR /build/app
 COPY app/package*.json ./
@@ -22,7 +25,7 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 # ── runtime ──────────────────────────────────────────────────────────────
-FROM node:22-alpine
+FROM node:22-slim
 
 ENV NODE_ENV=production
 WORKDIR /app

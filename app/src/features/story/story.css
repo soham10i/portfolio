@@ -132,20 +132,13 @@ html[data-style="editorial"] :is(.story, .jarvis) .serif { letter-spacing: -.005
 /* ---------------- type scale ----------------
    One scale for every page: display (hero), h2 (chapter titles), statement
    (About), closing (Contact), lead and body. Sized for reading first —
-   generous line height, measured line length, balanced headings. The
-   Physical AI theme keeps its larger poster scale (overrides further down). */
+   generous line height, measured line length, balanced headings. */
 .story .t-display   { font-size: clamp(42px, 6.2vw, 96px);  line-height: 1.03; letter-spacing: -.034em; font-weight: 500; text-wrap: balance; }
 .story .t-h2        { font-size: clamp(34px, 4.4vw, 66px);  line-height: 1.05; letter-spacing: -.03em;  font-weight: 500; text-wrap: balance; }
 .story .t-statement { font-size: clamp(26px, 3.1vw, 46px);  line-height: 1.16; letter-spacing: -.022em; font-weight: 500; text-wrap: balance; }
 .story .t-closing   { font-size: clamp(46px, 7.6vw, 120px); line-height: .98; letter-spacing: -.04em;  font-weight: 500; }
 .story .t-lead      { font-size: clamp(17px, 1.3vw, 19px);  line-height: 1.62; color: var(--fg2); max-width: 62ch; text-wrap: pretty; }
 .story .t-body      { font-size: 16px; line-height: 1.68; color: var(--fg2); text-wrap: pretty; }
-html[data-style="physical"] .story .t-display   { font-size: clamp(48px, 8.2vw, 136px); line-height: .95; letter-spacing: -.045em; }
-html[data-style="physical"] .story .t-h2        { font-size: clamp(40px, 7vw, 112px);   line-height: .92; letter-spacing: -.05em; }
-html[data-style="physical"] .story .t-statement { font-size: clamp(32px, 5.4vw, 84px);  line-height: 1.02; letter-spacing: -.04em; }
-html[data-style="physical"] .story .t-closing   { font-size: clamp(56px, 12vw, 200px);  line-height: .86; letter-spacing: -.06em; }
-html[data-style="physical"] .story .t-lead      { font-size: 17px; line-height: 1.625; max-width: 58ch; }
-html[data-style="physical"] .story .t-body      { font-size: 15px; line-height: 1.625; }
 
 :is(.story, .jarvis) .mono {
   font-family: var(--font-mono);
@@ -181,137 +174,6 @@ html[data-theme="dark"] .story .panel {
     radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%),
     color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
 }
-/* Physical AI: graphite ground, safety-orange signal and teal glow, and a
-   split layout — on wide screens the point-cloud machines get their own fixed
-   stage on the left and the chapters scroll in the column beside it. */
-html[data-style="physical"] :is(.story, .jarvis) {
-  --ground: #050608;
-  --bg: #0b0d10;
-  --bg2: #13161b;
-  --surf2: rgba(255, 255, 255, .045);
-  --fg: #eceff3;
-  --fg2: #a3abb7;
-  --fg3: #6e7784;
-  --on-fg: #0b0d10;
-  --line: rgba(255, 170, 110, .12);
-  --p: #ff8a3d;
-  --s: #ffc861;
-  --a: #4fe3c8;
-  --canvas: #050608;
-  --glass-fill: rgba(255, 255, 255, .04);
-  --chrome-fill: rgba(13, 15, 19, .82);
-  --chip-fill: rgba(255, 255, 255, .045);
-  --glass-rim: rgba(255, 200, 160, .12);
-  --glass-inner: rgba(255, 255, 255, .03);
-  --card-fill: rgba(19, 22, 27, .9);
-  --stage-w: 0px;
-}
-html[data-style="physical"] .story .panel {
-  background:
-    radial-gradient(70vmax 40vmax at 85% 0%, rgba(255, 138, 61, .10), transparent 60%),
-    radial-gradient(60vmax 40vmax at 0% 100%, rgba(79, 227, 200, .07), transparent 60%),
-    color-mix(in oklab, var(--bg) var(--panel-opacity), transparent);
-}
-.pa-stage { display: none; }
-@media (min-width: 1024px) {
-  html[data-style="physical"] .story { --stage-w: 42vw; }
-  html[data-style="physical"] .story main { margin-left: var(--stage-w); }
-  /* Content panels read as solid pages; the animation has its own stage. */
-  html[data-cloud="on"][data-style="physical"] .story .panel {
-    --panel-opacity: 88%;
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-    text-shadow: none;
-  }
-  html[data-style="physical"] .story :is(.story-top, .story-bottom) { left: var(--stage-w); }
-  /* The content column is ~58vw: wide grids drop to two columns. */
-  html[data-style="physical"] .story :is(#work > ul, #method > ol, #hey ul) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  html[data-style="physical"] .story .cloud-layer,
-  html[data-style="physical"] .story .pa-stage {
-    top: var(--inset); left: var(--inset); right: auto; bottom: auto;
-    width: calc(var(--stage-w) - var(--inset));
-    height: calc(100vh - var(--inset) * 2);
-    border-radius: var(--radius-panel);
-  }
-  html[data-style="physical"] .story .cloud-layer { z-index: 1; }
-  .pa-stage {
-    display: block;
-    position: fixed;
-    z-index: 0;
-    background:
-      radial-gradient(60% 50% at 50% 55%, rgba(255, 138, 61, .10), transparent 70%),
-      linear-gradient(180deg, #0d1014, #07090b);
-    border: 1px solid var(--line);
-    overflow: hidden;
-  }
-  /* Engineering-paper grid under the models. */
-  .pa-stage::before {
-    content: ""; position: absolute; inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(80% 70% at 50% 55%, #000 40%, transparent 100%);
-  }
-  .pa-corner { position: absolute; width: 18px; height: 18px; border-color: var(--p); opacity: .7; }
-  .pa-tl { top: 18px; left: 18px; border-top: 1px solid; border-left: 1px solid; }
-  .pa-tr { top: 18px; right: 18px; border-top: 1px solid; border-right: 1px solid; }
-  .pa-bl { bottom: 18px; left: 18px; border-bottom: 1px solid; border-left: 1px solid; }
-  .pa-br { bottom: 18px; right: 18px; border-bottom: 1px solid; border-right: 1px solid; }
-  .pa-hud { position: absolute; left: 40px; right: 40px; z-index: 2; }
-  .pa-hud-top { top: 34px; display: flex; justify-content: space-between; font-size: 10px !important; color: var(--fg3); }
-  .pa-hud-bottom { bottom: 36px; }
-  .pa-title { animation: pa-in .6s var(--ease-out) both; }
-}
-@keyframes pa-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-/* HIL Bench: a test-bench look for hardware-in-the-loop work. Deep navy,
-   blue scope traces, a signal-yellow accent, an oscilloscope graticule on the
-   ground, and an instrument readout naming the background model. */
-html[data-style="hil"] :is(.story, .jarvis) {
-  --ground: #04070d;
-  --bg: #0a1020;
-  --bg2: #111a2e;
-  --surf2: rgba(140, 180, 255, .05);
-  --fg: #e6edf7;
-  --fg2: #9fb0c8;
-  --fg3: #6b7d98;
-  --on-fg: #0a1020;
-  --line: rgba(120, 170, 255, .13);
-  --p: #f5c542;
-  --s: #5aa9ff;
-  --a: #39d0c3;
-  --glass-fill: rgba(120, 170, 255, .05);
-  --chrome-fill: rgba(10, 16, 32, .82);
-  --chip-fill: rgba(120, 170, 255, .06);
-  --glass-rim: rgba(150, 190, 255, .14);
-  --card-fill: rgba(12, 20, 38, .88);
-}
-html[data-style="hil"] .story {
-  --block-fill: rgba(10, 18, 36, .7);
-  --block-line: rgba(120, 170, 255, .14);
-  background:
-    linear-gradient(rgba(120, 170, 255, .045) 1px, transparent 1px) 0 0 / 64px 64px,
-    linear-gradient(90deg, rgba(120, 170, 255, .045) 1px, transparent 1px) 0 0 / 64px 64px,
-    radial-gradient(70vmax 50vmax at 80% 0%, rgba(90, 169, 255, .12), transparent 60%),
-    radial-gradient(60vmax 40vmax at 0% 100%, rgba(245, 197, 66, .06), transparent 60%),
-    var(--ground) !important;
-  background-attachment: fixed !important;
-}
-.hil-readout { display: none; }
-@media (min-width: 900px) {
-  .hil-readout {
-    position: fixed; left: calc(var(--inset) + 20px); bottom: 22px; z-index: 55;
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px; border-radius: 999px;
-    background: var(--chrome-fill); border: 1px solid var(--line);
-    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-  }
-  .hil-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--p); box-shadow: 0 0 10px var(--p); animation: hil-blink 1.6s steps(2) infinite; }
-  .hil-name { animation: pa-in .5s var(--ease-out) both; }
-}
-@keyframes hil-blink { 50% { opacity: .35; } }
-@media (max-width: 1279px) { .hil-readout { display: none; } }
-
 /* Minimal: no 3D background, one ink colour and one muted accent, flat
    white cards with a hairline border and no shadows or glow. The quietest
    and fastest theme. */
@@ -586,27 +448,27 @@ html[data-cloud="on"][data-theme="dark"] .story .panel { --panel-opacity: 36%; }
 /* The hero is the stage for the scan itself: see-through, never blurred. */
 html[data-cloud="on"] .story #hey.panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
 
-/* ---------------- open layout (Light, Dark, Editorial) ----------------
+/* ---------------- open layout ----------------
    The chapters stop being full-width slabs: their panels go clear, so the
    point cloud reads through all the free space, and only the reading parts —
    paragraphs, lists, the contact block — sit on frosted glass boxes (plus the
-   cards that already were glass). Physical AI keeps its solid column. */
+   cards that already were glass). */
 .story { --block-fill: rgba(255, 255, 255, .7); --block-line: rgba(255, 255, 255, .9); }
 html[data-theme="dark"] .story { --block-fill: rgba(13, 18, 29, .66); --block-line: rgba(255, 255, 255, .08); }
 html[data-style="editorial"] .story { --block-fill: rgba(255, 252, 246, .72); --block-line: rgba(255, 255, 255, .85); }
-html:not([data-style="physical"]) .story .panel {
+.story .panel {
   background: transparent !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-html:not([data-style="physical"]) .story {
+.story {
   background:
     radial-gradient(60vmax 40vmax at 90% 0%, color-mix(in oklab, var(--p) 10%, transparent), transparent 60%),
     radial-gradient(60vmax 40vmax at 0% 100%, color-mix(in oklab, var(--a) 8%, transparent), transparent 60%),
     var(--ground);
   background-attachment: fixed;
 }
-html:not([data-style="physical"]) .story .content-glass {
+.story .content-glass {
   position: relative;
   border-radius: 24px;
   padding: clamp(18px, 2.2vw, 30px);
@@ -615,14 +477,14 @@ html:not([data-style="physical"]) .story .content-glass {
   box-shadow: var(--glass-shadow);
   text-shadow: none;
 }
-html:not([data-style="physical"]) .story .content-glass.content-list { padding-block: 4px; border-top-color: var(--block-line); }
-html:not([data-style="physical"]) .story .content-glass.content-list > li:last-child { border-bottom: 0; }
+.story .content-glass.content-list { padding-block: 4px; border-top-color: var(--block-line); }
+.story .content-glass.content-list > li:last-child { border-bottom: 0; }
 @media (prefers-reduced-transparency: reduce) {
-  html:not([data-style="physical"]) .story .content-glass { background: var(--bg); }
+  .story .content-glass { background: var(--bg); }
 }
 
 /* ---------------- generative project covers ----------------
-   Dark (and Physical AI): the tint glows out of a deep navy field, white type.
+   Dark: the tint glows out of a deep navy field, white type.
    Light and Editorial: the same tint as a pale wash on a near-white field,
    a fine ink grid, and the number in a deepened tint so it reads as ink. */
 .cover-field {

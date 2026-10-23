@@ -5,9 +5,9 @@ real thing executing in front of the visitor: object detection runs in their
 browser, the digital twin steps a live simulation, the assistant streams tokens
 from a hosted model. Nothing on it is a screenshot of something that once worked.
 
-**Live:** https://soham-portfolio.onrender.com — once the service is created from
-`render.yaml` (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). Free tier sleeps
-when idle, so the first visit can take up to a minute to wake.
+**Live:** https://portfolio-500754517962.europe-west1.run.app — one Cloud Run
+service (europe-west1) built from `backend/Dockerfile` via `cloudbuild.yaml`.
+It scales to zero when idle, so the first visit can take a few seconds to wake.
 
 ---
 

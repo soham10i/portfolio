@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Activity, Bot, Check, Feather, Minus, Moon, Sun, type LucideIcon } from 'lucide-react';
+import { Check, Feather, Minus, Moon, Sun, type LucideIcon } from 'lucide-react';
 import { useTheme, type Theme } from '@/shared/lib/theme';
 
 /* Theme menu for the site: Light, Dark, Editorial (warm paper set in
-   Playfair Display) and Physical AI (a fixed stage of morphing machines
-   beside the scrolling content). The button shows the current theme's icon; the menu
-   opens above it in the bottom bar and below it in page headers. */
+   Playfair Display) and Minimal (no animation). The button shows the current
+   theme's icon; the menu opens above it in the bottom bar and below it in
+   page headers. */
 
 const OPTIONS: { key: Theme; label: string; note: string; icon: LucideIcon; swatch: [string, string]; font?: string }[] = [
   { key: 'minimal', label: 'Minimal', note: 'Plain, no animation · fastest', icon: Minus, swatch: ['#f6f6f4', '#2f3b4c'] },
   { key: 'light', label: 'Light', note: 'Cool glass, daylight', icon: Sun, swatch: ['#f4f6fb', '#2f5bea'] },
   { key: 'dark', label: 'Dark', note: 'Midnight, glowing scan', icon: Moon, swatch: ['#0a0f1a', '#7fb0ff'] },
   { key: 'editorial', label: 'Editorial', note: 'Warm paper, Playfair', icon: Feather, swatch: ['#f6f1e7', '#9a3b1c'], font: "'Playfair Display', serif" },
-  { key: 'physical', label: 'Physical AI', note: 'Robot stage beside the text', icon: Bot, swatch: ['#0b0d10', '#ff8a3d'] },
-  { key: 'hil', label: 'HIL Bench', note: 'Test-bench look · for dSPACE', icon: Activity, swatch: ['#0a1020', '#f5c542'] },
 ];
 
 export default function ThemeToggle({ className = '', placement = 'up' }: { className?: string; placement?: 'up' | 'down' }) {

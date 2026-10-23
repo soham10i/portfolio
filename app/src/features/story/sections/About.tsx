@@ -1,7 +1,6 @@
 import type React from 'react';
 import { DOMAINS, HERO_STATS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
-import HilFit from '../components/HilFit';
 
 /* 02 — About. The story in three short paragraphs, four numbers, then the
    four areas of work as an index. */
@@ -30,8 +29,8 @@ export default function About() {
           tracking with BLE beacons.
         </p>
         <p>
-          Now I study Computer Engineering at Paderborn University, with a focus on Physical AI: state estimation,
-          perception, planning and control, and testing them in simulation before they run on hardware.
+          Now I study Computer Engineering at Paderborn University, focused on robotics: state estimation,
+          perception, planning and control, tested in simulation before they run on hardware.
         </p>
       </div>
 
@@ -43,8 +42,6 @@ export default function About() {
           </div>
         ))}
       </div>
-
-      <HilFit />
 
       <ol className="content-glass content-list mt-[8vh] border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
