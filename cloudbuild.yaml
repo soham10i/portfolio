@@ -1,0 +1,24 @@
+# Cloud Build → Artifact Registry → Cloud Run.
+#
+#   gcloud builds submit --config cloudbuild.yaml
+#   gcloud run deploy portfolio --image <image> --region europe-west1
+#
+# The Dockerfile lives in backend/ but builds from the repo root (one image:
+# built frontend + API). --source deploys would miss that and fall back to
+# buildpacks, which cannot produce this topology.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - backend/Dockerfile
+      - -t
+      - europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/portfolio:latest
+      - .
+images:
+  - europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/portfolio:latest
+options:
+  # The videos under app/public/videos make the context large; give the push
+  # some room and keep the machine small.
+  machineType: E2_HIGHCPU_8
+timeout: 1800s

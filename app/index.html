@@ -3,31 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Software engineer (2.5 years backend and data, healthcare and payments) studying M.Sc. Computer Engineering in Paderborn and working on Physical AI: state estimation, perception, simulation and digital twins." />
+    <meta name="description" content="Software engineer (2.5 years backend and data in healthcare and payments) studying Computer Engineering in Paderborn, building robot software, factory digital twins and on-device perception — every project measured and running live." />
     <meta name="keywords" content="Soham Patel, Software Engineer, Industrial AI, Digital Twin, Machine Learning, Computer Vision, Python, FastAPI, Production Engineering" />
     <meta name="author" content="Soham Patel" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0f1e" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f7fc" />
     
-    <!-- Canonical origin matches the Render service name in render.yaml. -->
-    <link rel="canonical" href="https://soham-portfolio.onrender.com/" />
+    <!-- Canonical origin: the Cloud Run service URL (see cloudbuild.yaml). -->
+    <link rel="canonical" href="https://portfolio-500754517962.europe-west1.run.app/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Soham Patel — Software Engineer · Physical AI" />
-    <meta property="og:description" content="Software engineer (2.5 years backend and data, healthcare and payments) studying M.Sc. Computer Engineering in Paderborn and working on Physical AI: state estimation, perception, simulation and digital twins." />
+    <meta property="og:title" content="Soham Patel — Software Engineer · Robotics & Simulation" />
+    <meta property="og:description" content="Software engineer (2.5 years backend and data in healthcare and payments) studying Computer Engineering in Paderborn, building robot software, factory digital twins and on-device perception — every project measured and running live." />
     <meta property="og:site_name" content="Soham Patel Portfolio" />
-    <meta property="og:url" content="https://soham-portfolio.onrender.com/" />
-    <meta property="og:image" content="https://soham-portfolio.onrender.com/og-image.png" />
+    <meta property="og:url" content="https://portfolio-500754517962.europe-west1.run.app/" />
+    <meta property="og:image" content="https://portfolio-500754517962.europe-west1.run.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Soham Patel — Software engineer, learning Physical AI" />
+    <meta property="og:image:alt" content="Soham Patel — Software engineer, robotics and simulation" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Soham Patel — Software Engineer · Physical AI" />
-    <meta name="twitter:description" content="Software engineer (2.5 years backend and data, healthcare and payments) studying M.Sc. Computer Engineering in Paderborn and working on Physical AI: state estimation, perception, simulation and digital twins." />
-    <meta name="twitter:image" content="https://soham-portfolio.onrender.com/og-image.png" />
+    <meta name="twitter:title" content="Soham Patel — Software Engineer · Robotics & Simulation" />
+    <meta name="twitter:description" content="Software engineer (2.5 years backend and data in healthcare and payments) studying Computer Engineering in Paderborn, building robot software, factory digital twins and on-device perception — every project measured and running live." />
+    <meta name="twitter:image" content="https://portfolio-500754517962.europe-west1.run.app/og-image.png" />
 
     <!-- Structured data: who this site is about. -->
     <script type="application/ld+json">
@@ -35,10 +35,10 @@
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Soham Patel",
-      "url": "https://soham-portfolio.onrender.com/",
-      "image": "https://soham-portfolio.onrender.com/og-image.png",
+      "url": "https://portfolio-500754517962.europe-west1.run.app/",
+      "image": "https://portfolio-500754517962.europe-west1.run.app/og-image.png",
       "jobTitle": "Software Engineer",
-      "description": "Software engineer working on Physical AI: state estimation, perception, simulation and digital twins.",
+      "description": "Software engineer building robot software, factory digital twins and on-device perception — every project measured and running live.",
       "email": "mailto:soham.patel.2201@gmail.com",
       "address": { "@type": "PostalAddress", "addressLocality": "Paderborn", "addressCountry": "DE" },
       "alumniOf": [
@@ -52,7 +52,7 @@
     }
     </script>
 
-    <title>Soham Patel — Software Engineer · Physical AI</title>
+    <title>Soham Patel — Software Engineer · Robotics & Simulation</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
   </head>
   <body>
@@ -61,11 +61,13 @@
       (function () {
         try {
           var t = localStorage.getItem('sp-theme');
-          if (t === 'editorial' || t === 'physical' || t === 'hil' || t === 'minimal') document.documentElement.setAttribute('data-style', t);
+          // Retired themes (physical, hil) migrate to dark — both were dark.
+          if (t === 'physical' || t === 'hil') t = 'dark';
+          if (t === 'editorial' || t === 'minimal') document.documentElement.setAttribute('data-style', t);
           else if (t !== 'dark' && t !== 'light') {
             t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
-          var dark = t === 'dark' || t === 'physical' || t === 'hil';
+          var dark = t === 'dark';
           document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
           document.documentElement.classList.toggle('dark', dark);
         } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }

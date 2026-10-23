@@ -42,12 +42,10 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
   const motion = useStory((s) => s.motion);
   const theme = useTheme((s) => s.theme);
   const dark = isDarkTheme(theme);
-  const tone = theme === 'editorial' ? 'warm' : theme === 'physical' ? 'signal' : theme === 'hil' ? 'scope' : undefined;
-  /* The Physical AI theme swaps the home chapters' shapes for its machines;
-     its CSS confines this canvas to the left stage (story.css). */
+  const tone = theme === 'editorial' ? 'warm' : undefined;
   /* Minimal theme: no 3D background at all — nothing is loaded or drawn. */
   const off = theme === 'minimal';
-  const set: ShapeSet = requested !== 'home' ? requested : theme === 'physical' ? 'physical' : theme === 'hil' ? 'hil' : 'home';
+  const set: ShapeSet = requested;
   const canvas = useRef<HTMLCanvasElement>(null);
   const cloud = useRef<PointCloud | null>(null);
   const motionRef = useRef(motion);
@@ -125,7 +123,7 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
         return;   // WebGL refused at runtime — the page is complete without it
       }
       const style = document.documentElement.dataset.style;
-      cloud.current.setDark(document.documentElement.dataset.theme === 'dark', style === 'editorial' ? 'warm' : style === 'physical' ? 'signal' : style === 'hil' ? 'scope' : undefined);
+      cloud.current.setDark(document.documentElement.dataset.theme === 'dark', style === 'editorial' ? 'warm' : undefined);
       resize();
       gsap.ticker.add(tick);
       setReady(true);

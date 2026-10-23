@@ -2,7 +2,7 @@
 /* End-to-end smoke test. Runs against any deployment, not just localhost:
  *
  *   node scripts/smoke.js                             # http://localhost:3001
- *   node scripts/smoke.js https://your.onrender.com   # production
+ *   node scripts/smoke.js https://portfolio-500754517962.europe-west1.run.app   # production
  *
  * Exit code is the number of failed checks, so it drops straight into CI.
  *

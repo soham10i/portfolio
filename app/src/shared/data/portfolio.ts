@@ -285,7 +285,7 @@ export const EDUCATION = [
     institution: 'Paderborn University',
     location: 'Paderborn, Germany',
     grade: 'In progress',
-    focus: 'Focus on Physical AI: robotics, embedded systems and the software that connects sensing to action.',
+    focus: 'Focus on robotics, embedded systems and the software that connects sensing to action.',
   },
   {
     period: 'Oct 2024 – Aug 2026',

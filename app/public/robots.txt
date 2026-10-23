@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://soham-portfolio.onrender.com/sitemap.xml
+Sitemap: https://portfolio-500754517962.europe-west1.run.app/sitemap.xml

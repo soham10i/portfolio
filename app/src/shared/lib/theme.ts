@@ -1,21 +1,21 @@
 import { create } from 'zustand';
 import { applyPalette, storePalette } from './palettes';
 
-/* Light / dark / editorial / physical for the whole site. Editorial is a
- * light theme (warm paper, Playfair Display) and Physical AI a dark one (split
- * layout with an animation stage), so each paints data-theme light or dark
- * plus a data-style — everything that only asks "is it dark?" keeps working.
+/* Light / dark / editorial / minimal for the whole site. Editorial is a
+ * light theme (warm paper, Playfair Display), so each styled theme paints
+ * data-theme light or dark plus a data-style — everything that only asks
+ * "is it dark?" keeps working.
  *
  * html[data-theme] is set before first paint by the inline script in
  * index.html (stored choice, else the OS preference), so this module only
  * reads it. Choosing a theme also moves the older palette system — used by the
  * demos and notes — to its matching palette, so every page agrees. */
 
-export type Theme = 'light' | 'dark' | 'editorial' | 'physical' | 'hil' | 'minimal';
-export const THEMES: Theme[] = ['light', 'dark', 'editorial', 'physical', 'hil', 'minimal'];
-export const isDarkTheme = (t: Theme) => t === 'dark' || t === 'physical' || t === 'hil';
+export type Theme = 'light' | 'dark' | 'editorial' | 'minimal';
+export const THEMES: Theme[] = ['light', 'dark', 'editorial', 'minimal'];
+export const isDarkTheme = (t: Theme) => t === 'dark';
 /** Themes painted as a data-style on top of light/dark. */
-const STYLED: Theme[] = ['editorial', 'physical', 'hil', 'minimal'];
+const STYLED: Theme[] = ['editorial', 'minimal'];
 const KEY = 'sp-theme';
 
 const current = (): Theme => {
@@ -24,8 +24,8 @@ const current = (): Theme => {
   return h.theme === 'dark' ? 'dark' : 'light';
 };
 
-const PALETTE_FOR = { light: 'daylight', dark: 'midnight', editorial: 'paper', physical: 'midnight', hil: 'midnight', minimal: 'daylight' } as const;
-const META_COLOR = { light: '#e4e9f1', dark: '#030509', editorial: '#ece5d8', physical: '#060708', hil: '#04070d', minimal: '#f6f6f4' } as const;
+const PALETTE_FOR = { light: 'daylight', dark: 'midnight', editorial: 'paper', minimal: 'daylight' } as const;
+const META_COLOR = { light: '#e4e9f1', dark: '#030509', editorial: '#ece5d8', minimal: '#f6f6f4' } as const;
 
 function paint(theme: Theme) {
   const html = document.documentElement;

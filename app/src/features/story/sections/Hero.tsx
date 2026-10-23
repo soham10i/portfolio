@@ -39,11 +39,12 @@ export default function Hero() {
           data-reveal="0.1"
           className="t-display max-w-[24ch]"
         >
-          Software engineer, learning{' '}<br className="max-sm:hidden" /><span className="serif whitespace-nowrap text-[color:var(--p)]">Physical AI.</span>
+          Software engineer,{' '}<br className="max-sm:hidden" /><span className="serif whitespace-nowrap text-[color:var(--p)]">robotics & simulation.</span>
         </h1>
         <p data-reveal="0.18" className="content-glass t-lead mt-7">
-          I worked for 2.5 years on backend and data systems in healthcare and payments. Since 2024 I have been
-          building projects with robots, sensors and simulation. I am now studying Computer Engineering in Paderborn.
+          I spent 2.5 years building backend and data systems in healthcare and payments. Now I build the software
+          side of physical systems: factory twins checked against their PLC code, maze-mapping robots, on-device
+          vision. I study Computer Engineering in Paderborn.
         </p>
       </div>
 
