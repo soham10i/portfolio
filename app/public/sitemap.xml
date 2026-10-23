@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Canonical origin matches the Render service name in render.yaml.
+     Update lastmod when the corresponding page's content changes. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://soham-portfolio.onrender.com/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/digital-twin</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/slam</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/scene</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/cv-uad</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/embedded-intelligence</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/wind-pdm</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/medqa-nlp</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/smart-home</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/project/co2-tracker</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/robot</loc><changefreq>yearly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/scene</loc><changefreq>yearly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/medqa</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/blog</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://soham-portfolio.onrender.com/blog/diffusion-from-scratch</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+</urlset>

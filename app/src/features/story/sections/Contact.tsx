@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { ArrowUpRight, Copy, Check, Download, Github } from 'lucide-react';
+import { ArrowUpRight, Copy, Check, Download, Github, Linkedin } from 'lucide-react';
 import { CONTACT, HERO_TAGS, PROJECTS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 
@@ -62,6 +62,9 @@ export default function Contact() {
           </button>
           <a href={CONTACT.github} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
             <Github className="h-4 w-4" /> GitHub <ArrowUpRight className="h-4 w-4" />
+          </a>
+          <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
+            <Linkedin className="h-4 w-4" /> LinkedIn <ArrowUpRight className="h-4 w-4" />
           </a>
           <a href="/Soham_Patel_CV.pdf" download className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
             <Download className="h-4 w-4" /> CV

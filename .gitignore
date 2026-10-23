@@ -63,3 +63,12 @@ scene-api/.venv/
 .claude/
 .idea/
 .vscode/
+
+# Private / local-only — never commit
+APPLY.md
+cv/
+.env.keys
+
+# Large binaries and git bundles live outside the repo
+*.pt
+*.bundle
