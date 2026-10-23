@@ -114,9 +114,23 @@ const config = {
     indexPath: path.join(__dirname, '..', '..', 'data', 'medqa-index.json'),
   },
 
+  /* ElevenLabs text-to-speech — JARVIS's voice. Unset → /api/tts answers 503
+     and the frontend falls back to the browser's speechSynthesis. Charged per
+     character, so the route caps text length and rate-limits per IP. */
+  tts: {
+    apiKey: process.env.ELEVENLABS_API_KEY || '',
+    voiceId: process.env.ELEVENLABS_VOICE_ID_01 || process.env.ELEVENLABS_VOICE_ID || '',
+    model: process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5',
+    timeoutMs: Number(process.env.ELEVENLABS_TIMEOUT_MS) || 30_000,
+    maxChars: 1200,
+    get ready() { return !!(this.apiKey && this.voiceId); },
+  },
+
   limits: {
     chat: { windowMs: 5 * 60 * 1000, max: 3000 },
     scene: { windowMs: 5 * 60 * 1000, max: 6000 },
+    /* TTS costs real money per character — a much tighter bucket than chat. */
+    tts: { windowMs: 5 * 60 * 1000, max: 120 },
     maxHistoryMessages: 20,
     maxMessageChars: 4000,
   },

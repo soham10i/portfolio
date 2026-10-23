@@ -51,6 +51,7 @@ app.get('/api/health', (req, res) => {
     fallback: !!config.llm.fallback,
     medqa: config.medqa.enabled,
     scene: !!config.scene.baseUrl,
+    tts: config.tts.ready,
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
@@ -61,6 +62,7 @@ app.use('/api/contact', smallJson, require('./src/routes/contact'));
 app.use('/api/scene', sceneJson, require('./src/routes/scene'));
 app.use('/api/notes', notesJson, require('./src/routes/notes'));
 app.use('/api/medqa', smallJson, require('./src/routes/medqa'));
+app.use('/api/tts', smallJson, require('./src/routes/tts'));
 
 // Unknown API routes → JSON 404, never the SPA shell
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
@@ -85,6 +87,9 @@ const server = app.listen(config.port, () => {
     : 'not configured');
   line('fallback', config.llm.fallback ? config.llm.fallback.baseUrl : 'none — a 429 from the primary is fatal');
   line('blip', config.scene.baseUrl || 'not configured (SceneLab falls back to the vision model)');
+  line('tts', config.tts.ready
+    ? `ElevenLabs (${config.tts.model})`
+    : 'not configured — JARVIS reads replies with the browser voice');
   line('medqa', config.medqa.enabled ? 'enabled (index loads on first request)' : 'disabled');
   line('chat store', config.supabase.ready ? `Supabase (${config.supabase.url})` : 'off — set SUPABASE_URL and SUPABASE_SECRET_KEY to store chats');
   line('notes', config.notes.adminToken ? 'editable' : 'read-only (no ADMIN_TOKEN)');

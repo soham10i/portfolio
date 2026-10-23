@@ -4,7 +4,7 @@ import '@/features/story/story.css';
 import MarkdownText from '@/features/chat/components/MarkdownText';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
 import {
-  createRecognizer, createSpeaker, sttSupported, ttsSupported,
+  cloudTtsReady, createCloudSpeaker, createRecognizer, createSpeaker, sttSupported, ttsSupported,
   type Recognizer, type Speaker,
 } from '@/features/chat/lib/voice';
 import { conversationId, fetchHistory, newConversation } from '@/features/chat/lib/conversation';
@@ -19,9 +19,10 @@ import { lenis } from '@/shared/lib/lenis';
    picks the conversation back up (lib/conversation.ts).
 
    Voice: the mic button (one-shot "talkback") and the AudioLines toggle
-   (hands-free voice mode) use the browser's Web Speech API — SpeechRecognition
-   for STT, speechSynthesis for TTS — so voice adds no API cost. Spoken turns
-   are flagged `voice: true` so the backend answers in short, speakable prose. */
+   (hands-free voice mode) use the browser's SpeechRecognition for STT. TTS is
+   ElevenLabs via /api/tts when the backend has a key, with the browser's
+   speechSynthesis as fallback. Spoken turns are flagged `voice: true` so the
+   backend answers in short, speakable prose. */
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 
@@ -87,7 +88,15 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   const sendRef = useRef<(text?: string, opts?: { spoken?: boolean }) => Promise<void>>(async () => {});
   const restored = useRef(false);
 
-  const voiceOk = sttSupported() && ttsSupported();
+  /* Server-side TTS (ElevenLabs) is probed once when the panel first opens;
+     the browser voice covers deployments without a key. With the cloud voice
+     available, talk-back works even where speechSynthesis is missing. */
+  const [cloudVoice, setCloudVoice] = useState(false);
+  useEffect(() => {
+    if (open) void cloudTtsReady(API_BASE).then(setCloudVoice);
+  }, [open]);
+
+  const voiceOk = sttSupported() && (ttsSupported() || cloudVoice);
 
   /* Pick up where the visitor left off: the stored conversation, if the
      backend has it. Silent on failure — a fresh greeting is fine. */
@@ -166,14 +175,15 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     /* Spoken turns are read aloud sentence-by-sentence as they stream in.
        When the reply finishes, voice mode starts listening for the next turn. */
     let speaker: Speaker | null = null;
-    if (spoken && ttsSupported()) {
-      speaker = createSpeaker({
+    if (spoken && (cloudVoice || ttsSupported())) {
+      const callbacks = {
         onStart: () => setSpeaking(true),
         onDone: () => {
           setSpeaking(false);
           if (voiceModeRef.current && openRef.current && !sendingRef.current) queueListen(350);
         },
-      });
+      };
+      speaker = cloudVoice ? createCloudSpeaker({ apiBase: API_BASE, ...callbacks }) : createSpeaker(callbacks);
       speakerRef.current = speaker;
     }
 
@@ -231,16 +241,41 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
 
   const queueListen = (delay = 0) => {
     if (listenTimer.current) window.clearTimeout(listenTimer.current);
-    listenTimer.current = window.setTimeout(() => { listenTimer.current = null; startListening(); }, delay);
+    listenTimer.current = window.setTimeout(() => { listenTimer.current = null; void startListening(); }, delay);
   };
 
-  const startListening = () => {
+  const startListening = async () => {
     if (!sttSupported() || sendingRef.current) return;
     // Barge-in: talking back cuts off any reply still being read out.
     speakerRef.current?.cancel();
     setSpeaking(false);
     recognizerRef.current?.abort();
     gotFinalRef.current = false;
+
+    /* Pre-flight the mic ourselves. SpeechRecognition's failures are opaque —
+       'network', 'audio-capture' — while getUserMedia says exactly what is
+       wrong: no device, no permission, or all clear. It also raises the
+       browser's real permission prompt, which SpeechRecognition alone does
+       not do on every platform. */
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : '';
+        haltedRef.current = true;
+        setVoiceModeBoth(false);
+        setListening(false);
+        setError(
+          name === 'NotFoundError' || name === 'DevicesNotFoundError'
+            ? 'No microphone was found on this device — plug one in, or type instead.'
+            : name === 'NotAllowedError' || name === 'SecurityError'
+              ? 'Microphone access is blocked for this site. Allow it in your browser’s site settings (the padlock icon), then try again.'
+              : 'The microphone could not be started — you can still type below.',
+        );
+        return;
+      }
+    }
 
     const rec = createRecognizer({
       onInterim: (t) => setDraft(t),
@@ -250,10 +285,23 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
         void sendRef.current(t, { spoken: true });
       },
       onError: (e) => {
-        if (e === 'not-allowed' || e === 'service-not-allowed' || e === 'audio-capture') {
+        setListening(false);
+        if (e === 'not-allowed' || e === 'service-not-allowed') {
           haltedRef.current = true;
           setVoiceModeBoth(false);
-          setError('Microphone access was blocked. Allow the mic in your browser to talk to JARVIS.');
+          setError('Microphone access is blocked for this site. Allow it in your browser’s site settings (the padlock icon), then try again.');
+        } else if (e === 'audio-capture') {
+          haltedRef.current = true;
+          setVoiceModeBoth(false);
+          setError('No microphone was found on this device — plug one in, or type instead.');
+        } else if (e === 'network') {
+          /* Chrome transcribes speech on Google's servers; a VPN, a firewall
+             or a non-Google Chromium build turns that into a silent failure. */
+          haltedRef.current = true;
+          setVoiceModeBoth(false);
+          setError('The speech service could not be reached — Chrome recognises speech online, so a VPN or firewall can block it. You can still type below.');
+        } else if (e === 'no-speech' && !voiceModeRef.current) {
+          setError('I didn’t catch anything — tap the mic and speak right away.');
         }
       },
       onEnd: () => {
@@ -267,6 +315,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     });
     if (!rec) return;
     recognizerRef.current = rec;
+    setError('');
     setListening(true);
     rec.start();
   };
@@ -281,7 +330,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       setError('');
       speakerRef.current?.cancel();
       setSpeaking(false);
-      startListening();
+      void startListening();
     }
   };
 
@@ -289,7 +338,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
      hands-free loop — that is what the header toggle is for. */
   const onMicClick = () => {
     if (listening) { recognizerRef.current?.stop(); return; }
-    startListening();
+    void startListening();
   };
 
   /* A new chat is a new conversation id; the old one stays stored. */
