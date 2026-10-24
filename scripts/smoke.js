@@ -138,10 +138,18 @@ const checks = [
 
   ['security headers', async () => {
     const { res } = await http('/');
-    const missing = ['x-content-type-options', 'referrer-policy']
+    const missing = ['x-content-type-options', 'referrer-policy', 'content-security-policy', 'permissions-policy']
       .filter((h) => !res.headers.get(h));
     if (missing.length) throw new Error(`missing: ${missing.join(', ')}`);
     if (res.headers.get('x-powered-by')) throw new Error('x-powered-by is still advertised');
+    const csp = res.headers.get('content-security-policy') || '';
+    if (!csp.includes('sha256-kPcTKKcuWKYH8pKMlPR27KrvTSf+NmzFmOU5G3nPtcA=')) {
+      throw new Error('CSP missing valid sha256 hash for inline theme script');
+    }
+    const perm = res.headers.get('permissions-policy') || '';
+    if (!perm.includes('microphone=(self)')) {
+      throw new Error('Permissions-Policy missing microphone=(self)');
+    }
   }],
 ];
 
