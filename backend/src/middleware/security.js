@@ -18,7 +18,7 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob:",
+  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: 'sha256-kPcTKKcuWKYH8pKMlPR27KrvTSf+NmzFmOU5G3nPtcA='",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
@@ -32,7 +32,7 @@ function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), payment=(), usb=()');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(), payment=(), usb=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   // HSTS only over TLS, and only in production — never on a localhost deploy,
   // where it would pin the browser to https for a server that has no cert.
