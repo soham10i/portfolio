@@ -13,6 +13,7 @@ const Notes = lazy(() => import('@/features/notes/Notes'));
 const NoteView = lazy(() => import('@/features/notes/NoteView'));
 const NoteEditor = lazy(() => import('@/features/notes/NoteEditor'));
 const MedqaDemo = lazy(() => import('@/features/medqa/MedqaDemo'));
+const Scene = lazy(() => import('@/shaders/Scene'));
 
 function ViewerFallback() {
   return (
@@ -37,6 +38,8 @@ export default function App() {
           <Route path="/classic" element={<Navigate to="/" replace />} />
           <Route path="/robot" element={<AutonomousRobot />} />
           <Route path="/scene" element={<SceneLab />} />
+          <Route path="/shaders" element={<Scene />} />
+          <Route path="/glass-ai-button" element={<Scene />} />
           <Route path="/blog" element={<Notes />} />
           <Route path="/blog/:slug" element={<NoteView />} />
           <Route path="/notes" element={<Navigate to="/blog" replace />} />
