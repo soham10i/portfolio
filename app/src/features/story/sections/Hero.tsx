@@ -1,6 +1,7 @@
 import type React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
+import JarvisOrb from '@/features/chat/components/JarvisOrb';
 
 /* 01 — Intro. Who this is in two sentences, then four measured results, each
    opening its project. The name is in the status line and the header. */
@@ -18,13 +19,13 @@ export default function Hero() {
       id="hey"
       data-anchor-offset="0"
       aria-label="Introduction"
-      className="panel relative flex min-h-[calc(100svh-var(--inset)*2)] flex-col justify-between gap-12 overflow-hidden px-[var(--gutter)] pb-28 pt-[132px]"
+      className="panel relative flex min-h-screen flex-col justify-between gap-12 overflow-hidden px-[var(--gutter)] pb-28 pt-[132px]"
       style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)' } as React.CSSProperties}
     >
 
       <div className="relative flex items-start justify-between gap-6 text-[13px] leading-snug text-fg2">
-        <p data-reveal className="mono !text-[10.5px] text-fg3">
-          01 — Intro
+        <p data-reveal className="mono !text-[11px] font-medium tracking-[.14em] uppercase text-fg3">
+          Soham Patel
         </p>
         <p data-reveal="0.08" className="text-right">
           M.Sc. Computer Engineering · Paderborn
@@ -38,9 +39,12 @@ export default function Hero() {
           data-reveal="0.1"
           className="t-display max-w-[24ch]"
         >
-          Software engineer,{' '}<br className="max-sm:hidden" /><span className="serif whitespace-nowrap text-[color:var(--p)]">robotics & simulation.</span>
+          <span className="block text-fg">Soham Patel</span>
+          <span className="block text-[clamp(28px,3.8vw,54px)] font-normal leading-[1.12] text-fg2 mt-2">
+            Software engineer,{' '}<br className="max-sm:hidden" /><span className="serif whitespace-nowrap text-[color:var(--p)]">robotics & simulation.</span>
+          </span>
         </h1>
-        <p data-reveal="0.18" className="content-glass t-lead mt-7">
+        <p data-reveal="0.18" className="t-lead mt-7">
           I spent 2.5 years building backend and data systems in healthcare and payments. Now I build the software
           side of physical systems: factory twins checked against their PLC code, maze-mapping robots, on-device
           vision. I study Computer Engineering in Paderborn.
@@ -65,7 +69,20 @@ export default function Hero() {
             </li>
           ))}
         </ul>
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            data-reveal="0.32"
+            onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
+            className="glass-ai-btn !h-14 !px-5 text-[14px]"
+            aria-label="Ask Assistant about my work"
+          >
+            <div className="glass-ai-orb-wrap">
+              <JarvisOrb size={26} />
+            </div>
+            <span>Ask Assistant about my work</span>
+          </button>
+
           <a href="#work" data-reveal="0.35" className="lg-pill flex h-14 items-center gap-3 pl-5 pr-2 text-[14px]">
             Explore the work
             <span className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)]">

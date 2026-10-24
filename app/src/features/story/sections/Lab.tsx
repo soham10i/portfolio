@@ -20,7 +20,7 @@ export default function Lab() {
   return (
     <section id="lab" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(14,165,233,.16)', '--t2': 'rgba(99,102,241,.12)' } as React.CSSProperties}>
-      <SectionHead no="04" label="Live lab" aside="Running, not recorded" />
+      <SectionHead label="Live lab" aside="Running, not recorded" />
 
       <h2
         data-reveal

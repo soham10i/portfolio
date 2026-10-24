@@ -65,7 +65,7 @@ export default function Work() {
 
   return (
     <section id="work" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]">
-      <SectionHead no="03" label="Selected work" aside={`${collected.length} / ${PROJECTS.length} explored`} />
+      <SectionHead label="Selected work" aside={`${collected.length} / ${PROJECTS.length} explored`} />
 
       <div className="mb-[clamp(40px,6vh,72px)] flex flex-wrap items-end justify-between gap-6">
         <h2
@@ -74,7 +74,7 @@ export default function Work() {
         >
           Nine projects, <span className="serif text-s">eight with public code.</span>
         </h2>
-        <p data-reveal className="content-glass t-body max-w-[42ch]">
+        <p data-reveal className="t-body max-w-[42ch]">
           Each card opens a short write-up: the problem, what I built, how I measured it and what did not work.
         </p>
       </div>

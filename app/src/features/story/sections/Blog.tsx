@@ -25,18 +25,18 @@ export default function Blog() {
   return (
     <section id="blog" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(37,99,235,.10)', '--t2': 'rgba(14,143,176,.08)' } as React.CSSProperties}>
-      <SectionHead no="08" label="Blog" aside={posts ? `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}` : undefined} />
+      <SectionHead label="Blog" aside={posts ? `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}` : undefined} />
 
       <div className="mb-[clamp(28px,4vh,48px)] flex flex-wrap items-end justify-between gap-6">
         <h2 data-reveal className="t-h2 max-w-[16ch]">
           Written out <span className="serif text-p">in full.</span>
         </h2>
-        <p data-reveal className="content-glass t-body max-w-[42ch]">
+        <p data-reveal className="t-body max-w-[42ch]">
           Longer posts from my studies and projects, with every step shown.
         </p>
       </div>
 
-      <div data-reveal className="content-glass content-list">
+      <div data-reveal className="content-list border-t border-[color:var(--line)]">
         {failed && <p className="t-body py-6">Posts could not be loaded right now. <Link to="/blog" className="underline">Open the blog</Link>.</p>}
         {!failed && posts === null && <div className="my-5 h-16 animate-pulse rounded-[12px] bg-[color:var(--surf2)]" />}
         {posts?.map((p) => (

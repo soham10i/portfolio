@@ -8,7 +8,7 @@ export default function Experience() {
   return (
     <section id="experience" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(139,92,246,.14)', '--t2': 'rgba(236,72,153,.08)' } as React.CSSProperties}>
-      <SectionHead no="05" label="Experience" aside={`${EXPERIENCES.length} roles`} />
+      <SectionHead label="Experience" aside={`${EXPERIENCES.length} roles`} />
 
       <h2
         data-reveal
@@ -16,11 +16,11 @@ export default function Experience() {
       >
         From backend services <span className="serif text-a">to physical systems.</span>
       </h2>
-      <p data-reveal className="content-glass -mt-[clamp(16px,3vh,40px)] mb-[clamp(24px,4vh,40px)] t-lead">
+      <p data-reveal className="-mt-[clamp(16px,3vh,40px)] mb-[clamp(24px,4vh,40px)] t-lead">
         Four industry roles in India — healthcare data, payments, and the teams in between. Newest first.
       </p>
 
-      <ol className="content-glass content-list border-t border-[color:var(--line)]">
+      <ol className="content-list border-t border-[color:var(--line)]">
         {EXPERIENCES.map((e) => (
           <li
             key={e.period + e.role}
