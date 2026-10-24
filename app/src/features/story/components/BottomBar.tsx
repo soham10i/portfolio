@@ -27,13 +27,10 @@ export default function BottomBar() {
     <div className="story-bottom pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-[var(--gutter)] pb-4">
       <div className="lg-pill lg-chrome pointer-events-auto flex h-12 max-w-full items-center gap-1 pl-4 pr-1.5">
         <div className="flex min-w-0 items-center gap-3 pr-2" aria-live="polite">
-          <span className="mono whitespace-nowrap text-fg">
-            {current.no}<span className="text-fg3"> / {CHAPTERS.at(-1)!.no}</span>
-          </span>
+          <span className="whitespace-nowrap text-[13px] font-medium text-fg">{current.label}</span>
           <span className="relative hidden h-px w-14 overflow-hidden bg-[color:var(--line)] sm:block">
             <span ref={bar} className="absolute inset-0 origin-left bg-[color:var(--fg)]" style={{ transform: 'scaleX(0)' }} />
           </span>
-          <span className="hidden whitespace-nowrap text-[13px] text-fg2 sm:inline">{current.label}</span>
           <span className="mono hidden whitespace-nowrap text-fg3 md:inline" title="Projects you have opened">
             {collected}/{PROJECTS.length} explored
           </span>
@@ -43,12 +40,14 @@ export default function BottomBar() {
 
         <button
           type="button"
-          className="lg-btn"
+          className="glass-ai-btn !h-8 !px-3"
           onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
-          aria-label="Ask JARVIS about my work"
+          aria-label="Ask Assistant about my work"
         >
-          <JarvisOrb size={22} className="-ml-1.5" />
-          <span className="hidden sm:inline">Ask JARVIS</span>
+          <div className="glass-ai-orb-wrap">
+            <JarvisOrb size={20} className="-ml-0.5" />
+          </div>
+          <span className="hidden sm:inline font-medium">Ask Assistant</span>
         </button>
         <button
           type="button"

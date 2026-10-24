@@ -28,7 +28,7 @@ export default function Contact() {
     <section id="contact" data-anchor-offset="0" className="chapter panel relative flex min-h-[100svh] flex-col justify-between !pb-28"
       style={{ '--t1': 'rgba(79,70,229,.16)', '--t2': 'rgba(37,99,235,.14)' } as React.CSSProperties}>
       <div className="px-[var(--gutter)]">
-        <SectionHead no="09" label="Contact" aside={CONTACT.location.split(' — ')[0]} />
+        <SectionHead label="Contact" aside={CONTACT.location.split(' — ')[0]} />
 
         <h2
           data-reveal
@@ -39,7 +39,7 @@ export default function Contact() {
           <span className="serif tracking-[-.02em] text-p">touch.</span>
         </h2>
 
-        <div data-reveal className="content-glass mt-8 max-w-[760px]">
+        <div data-reveal className="mt-8 max-w-[760px]">
         <p className="t-lead">
           I am looking for a software role close to physical systems: robotics, simulation, testing or industrial
           data. Email is the best way to reach me.

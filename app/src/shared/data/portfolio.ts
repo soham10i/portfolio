@@ -314,7 +314,7 @@ export const EDUCATION = [
 ];
 
 export const LANGUAGES = [
-  { name: 'English', level: 'C1 · professional working proficiency (IELTS 6.5)' },
+  { name: 'English', level: 'C1 · Professional working proficiency' },
   { name: 'German', level: 'A2 · in active study toward B1, living in Germany' },
   { name: 'Gujarati', level: 'Native' },
   { name: 'Hindi', level: 'Fluent' },
@@ -332,7 +332,7 @@ export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azu
 export const CONTACT = {
   email: 'soham.patel.2201@gmail.com',
   github: 'https://github.com/soham10i',
-  linkedin: 'https://linkedin.com/in/soham10i',
+  linkedin: 'https://www.linkedin.com/in/soham-patel-10i/',
   location: 'Paderborn, Germany — open to relocation across Germany and the EU',
   availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
 };

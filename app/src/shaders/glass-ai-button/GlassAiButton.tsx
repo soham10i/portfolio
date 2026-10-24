@@ -5,15 +5,38 @@ import sourceDocument from "./sources/glass-ai-button.html?raw";
 export type GlassAiButtonProps = {
   className?: string;
   style?: CSSProperties;
+  onClick?: () => void;
+  triggerJarvis?: boolean;
 };
 
-export function GlassAiButton({ className = "", style }: GlassAiButtonProps) {
+export function GlassAiButton({
+  className = "",
+  style,
+  onClick,
+  triggerJarvis = true,
+}: GlassAiButtonProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [documentVisible, setDocumentVisible] = useState(() => (
     typeof document === "undefined" || !document.hidden
   ));
   const [hostVisible, setHostVisible] = useState(false);
   const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "GLASS_AI_BUTTON_CLICK") {
+        onClick?.();
+        if (triggerJarvis) {
+          // Slight delay to allow the satisfying particle burst animation to start
+          setTimeout(() => {
+            window.dispatchEvent(new Event("jarvis:open"));
+          }, 350);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onClick, triggerJarvis]);
 
   useEffect(() => {
     const host = hostRef.current;

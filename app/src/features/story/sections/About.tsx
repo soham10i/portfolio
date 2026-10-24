@@ -8,7 +8,7 @@ export default function About() {
   return (
     <section id="about" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(14,143,176,.14)', '--t2': 'rgba(37,99,235,.12)' } as React.CSSProperties}>
-      <SectionHead no="02" label="About" />
+      <SectionHead label="About" />
 
       <p
         data-reveal
@@ -18,7 +18,7 @@ export default function About() {
         <span className="serif text-a">models</span> and acts in the real world.
       </p>
 
-      <div data-reveal className="content-glass mt-10 grid max-w-[1100px] t-body gap-6 md:grid-cols-3">
+      <div data-reveal className="mt-10 grid max-w-[1100px] t-body gap-6 md:grid-cols-3">
         <p>
           I started in backend development. As an intern I built an expense-sharing app. At Electrum I wrote
           payment APIs, and at Altera I built Azure data pipelines for clinical software.
@@ -43,7 +43,7 @@ export default function About() {
         ))}
       </div>
 
-      <ol className="content-glass content-list mt-[8vh] border-t border-[color:var(--line)]">
+      <ol className="content-list mt-[8vh] border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
           <li
             key={d.no}

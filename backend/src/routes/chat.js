@@ -20,7 +20,7 @@ const chatStore = require('../services/chatStore');
 const router = express.Router();
 const limit = createLimiter({
   ...config.limits.chat,
-  message: 'Easy there — JARVIS needs a breather. Try again in a few minutes.',
+  message: 'Easy there — the assistant needs a breather. Try again in a few minutes.',
 });
 
 const NOT_CONFIGURED = 'Chat is not configured — the backend has no LLM_API_BASE pointing at a model server.';

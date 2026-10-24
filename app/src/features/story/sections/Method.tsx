@@ -29,7 +29,7 @@ export default function Method() {
   return (
     <section id="method" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(16,185,129,.13)', '--t2': 'rgba(14,143,176,.12)' } as React.CSSProperties}>
-      <SectionHead no="07" label="Method" />
+      <SectionHead label="Method" />
 
       <h2
         data-reveal

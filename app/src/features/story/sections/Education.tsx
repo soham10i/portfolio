@@ -9,7 +9,7 @@ export default function Education() {
   return (
     <section id="education" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(16,185,129,.12)', '--t2': 'rgba(59,130,246,.10)' } as React.CSSProperties}>
-      <SectionHead no="06" label="Education" aside={`${EDUCATION.length} degrees`} />
+      <SectionHead label="Education" aside={`${EDUCATION.length} degrees`} />
 
       <h2
         data-reveal
@@ -17,12 +17,12 @@ export default function Education() {
       >
         Study, <span className="serif text-a">project-led.</span>
       </h2>
-      <p data-reveal className="content-glass -mt-[clamp(16px,3vh,40px)] mb-[clamp(24px,4vh,40px)] t-lead">
+      <p data-reveal className="-mt-[clamp(16px,3vh,40px)] mb-[clamp(24px,4vh,40px)] t-lead">
         Computer Engineering in Paderborn now; AI coursework in Amberg before that; two degrees in India before
         that. Most of the projects on this site started as coursework.
       </p>
 
-      <ol className="content-glass content-list border-t border-[color:var(--line)]">
+      <ol className="content-list border-t border-[color:var(--line)]">
         {EDUCATION.map((e) => (
           <li
             key={e.period + e.degree}
@@ -42,16 +42,35 @@ export default function Education() {
         ))}
       </ol>
 
-      <div data-reveal className="content-glass mt-6">
-        <p className="mono !text-[10.5px] text-fg3">Languages</p>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-          {LANGUAGES.map((l) => (
-            <li key={l.name} className="flex items-baseline justify-between gap-4 text-[14px]">
-              <span className="font-medium">{l.name}</span>
-              <span className="text-right text-[13px] text-fg2">{l.level}</span>
-            </li>
-          ))}
-        </ul>
+      <div data-reveal className="mt-12 border-t border-[color:var(--line)] pt-8">
+        <p className="mono !text-[10.5px] uppercase tracking-wider text-fg3 mb-4">Languages</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {LANGUAGES.map((l) => {
+            const parts = l.level.split(' · ');
+            const badge = parts.length > 1 ? parts[0] : l.level;
+            const desc = parts.length > 1
+              ? parts.slice(1).join(' · ')
+              : l.name === 'Gujarati'
+                ? 'Mother tongue'
+                : 'Professional working';
+            return (
+              <div
+                key={l.name}
+                className="lg-panel flex flex-col justify-between p-4 transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[15px] font-medium text-fg">{l.name}</span>
+                  <span className="rounded-full border border-[color:var(--line)] bg-[color-mix(in_oklab,var(--fg)_6%,transparent)] px-2.5 py-0.5 mono !text-[10px] text-fg font-medium">
+                    {badge}
+                  </span>
+                </div>
+                <p className="mt-3 text-[12.5px] leading-snug text-fg2">
+                  {desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

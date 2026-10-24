@@ -9,9 +9,10 @@ const { SYSTEM_PROMPT } = require('../prompts/systemPrompt');
 
 const LLM = config.llm;
 
-/* Appended to the system prompt when the visitor is talking by voice: the
-   reply is read aloud, so markdown and long answers actively hurt. */
-const VOICE_SUFFIX = '\n\n[Voice mode] The visitor is speaking to you and will hear your reply read aloud by a speech synthesizer. Answer in plain, conversational sentences — no markdown, no bullet lists, no code blocks, no emojis — and keep it under about 60 words unless they explicitly ask for detail.';
+/* Appended to the system prompt when the visitor is talking by voice.
+   Answers should be conversational and concise, with standard markdown links
+   and clean notation. A dedicated voice preprocessor handles speech conversion. */
+const VOICE_SUFFIX = '\n\n[Voice mode] The visitor is speaking to you. Answer in concise, conversational sentences (around 50–70 words unless they explicitly ask for deep detail). Use standard markdown links [Label](url) for repositories, projects, or profiles, and clean notation for units and formulas. Do NOT spell out phonetic URLs (like "slash" or "dash") — the response is displayed visually in the chat UI while a dedicated audio module handles speech synthesis.';
 
 function buildMessages(message, history, voice = false) {
   return [

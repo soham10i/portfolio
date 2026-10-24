@@ -27,7 +27,7 @@ import { lenis } from '@/shared/lib/lenis';
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 
 const GREETING =
-  "Hi, I'm JARVIS. I answer questions about Soham's projects, experience and skills, using the facts on this site. You can type or use the mic.";
+  "Hi, I'm the assistant. I answer questions about Soham's projects, experience and skills, using the facts on this site. You can type or use the mic.";
 
 const SUGGESTIONS = [
   'What projects has Soham built?',
@@ -365,14 +365,14 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   if (!open) return null;
 
   return (
-    <div className="jarvis" style={GEOM[maximised ? 'max' : 'docked']} role="dialog" aria-label="JARVIS assistant">
+    <div className="jarvis" style={GEOM[maximised ? 'max' : 'docked']} role="dialog" aria-label="Assistant">
       <div className="jarvis-panel lg-panel lg-chrome flex h-full w-full flex-col overflow-hidden !rounded-[28px]">
         {/* Header */}
         <div className="flex flex-none items-center gap-3 border-b border-[color:var(--line)] py-3 pl-4 pr-2.5">
           <Orb size={36} active={active} />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-medium tracking-[-.01em]">
-              JARVIS <span className="serif text-fg3">assistant</span>
+              Assistant
             </p>
             <p className="mono mt-0.5 flex items-center gap-1.5 truncate !text-[9.5px] text-fg3">
               <span
@@ -484,7 +484,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
               }}
               placeholder={listening ? 'Listening — speak now…' : 'Ask about Soham’s work…'}
-              aria-label="Message JARVIS"
+              aria-label="Message the assistant"
               className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-2 text-[14px] leading-relaxed text-fg outline-none placeholder:text-fg3"
             />
             {voiceOk && (
@@ -492,8 +492,8 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
                 type="button"
                 onClick={onMicClick}
                 disabled={sending && !listening}
-                aria-label={listening ? 'Stop listening' : 'Talk to JARVIS'}
-                title={listening ? 'Stop listening' : 'Talk to JARVIS — your words are sent and the reply is read aloud'}
+                aria-label={listening ? 'Stop listening' : 'Talk to the assistant'}
+                title={listening ? 'Stop listening' : 'Talk to the assistant — your words are sent and the reply is read aloud'}
                 className={'grid h-9 w-9 flex-none place-items-center rounded-full transition-colors disabled:opacity-50 ' +
                   (listening ? 'animate-pulse bg-[#ef4444] text-white' : 'text-fg2 hover:bg-[color:var(--surf2)] hover:text-fg')}
               >
@@ -510,7 +510,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
               <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
             </button>
           </div>
-          <p className="mono mt-2 text-center !text-[9px] text-fg3">Conversations are stored to improve JARVIS</p>
+          <p className="mono mt-2 text-center !text-[9px] text-fg3">Conversations are stored to improve the assistant</p>
         </div>
       </div>
     </div>
