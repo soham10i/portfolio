@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Feather, Minus, Moon, Sun, type LucideIcon } from 'lucide-react';
+import { Check, Feather, Moon, Sun, type LucideIcon } from 'lucide-react';
 import { useTheme, type Theme } from '@/shared/lib/theme';
 
-/* Theme menu for the site: Light, Dark, Editorial (warm paper set in
-   Playfair Display) and Minimal (no animation). The button shows the current
-   theme's icon; the menu opens above it in the bottom bar and below it in
-   page headers. */
+/* Theme menu for the site: Dark, Light, Editorial (warm paper). The button
+   shows the current theme's icon; the menu opens above it in the bottom bar
+   and below it in page headers. */
 
-const OPTIONS: { key: Theme; label: string; note: string; icon: LucideIcon; swatch: [string, string]; font?: string }[] = [
-  { key: 'minimal', label: 'Minimal', note: 'Plain, no animation · fastest', icon: Minus, swatch: ['#f6f6f4', '#2f3b4c'] },
-  { key: 'light', label: 'Light', note: 'Cool glass, daylight', icon: Sun, swatch: ['#f4f6fb', '#2f5bea'] },
+const OPTIONS: { key: Theme; label: string; note: string; icon: LucideIcon; swatch: [string, string] }[] = [
   { key: 'dark', label: 'Dark', note: 'Midnight, glowing scan', icon: Moon, swatch: ['#0a0f1a', '#7fb0ff'] },
-  { key: 'editorial', label: 'Editorial', note: 'Warm paper, Playfair', icon: Feather, swatch: ['#f6f1e7', '#9a3b1c'], font: "'Playfair Display', serif" },
+  { key: 'light', label: 'Light', note: 'Cool glass, daylight', icon: Sun, swatch: ['#f4f6fb', '#2f5bea'] },
+  { key: 'editorial', label: 'Editorial', note: 'Warm paper, terracotta', icon: Feather, swatch: ['#f6f1e7', '#9a3b1c'] },
 ];
 
 export default function ThemeToggle({ className = '', placement = 'up' }: { className?: string; placement?: 'up' | 'down' }) {
@@ -74,7 +72,7 @@ export default function ThemeToggle({ className = '', placement = 'up' }: { clas
                   <o.icon className="h-3.5 w-3.5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-medium leading-tight text-fg" style={o.font ? { fontFamily: o.font } : undefined}>
+                  <span className="block text-[14px] font-medium leading-tight text-fg">
                     {o.label}
                   </span>
                   <span className="block text-[11.5px] leading-tight text-fg3">{o.note}</span>

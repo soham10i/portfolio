@@ -61,9 +61,9 @@
       (function () {
         try {
           var t = localStorage.getItem('sp-theme');
-          // Retired themes (physical, hil) migrate to dark — both were dark.
-          if (t === 'physical' || t === 'hil') t = 'dark';
-          if (t === 'editorial' || t === 'minimal') document.documentElement.setAttribute('data-style', t);
+          // Retired themes (physical, hil, minimal) migrate to dark.
+          if (t === 'physical' || t === 'hil' || t === 'minimal') t = 'dark';
+          if (t === 'editorial') document.documentElement.setAttribute('data-style', t);
           else if (t !== 'dark' && t !== 'light') {
             t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }

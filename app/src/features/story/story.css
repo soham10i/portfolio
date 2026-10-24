@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400..800;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
 
 /* ================================================================
    STORY — the site's design system (docs/REDESIGN.md §6b).
@@ -78,10 +78,9 @@ html[data-theme="dark"] :is(.story, .jarvis) {
 }
 
 /* Editorial: a light theme on warm paper. Ink-brown text, terracotta and
-   ochre accents, and Playfair Display for headings and the italic accents —
-   the body stays in Geist so long passages remain easy to read. */
+   ochre accents, using the same unified typography (Geist + Instrument Serif)
+   so the visual hierarchy remains identical across themes. */
 html[data-style="editorial"] :is(.story, .jarvis) {
-  --font-serif: 'Playfair Display', 'Times New Roman', serif;
   --ground: #ece5d8;
   --bg: #f6f1e7;
   --bg2: #fffcf6;
@@ -103,12 +102,6 @@ html[data-style="editorial"] :is(.story, .jarvis) {
   --glass-shadow: 0 24px 50px -28px rgba(60, 40, 20, .35), 0 2px 6px -2px rgba(60, 40, 20, .1);
   --card-fill: rgba(255, 252, 246, .86);
 }
-html[data-style="editorial"] .story :is(h1, h2, h3) {
-  font-family: 'Playfair Display', 'Times New Roman', serif;
-  letter-spacing: -.015em;
-  font-weight: 600;
-}
-html[data-style="editorial"] :is(.story, .jarvis) .serif { letter-spacing: -.005em; }
 
 .story {
   position: relative;
@@ -187,47 +180,6 @@ html[data-theme="dark"] .story .panel {
     backdrop-filter: none;
   }
 }
-/* Minimal: no 3D background, one ink colour and one muted accent, flat
-   white cards with a hairline border and no shadows or glow. The quietest
-   and fastest theme. */
-html[data-style="minimal"] :is(.story, .jarvis) {
-  --ground: #f6f6f4;
-  --bg: #f6f6f4;
-  --bg2: #ffffff;
-  --surf2: rgba(20, 20, 20, .04);
-  --fg: #16181b;
-  --fg2: #4a4f57;
-  --fg3: #80868f;
-  --on-fg: #ffffff;
-  --line: rgba(20, 20, 20, .1);
-  --p: #2f3b4c;
-  --s: #2f3b4c;
-  --a: #2f3b4c;
-  --glass-fill: #ffffff;
-  --chrome-fill: rgba(246, 246, 244, .94);
-  --chip-fill: #ffffff;
-  --glass-rim: transparent;
-  --glass-inner: transparent;
-  --glass-shadow: none;
-  --card-fill: #ffffff;
-  --block-line: rgba(20, 20, 20, .1);
-}
-html[data-style="minimal"] .story { background: var(--ground) !important; }
-html[data-style="minimal"] .story .panel {
-  background: var(--bg2);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  border-color: var(--line);
-  box-shadow: none;
-}
-html[data-style="minimal"] .story .panel :is(.t-display, .t-h2, .t-statement, .t-closing) { text-shadow: none; }
-html[data-style="minimal"] :is(.story, .jarvis) .serif { color: var(--fg) !important; }
-html[data-style="minimal"] .story :is(.lg-panel, .lg-pill, .content-glass) { box-shadow: none; }
-html[data-style="minimal"] .story .tilt { transform: none !important; }
-html[data-style="minimal"][data-theme] .cover-field { background: linear-gradient(160deg, #fbfbfa, #ecedef); }
-html[data-style="minimal"][data-theme] .cover-grid { opacity: .35; background-image: linear-gradient(rgba(20,20,20,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(20,20,20,.08) 1px, transparent 1px); }
-html[data-style="minimal"][data-theme] .cover-no { color: #c9ccd1; opacity: 1; }
-html[data-style="minimal"][data-theme] .cover-meta { color: var(--fg3); }
 
 /* Editorial ignores the per-section blue/violet fields for warm ones. */
 html[data-style="editorial"] .story .panel {
