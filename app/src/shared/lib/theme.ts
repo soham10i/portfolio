@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { applyPalette, storePalette } from './palettes';
 
-/* Light / dark / editorial / minimal for the whole site. Editorial is a
- * light theme (warm paper, Playfair Display), so each styled theme paints
- * data-theme light or dark plus a data-style — everything that only asks
+/* Light / dark / editorial for the whole site. Editorial is a
+ * light theme (warm paper, terracotta accents), so it paints
+ * data-theme light plus data-style editorial — everything that only asks
  * "is it dark?" keeps working.
  *
  * html[data-theme] is set before first paint by the inline script in
@@ -11,11 +11,11 @@ import { applyPalette, storePalette } from './palettes';
  * reads it. Choosing a theme also moves the older palette system — used by the
  * demos and notes — to its matching palette, so every page agrees. */
 
-export type Theme = 'light' | 'dark' | 'editorial' | 'minimal';
-export const THEMES: Theme[] = ['light', 'dark', 'editorial', 'minimal'];
+export type Theme = 'dark' | 'light' | 'editorial';
+export const THEMES: Theme[] = ['dark', 'light', 'editorial'];
 export const isDarkTheme = (t: Theme) => t === 'dark';
 /** Themes painted as a data-style on top of light/dark. */
-const STYLED: Theme[] = ['editorial', 'minimal'];
+const STYLED: Theme[] = ['editorial'];
 const KEY = 'sp-theme';
 
 const current = (): Theme => {
@@ -24,8 +24,8 @@ const current = (): Theme => {
   return h.theme === 'dark' ? 'dark' : 'light';
 };
 
-const PALETTE_FOR = { light: 'daylight', dark: 'midnight', editorial: 'paper', minimal: 'daylight' } as const;
-const META_COLOR = { light: '#e4e9f1', dark: '#030509', editorial: '#ece5d8', minimal: '#f6f6f4' } as const;
+const PALETTE_FOR = { dark: 'midnight', light: 'daylight', editorial: 'paper' } as const;
+const META_COLOR = { dark: '#030509', light: '#e4e9f1', editorial: '#ece5d8' } as const;
 
 function paint(theme: Theme) {
   const html = document.documentElement;
@@ -41,6 +41,7 @@ function paint(theme: Theme) {
 function stored(): Theme | null {
   try {
     const v = localStorage.getItem(KEY);
+    if (v === 'minimal') return 'dark';
     return (THEMES as string[]).includes(v ?? '') ? (v as Theme) : null;
   } catch {
     return null;

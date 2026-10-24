@@ -43,8 +43,6 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
   const theme = useTheme((s) => s.theme);
   const dark = isDarkTheme(theme);
   const tone = theme === 'editorial' ? 'warm' : undefined;
-  /* Minimal theme: no 3D background at all — nothing is loaded or drawn. */
-  const off = theme === 'minimal';
   const set: ShapeSet = requested;
   const canvas = useRef<HTMLCanvasElement>(null);
   const cloud = useRef<PointCloud | null>(null);
@@ -57,7 +55,7 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
   useEffect(() => { cloud.current?.setDark(dark, tone); }, [dark, tone]);
 
   useEffect(() => {
-    if (quality === 0 || off || !canvas.current) return;
+    if (quality === 0 || !canvas.current) return;
     const el = canvas.current;
     const tier = TIER[quality];
     let disposed = false;
@@ -149,9 +147,9 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
       cloud.current = null;
       delete document.documentElement.dataset.cloud;
     };
-  }, [quality, set, off]);
+  }, [quality, set]);
 
-  if (quality === 0 || off) return null;
+  if (quality === 0) return null;
 
   return (
     <canvas
