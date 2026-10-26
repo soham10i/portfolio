@@ -1,7 +1,12 @@
 # Cloud Build → Artifact Registry → Cloud Run.
 #
 #   gcloud builds submit --config cloudbuild.yaml
-#   gcloud run deploy portfolio --image <image> --region europe-west1
+#   gcloud run deploy portfolio --image <image> --region europe-west1 \
+#     --update-secrets=GEMINI_API_KEY=portfolio-gemini-api-key:latest,NVIDIA_API_KEY=portfolio-nvidia-api-key:latest,GROQ_API_KEY=portfolio-groq-api-key:latest,ELEVENLABS_API_KEY=portfolio-elevenlabs-api-key:latest,SUPABASE_SECRET_KEY=portfolio-supabase-secret-key:latest,ADMIN_TOKEN=portfolio-admin-token:latest
+#
+# Secrets live in Secret Manager (created 2026-10-26); the six *_API_KEY /
+# *_SECRET_KEY / ADMIN_TOKEN env vars must never be set as plaintext again —
+# `gcloud run services describe` prints plain env values to any viewer.
 #
 # The Dockerfile lives in backend/ but builds from the repo root (one image:
 # built frontend + API). --source deploys would miss that and fall back to

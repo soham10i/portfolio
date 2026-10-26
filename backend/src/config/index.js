@@ -127,10 +127,16 @@ const config = {
   },
 
   limits: {
-    chat: { windowMs: 5 * 60 * 1000, max: 3000 },
-    scene: { windowMs: 5 * 60 * 1000, max: 6000 },
-    /* TTS costs real money per character — a much tighter bucket than chat. */
-    tts: { windowMs: 5 * 60 * 1000, max: 120 },
+    /* Each of these endpoints fans out to a paid upstream (LLM API, ElevenLabs,
+       vision model), so the per-IP ceilings are deliberately tight: a genuine
+       visitor sends a handful of chat messages and one or two TTS requests per
+       visit. The old values (thousands per 5 minutes) assumed the limits were
+       per-instance DoS guards; with CF-Connecting-IP keying they are per-human
+       and the paid-call surface needs real caps. */
+    chat: { windowMs: 5 * 60 * 1000, max: 40 },
+    scene: { windowMs: 5 * 60 * 1000, max: 60 },
+    /* TTS costs real money per character — the tightest bucket of any endpoint. */
+    tts: { windowMs: 5 * 60 * 1000, max: 30 },
     maxHistoryMessages: 20,
     maxMessageChars: 4000,
   },
