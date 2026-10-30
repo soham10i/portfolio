@@ -2,8 +2,9 @@ import type React from 'react';
 import { DOMAINS, HERO_STATS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 
-/* 02 — About. The story in three short paragraphs, where it is going, four
-   numbers, then the four areas of work as an index. */
+/* 04 — About. One statement, three short factual paragraphs, four numbers,
+   then the four areas of work as an index. Everything here is a shipped
+   result or a current role — no roadmap, no aspirations. */
 export default function About() {
   return (
     <section id="about" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
@@ -20,31 +21,22 @@ export default function About() {
 
       <div data-reveal className="mt-10 grid max-w-[1100px] t-body gap-6 md:grid-cols-3">
         <p>
-          I started in backend development. As an intern I built an expense-sharing app. At Electrum I wrote
-          payment APIs, and at Altera I built Azure data pipelines for clinical software.
+          2.5 years of industry work in India: REST APIs for a payments platform processing about 2,000
+          transactions a day (Electrum), then Azure data pipelines for clinical software, where retrieval
+          became about 30% faster (Altera Digital Health).
         </p>
         <p>
-          That work recorded what happened in the world; I wanted to write software that acts in it. So in 2024
-          I moved to Germany to study AI at OTH Amberg-Weiden, and my projects moved to physical systems: a
-          factory cell simulated from its PLC code, a robot that maps mazes with LIDAR, indoor tracking with
-          BLE beacons.
+          Since 2024, based in Germany. Graduate AI coursework at OTH Amberg-Weiden (45 ECTS, GPA 2.0) —
+          the tabletop-factory twin, the Webots SLAM robot and the diffusion work on this site are outputs
+          of that programme. Teaching assistant for a Master's data-analysis module with 30 students.
         </p>
         <p>
-          Now I study Computer Engineering at Paderborn University, focused on robotics: state estimation,
-          perception, planning and control, tested in simulation before they run on hardware.
+          Now M.Sc. Computer Engineering at Paderborn University, focused on robotics and embedded systems:
+          state estimation, perception, planning and control, verified in simulation before hardware.
         </p>
       </div>
 
-      <div data-reveal className="lg-panel mt-10 max-w-[760px] p-6 md:p-8">
-        <p className="mono !text-[10.5px] tracking-[.14em] uppercase text-fg3">Where I'm headed</p>
-        <p className="t-lead mt-3">
-          Robots that work outside the lab need software you can trust before it touches hardware: estimators
-          that report their own error, perception that runs on the device, and simulations checked against the
-          real machine. That is the work I want to do next, in a team that ships robots or industrial systems.
-        </p>
-      </div>
-
-      <div className="mt-[8vh] grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mt-[clamp(28px,5vh,52px)] grid grid-cols-2 gap-3 md:grid-cols-4">
         {HERO_STATS.map((s, i) => (
           <div key={s.label} data-reveal={i * 0.06} className="lg-panel p-5 md:p-6">
             <p className="text-[clamp(30px,3.6vw,52px)] font-medium tracking-[-.04em]">{s.value}</p>
@@ -53,7 +45,7 @@ export default function About() {
         ))}
       </div>
 
-      <ol className="content-list mt-[8vh] border-t border-[color:var(--line)]">
+      <ol className="content-list mt-[clamp(28px,5vh,52px)] border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
           <li
             key={d.no}
