@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/decision.schema.json",
+  "title": "Decision",
+  "description": "The gate's deterministic verdict on one proposal, with the policy version and state versions it was based on, so it can be reproduced.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id", "proposal_id", "outcome", "reasons", "approvals_required", "policy_version",
+    "autonomy", "state_versions", "proposal_hash", "latency_ms", "decided_at"
+  ],
+  "properties": {
+    "decision_id": {"$ref": "common.schema.json#/$defs/uuid"},
+    "proposal_id": {"$ref": "common.schema.json#/$defs/uuid"},
+    "outcome": {"description": "ALLOW executes; DENY never does; NEEDS_APPROVAL waits for humans.", "enum": ["ALLOW", "DENY", "NEEDS_APPROVAL"]},
+    "reasons": {"description": "Why; at least one unless the outcome is ALLOW.", "type": "array", "items": {"$ref": "common.schema.json#/$defs/reason"}},
+    "approvals_required": {"description": "Distinct approvals still needed: 0 for ALLOW/DENY, 1-2 for NEEDS_APPROVAL (rule APPROVALS_MISMATCH).", "type": "integer", "minimum": 0, "maximum": 2},
+    "policy_version": {"description": "Version of the policy set that decided.", "type": "string", "minLength": 1, "maxLength": 64},
+    "autonomy": {"description": "Autonomy level of the action at decision time.", "$ref": "common.schema.json#/$defs/autonomy"},
+    "state_versions": {
+      "description": "Version of every state entity read, entity key to version.",
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "proposal_hash": {"description": "SHA-256 of the canonical proposal; approvals sign this exact hash.", "$ref": "common.schema.json#/$defs/sha256_hex"},
+    "latency_ms": {"description": "Gate time for this decision.", "type": "number", "minimum": 0},
+    "decided_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "if": {"required": ["outcome"], "properties": {"outcome": {"enum": ["DENY", "NEEDS_APPROVAL"]}}},
+  "then": {"properties": {"reasons": {"minItems": 1}}}
+}

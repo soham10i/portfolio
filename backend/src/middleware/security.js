@@ -18,13 +18,13 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: 'sha256-rBlgI8d9oiCCW05FqZ/z2o5CdA0UPPsjTmDgxgAk2P8='",
+  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: 'sha256-keXAbiEIOMjudanlCId3M7CVgHP/t27PkXBIHzNWrNs='",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob:",
   "media-src 'self' blob:",
-  "connect-src 'self' blob:",
+  "connect-src 'self' blob: https://get.geojs.io",
 ].join('; ');
 
 function securityHeaders(req, res, next) {

@@ -1,0 +1,13 @@
+# A single action document, as a planner tool definition is derived from it.
+id: echo.say
+title: Say something
+risk: low
+autonomy: L1
+params:
+  type: object
+  properties:
+    text: {type: string, minLength: 1, maxLength: 200}
+  required: [text]
+  additionalProperties: false
+preconditions: []
+effects: []

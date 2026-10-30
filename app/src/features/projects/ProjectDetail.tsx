@@ -314,7 +314,7 @@ export default function ProjectDetail() {
               >
                 <JarvisOrb size={30} className="mt-0.5" />
                 <span>
-                  <span className="flex items-center gap-1.5 text-[15px] font-medium">Ask Assistant</span>
+                  <span className="flex items-center gap-1.5 text-[15px] font-medium">Ask Nexus</span>
                   <span className="mt-1 block text-[13.5px] leading-relaxed text-fg2">Questions about how this was built?</span>
                 </span>
               </button>

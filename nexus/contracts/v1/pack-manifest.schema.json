@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/pack-manifest.schema.json",
+  "title": "Pack manifest",
+  "description": "How a project plugs into NEXUS: what the agent may read (observables), what it may propose (actions), how to reach the system (connector), plus knowledge and evals. Onboarding a project means writing this file and a binding, never changing the core.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pack", "version", "owner", "title", "observables", "actions", "connector"],
+  "properties": {
+    "schema_version": {"description": "Contract major version.", "const": "1"},
+    "pack": {"description": "Pack id; prefixes every action as '<pack>:<action>'.", "$ref": "common.schema.json#/$defs/pack_id"},
+    "version": {"description": "Version of this pack.", "$ref": "common.schema.json#/$defs/semver"},
+    "owner": {"description": "Person or team accountable for the pack.", "type": "string", "minLength": 1, "maxLength": 128},
+    "title": {"description": "Human-readable name.", "type": "string", "minLength": 1, "maxLength": 120},
+    "description": {"description": "What the system is and what the pack lets the agent do.", "type": "string", "maxLength": 4000},
+    "tags": {"description": "Free-form labels.", "type": "array", "items": {"$ref": "common.schema.json#/$defs/id_segment"}, "uniqueItems": true},
+    "observables": {
+      "description": "State the agent may READ. Freshness is part of the contract: older values are treated as unknown.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/observable"}
+    },
+    "actions": {
+      "description": "Actions the agent may PROPOSE.",
+      "type": "array",
+      "items": {"$ref": "action.schema.json"}
+    },
+    "sandboxes": {
+      "description": "Simulators that actions can be dry-run in before execution.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": {"description": "Sandbox id referenced by actions.", "$ref": "common.schema.json#/$defs/id_segment"},
+          "description": {"description": "What the sandbox simulates.", "type": "string", "maxLength": 1000}
+        }
+      }
+    },
+    "knowledge": {"description": "Relative paths of documents to index for retrieval.", "type": "array", "items": {"$ref": "#/$defs/rel_path"}},
+    "evals": {"description": "Relative paths of eval suites.", "type": "array", "items": {"$ref": "#/$defs/rel_path"}},
+    "connector": {"description": "How the runtime reaches the system.", "$ref": "#/$defs/connector"}
+  },
+  "$defs": {
+    "rel_path": {
+      "description": "Path relative to the manifest. Escaping the pack folder is rejected by the semantic rule PATH_ESCAPE.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "observable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "max_age_s"],
+      "properties": {
+        "id": {
+          "description": "Dotted path; '[*]' marks a family, '[n]' one member, e.g. 'oven.zone[*].temp'.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*|\\[\\*\\]|\\[\\d+\\])*$"
+        },
+        "type": {"description": "Value type.", "enum": ["number", "integer", "boolean", "string", "enum"]},
+        "unit": {"description": "Unit for numbers, e.g. 'degC'.", "type": "string", "maxLength": 32},
+        "enum_values": {"description": "Allowed values; required iff type is 'enum'.", "type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+        "max_age_s": {"description": "A value older than this is stale and must not ground a decision.", "type": "integer", "minimum": 1, "maximum": 86400},
+        "description": {"description": "Meaning of the value.", "type": "string", "maxLength": 1000}
+      },
+      "if": {"required": ["type"], "properties": {"type": {"const": "enum"}}},
+      "then": {"required": ["enum_values"]},
+      "else": {"not": {"required": ["enum_values"]}}
+    },
+    "connector": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["python", "openapi", "mcp", "opcua", "mqtt"]}
+      },
+      "oneOf": [
+        {
+          "title": "python",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "module"],
+          "properties": {
+            "kind": {"const": "python"},
+            "module": {"description": "Dotted import path of the binding module.", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$"}
+          }
+        },
+        {
+          "title": "openapi",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "spec", "base_url_env"],
+          "properties": {
+            "kind": {"const": "openapi"},
+            "spec": {"description": "Relative path or https URL of the OpenAPI document.", "type": "string", "minLength": 1, "maxLength": 512},
+            "base_url_env": {"$ref": "common.schema.json#/$defs/env_name"}
+          }
+        },
+        {
+          "title": "mcp",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "transport"],
+          "properties": {
+            "kind": {"const": "mcp"},
+            "transport": {"enum": ["stdio", "http"]},
+            "command": {"description": "Command for stdio transport.", "type": "array", "items": {"type": "string"}, "minItems": 1},
+            "url_env": {"$ref": "common.schema.json#/$defs/env_name"}
+          }
+        },
+        {
+          "title": "opcua",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "endpoint_env", "namespace"],
+          "properties": {
+            "kind": {"const": "opcua"},
+            "endpoint_env": {"$ref": "common.schema.json#/$defs/env_name"},
+            "namespace": {"description": "OPC UA namespace URI.", "type": "string", "minLength": 1, "maxLength": 256}
+          }
+        },
+        {
+          "title": "mqtt",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "broker_env", "sparkplug"],
+          "properties": {
+            "kind": {"const": "mqtt"},
+            "broker_env": {"$ref": "common.schema.json#/$defs/env_name"},
+            "sparkplug": {"description": "True if topics follow Sparkplug B.", "type": "boolean"}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/common.schema.json",
+  "title": "Common definitions",
+  "description": "Shared building blocks referenced by every other v1 contract. Contains $defs only and validates nothing on its own.",
+  "$defs": {
+    "id_segment": {
+      "description": "Lower-case identifier segment: a letter, then letters, digits or underscores, at most 48 characters.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,47}$"
+    },
+    "pack_id": {
+      "description": "Identifier of a pack, e.g. 'stf'.",
+      "$ref": "#/$defs/id_segment"
+    },
+    "action_id": {
+      "description": "Action identifier inside a pack: 2 to 4 dot-separated segments, e.g. 'oven.set_zone_temp'.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,47}(\\.[a-z][a-z0-9_]{0,47}){1,3}$"
+    },
+    "qualified_action_id": {
+      "description": "Pack-qualified action identifier '<pack>:<action>', e.g. 'stf:oven.set_zone_temp'.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,47}:[a-z][a-z0-9_]{0,47}(\\.[a-z][a-z0-9_]{0,47}){1,3}$"
+    },
+    "env_name": {
+      "description": "Name of an environment variable that holds a value (often a secret). Manifests carry the name, never the value.",
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "semver": {
+      "description": "Semantic Version 2.0 core with optional pre-release, e.g. '1.4.0' or '0.3.0-rc.1'.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "uuid": {
+      "description": "RFC 9562 UUID in canonical lower-case hyphenated form.",
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "sha256_hex": {
+      "description": "SHA-256 digest as 64 lower-case hex characters.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "trace_id": {
+      "description": "W3C trace-context trace id: 32 lower-case hex characters.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "timestamp": {
+      "description": "RFC 3339 date-time in UTC; must end in 'Z'.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "risk": {
+      "description": "Risk tier of an action. high/critical never execute without human approval.",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "autonomy": {
+      "description": "Autonomy level: L0 observe, L1 advise, L2 propose (human approves), L3 act within envelope, L4 exception-only.",
+      "enum": ["L0", "L1", "L2", "L3", "L4"]
+    },
+    "actor": {
+      "description": "Who did something: a human, an agent, a pack binding, or the system itself.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"description": "Category of actor.", "enum": ["human", "agent", "pack", "system"]},
+        "id": {"description": "Stable identifier of the actor within its kind.", "type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "taint_source": {
+      "description": "Origin of a context item. Only 'user' and 'system' may authorize; the rest is data.",
+      "enum": ["user", "system", "tool", "doc", "external"]
+    },
+    "cel_expr": {
+      "description": "Common Expression Language expression. Parsed and evaluated from P2 on; stored as text here.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "reason": {
+      "description": "Machine-readable code plus a human-readable message.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"description": "Stable upper-snake-case code.", "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,47}$"},
+        "message": {"description": "Explanation for people.", "type": "string", "minLength": 1, "maxLength": 500}
+      }
+    }
+  }
+}

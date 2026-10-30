@@ -18,7 +18,7 @@ export function Scene() {
 
         <div className="pointer-events-auto hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/50 px-4 py-2 text-[12px] text-neutral-700 backdrop-blur-md">
           <Sparkles className="h-3.5 w-3.5 text-blue-600 animate-pulse" />
-          <span>Click the button to trigger particle burst & launch Assistant</span>
+          <span>Click the button to trigger particle burst & launch Nexus</span>
         </div>
       </header>
 

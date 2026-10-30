@@ -1,0 +1,140 @@
+# INVALID: high-risk action at L3. Expected: SCHEMA.
+schema_version: '1'
+pack: stf
+version: 0.1.0
+owner: soham
+title: STF cookie factory
+description: Simulated Fischertechnik training factory. Orders, oven zones, conveyor
+  and the vacuum gripper.
+tags:
+- factory
+- simulation
+observables:
+- id: oven.zone[*].temp
+  type: number
+  unit: degC
+  max_age_s: 5
+  description: Measured temperature per oven zone.
+- id: oven.zone[*].mode
+  type: enum
+  enum_values:
+  - idle
+  - heating
+  - baking
+  - fault
+  max_age_s: 5
+- id: storage.raw_count
+  type: integer
+  max_age_s: 30
+  description: Raw workpieces in the high-bay warehouse.
+sandboxes:
+- id: stf_sim
+  description: The factory simulator, stepped 30 virtual seconds.
+actions:
+- id: order.place
+  title: Place an order
+  risk: medium
+  autonomy: L2
+  params:
+    type: object
+    properties:
+      colour:
+        type: string
+        enum:
+        - red
+        - white
+        - blue
+      quantity:
+        type: integer
+        minimum: 1
+        maximum: 12
+    required:
+    - colour
+    - quantity
+    additionalProperties: false
+  preconditions:
+  - state.storage.raw_count >= params.quantity
+  effects: []
+  rate_limit:
+    max: 5
+    per_s: 60
+- id: oven.set_zone_temp
+  title: Set an oven zone temperature
+  risk: high
+  autonomy: L3
+  params:
+    type: object
+    properties:
+      zone:
+        type: integer
+        minimum: 1
+        maximum: 3
+      temp:
+        type: number
+        minimum: 150
+        maximum: 240
+        unit: degC
+    required:
+    - zone
+    - temp
+    additionalProperties: false
+  preconditions:
+  - state.oven.zone[params.zone].mode == 'idle'
+  effects:
+  - state.oven.zone[params.zone].setpoint == params.temp
+  envelope:
+    temp_max: 240
+    temp_ramp_degc_per_minute: 10
+  verify_within_s: 120
+  compensation:
+    action: oven.set_zone_temp
+    params:
+      zone: params.zone
+      temp: prev.oven.zone[params.zone].setpoint
+  sandbox: stf_sim
+  approvers: 1
+- id: conveyor.set_speed
+  title: Set conveyor speed
+  risk: medium
+  autonomy: L2
+  params:
+    type: object
+    properties:
+      speed:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Fraction of maximum speed.
+    required:
+    - speed
+    additionalProperties: false
+  preconditions: []
+  effects:
+  - state.conveyor.speed == params.speed
+  envelope:
+    speed_max: 1
+  sandbox: stf_sim
+- id: vgr.sweep_home
+  title: Send the vacuum gripper home
+  risk: low
+  autonomy: L3
+  params:
+    type: object
+    properties: {}
+    required: []
+    additionalProperties: false
+  preconditions: []
+  effects:
+  - state.vgr.position == 'home'
+  verify_within_s: 30
+  compensation:
+    action: vgr.sweep_home
+    params: {}
+  idempotent: true
+knowledge:
+- corpus/
+evals:
+- evals/
+connector:
+  kind: python
+  module: stf_nexus.binding

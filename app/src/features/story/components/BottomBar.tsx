@@ -42,12 +42,12 @@ export default function BottomBar() {
           type="button"
           className="glass-ai-btn !h-8 !px-3"
           onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
-          aria-label="Ask Assistant about my work"
+          aria-label="Ask Nexus about my work"
         >
           <div className="glass-ai-orb-wrap">
             <JarvisOrb size={20} className="-ml-0.5" />
           </div>
-          <span className="hidden sm:inline font-medium">Ask Assistant</span>
+          <span className="hidden sm:inline font-medium">Ask Nexus</span>
         </button>
         <button
           type="button"

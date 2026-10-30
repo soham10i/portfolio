@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1400" preserveAspectRatio="xMidYMid slice">
+  <!-- Liquid theme ground: three soft blue-violet ribbons over deep navy,
+       each shaded like a lit volume (bright lavender crest, falling off into
+       blue, then a dark fold). Taller than the screen so it can drift with
+       the scroll. Heavy blurs keep every edge smooth. -->
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050a3a"/>
+      <stop offset=".5" stop-color="#03072a"/>
+      <stop offset="1" stop-color="#060b40"/>
+    </linearGradient>
+    <linearGradient id="r1" x1="0" y1="0" x2="1" y2=".7">
+      <stop offset="0" stop-color="#0d1fb8"/>
+      <stop offset=".4" stop-color="#1f3cff"/>
+      <stop offset=".75" stop-color="#4a4cff"/>
+      <stop offset="1" stop-color="#8e7cff"/>
+    </linearGradient>
+    <linearGradient id="r2" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2fd8"/>
+      <stop offset=".5" stop-color="#3d3cf0"/>
+      <stop offset="1" stop-color="#7a64ff"/>
+    </linearGradient>
+    <linearGradient id="r3" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1f6bff"/>
+      <stop offset=".45" stop-color="#3540ee"/>
+      <stop offset="1" stop-color="#8a6dff"/>
+    </linearGradient>
+    <filter id="body" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="crest" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="halo" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="38"/></filter>
+    <filter id="fold" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="60"/></filter>
+  </defs>
+
+  <rect width="1440" height="1400" fill="url(#base)"/>
+
+  <!-- ribbon bodies -->
+  <g filter="url(#body)">
+    <path d="M0 0H1440V360C1290 420 1130 400 990 320C820 225 660 300 480 220C320 150 160 90 0 150Z" fill="url(#r1)"/>
+    <path d="M1440 520C1300 560 1180 640 1120 760C1060 880 1110 1010 1250 1080C1320 1115 1390 1120 1440 1110Z" fill="url(#r2)"/>
+    <path d="M0 1400V900C160 860 300 960 450 990C600 1020 660 900 790 900C930 900 960 1070 1110 1140C1240 1200 1350 1170 1440 1200V1400Z" fill="url(#r3)"/>
+  </g>
+
+  <!-- dark folds give each ribbon depth -->
+  <g filter="url(#fold)" fill="#03062a">
+    <ellipse cx="380" cy="60" rx="420" ry="90" opacity=".55"/>
+    <ellipse cx="1330" cy="830" rx="110" ry="200" opacity=".5"/>
+    <ellipse cx="300" cy="1300" rx="420" ry="110" opacity=".5"/>
+  </g>
+
+  <!-- lit crests: a wide halo plus a tighter bright line -->
+  <g fill="none" stroke-linecap="round">
+    <g filter="url(#halo)">
+      <path d="M1440 360C1290 420 1130 400 990 320C820 225 660 300 480 220" stroke="#b9a8ff" stroke-width="70" stroke-opacity=".55"/>
+      <path d="M1440 540C1300 580 1190 650 1140 760" stroke="#a99cff" stroke-width="60" stroke-opacity=".45"/>
+      <path d="M450 990C600 1020 660 900 790 900C930 900 960 1070 1110 1140" stroke="#b8c6ff" stroke-width="64" stroke-opacity=".5"/>
+    </g>
+    <g filter="url(#crest)">
+      <path d="M1440 362C1290 422 1130 402 990 322C860 248 740 280 620 262" stroke="#e6deff" stroke-width="10" stroke-opacity=".7"/>
+      <path d="M1440 528C1320 562 1210 628 1160 720" stroke="#ddd6ff" stroke-width="8" stroke-opacity=".6"/>
+      <path d="M560 1000C660 1000 700 902 790 902C900 902 950 1040 1060 1110" stroke="#e2e8ff" stroke-width="9" stroke-opacity=".65"/>
+    </g>
+  </g>
+</svg>

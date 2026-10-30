@@ -63,11 +63,11 @@
           var t = localStorage.getItem('sp-theme');
           // Retired themes (physical, hil, minimal) migrate to dark.
           if (t === 'physical' || t === 'hil' || t === 'minimal') t = 'dark';
-          if (t === 'editorial') document.documentElement.setAttribute('data-style', t);
+          if (t === 'editorial' || t === 'liquid' || t === 'slate') document.documentElement.setAttribute('data-style', t);
           else if (t !== 'dark' && t !== 'light') {
             t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
-          var dark = t === 'dark';
+          var dark = t === 'dark' || t === 'liquid' || t === 'slate';
           document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
           document.documentElement.classList.toggle('dark', dark);
         } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }

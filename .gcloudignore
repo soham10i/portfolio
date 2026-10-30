@@ -21,3 +21,6 @@ dist/
 /docs/
 /supabase/
 app/public/videos/_orig/
+
+# NEXUS is a separate project built in nexus/ (see nexus/README.md).
+/nexus/

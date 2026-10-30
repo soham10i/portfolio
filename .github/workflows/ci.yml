@@ -8,9 +8,10 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore: ['docs/**', '**/*.md']
+    paths-ignore: ['docs/**', '**/*.md', 'nexus/**', '.github/workflows/nexus-ci.yml']
   pull_request:
     branches: [main]
+    paths-ignore: ['nexus/**', '.github/workflows/nexus-ci.yml']
 
 jobs:
   build-and-smoke:

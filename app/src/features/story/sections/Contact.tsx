@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Copy, Check, Download, Github, Linkedin } from 'lucide-react';
 import { CONTACT, HERO_TAGS, PROJECTS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
@@ -10,9 +10,25 @@ const FIT = ['Robotics software', 'Robotics & embedded systems', 'Simulation & d
 /* The stack, de-duplicated across every project, for the marquee band. */
 const STACK = Array.from(new Set([...HERO_TAGS, ...PROJECTS.flatMap((p) => p.tech ?? [])]));
 
+/* Marquee speed in px/s. The duration is derived from the track's width, so
+   the words travel at the same readable pace on every screen size; a fixed
+   duration made the long track race past at over 200 px/s and smear. */
+const MARQUEE_SPEED = 60;
+
 /* 08 — Contact. Big closing line, one-click email, and the stack marquee. */
 export default function Contact() {
   const [copied, setCopied] = useState(false);
+  const track = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = track.current;
+    if (!el) return;
+    const fit = () => el.style.setProperty('--marquee-dur', `${(el.scrollWidth / 2 / MARQUEE_SPEED).toFixed(1)}s`);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const copy = async () => {
     try {
@@ -25,7 +41,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" data-anchor-offset="0" className="chapter panel relative flex min-h-[100svh] flex-col justify-between !pb-28"
+    <section id="contact" data-anchor-offset="0" className="chapter panel relative flex flex-col !pb-28"
       style={{ '--t1': 'rgba(79,70,229,.16)', '--t2': 'rgba(37,99,235,.14)' } as React.CSSProperties}>
       <div className="px-[var(--gutter)]">
         <SectionHead label="Contact" aside={CONTACT.location.split(' — ')[0]} />
@@ -74,8 +90,8 @@ export default function Contact() {
         </div>
       </div>
 
-      <div className="story-marquee mt-[12vh] overflow-hidden border-y border-[color:var(--line)] py-5" aria-hidden>
-        <div className="flex w-max gap-10 whitespace-nowrap text-[clamp(22px,2.6vw,36px)] font-medium tracking-[-.03em] text-fg2">
+      <div className="story-marquee mt-[clamp(40px,7vh,72px)] overflow-hidden border-y border-[color:var(--line)] py-5" aria-hidden>
+        <div ref={track} className="flex w-max gap-10 whitespace-nowrap text-[clamp(22px,2.6vw,36px)] font-medium tracking-[-.03em] text-fg2">
           {[...STACK, ...STACK].map((t, i) => (
             <span key={i} className="flex items-center gap-10">
               {t}

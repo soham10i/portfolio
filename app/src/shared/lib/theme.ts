@@ -1,21 +1,23 @@
 import { create } from 'zustand';
 import { applyPalette, storePalette } from './palettes';
 
-/* Light / dark / editorial for the whole site. Editorial is a
- * light theme (warm paper, terracotta accents), so it paints
- * data-theme light plus data-style editorial — everything that only asks
- * "is it dark?" keeps working.
+/* Light / dark / editorial / liquid / slate for the whole site. Editorial is
+ * a light theme (warm paper, terracotta accents), so it paints
+ * data-theme light plus data-style editorial; liquid (deep blue liquid ground,
+ * clear frosted glass) and slate (matte graphite, bevelled glass) carry light
+ * text, so they paint data-theme dark plus their data-style — everything that
+ * only asks "is it dark?" keeps working.
  *
  * html[data-theme] is set before first paint by the inline script in
  * index.html (stored choice, else the OS preference), so this module only
  * reads it. Choosing a theme also moves the older palette system — used by the
  * demos and notes — to its matching palette, so every page agrees. */
 
-export type Theme = 'dark' | 'light' | 'editorial';
-export const THEMES: Theme[] = ['dark', 'light', 'editorial'];
-export const isDarkTheme = (t: Theme) => t === 'dark';
+export type Theme = 'dark' | 'light' | 'editorial' | 'liquid' | 'slate';
+export const THEMES: Theme[] = ['dark', 'light', 'editorial', 'liquid', 'slate'];
+export const isDarkTheme = (t: Theme) => t === 'dark' || t === 'liquid' || t === 'slate';
 /** Themes painted as a data-style on top of light/dark. */
-const STYLED: Theme[] = ['editorial'];
+const STYLED: Theme[] = ['editorial', 'liquid', 'slate'];
 const KEY = 'sp-theme';
 
 const current = (): Theme => {
@@ -24,8 +26,8 @@ const current = (): Theme => {
   return h.theme === 'dark' ? 'dark' : 'light';
 };
 
-const PALETTE_FOR = { dark: 'midnight', light: 'daylight', editorial: 'paper' } as const;
-const META_COLOR = { dark: '#030509', light: '#e4e9f1', editorial: '#ece5d8' } as const;
+const PALETTE_FOR = { dark: 'midnight', light: 'daylight', editorial: 'paper', liquid: 'midnight', slate: 'midnight' } as const;
+const META_COLOR = { dark: '#030509', light: '#e4e9f1', editorial: '#ece5d8', liquid: '#050a2e', slate: '#56616a' } as const;
 
 function paint(theme: Theme) {
   const html = document.documentElement;

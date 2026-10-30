@@ -43,11 +43,11 @@ export default function ChatLauncher() {
           <button
             type="button"
             onClick={() => { setOpen(true); setTouched(true); }}
-            aria-label="Ask Assistant"
+            aria-label="Ask Nexus"
             className="lg-pill lg-chrome flex h-12 items-center gap-2.5 pl-1.5 pr-1.5 text-[13.5px] font-medium transition-transform duration-300 hover:-translate-y-0.5 sm:pr-4"
           >
             <JarvisOrb size={36} />
-            <span className="hidden sm:inline">Ask Assistant</span>
+            <span className="hidden sm:inline">Ask Nexus</span>
           </button>
         </div>
       )}

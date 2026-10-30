@@ -1,0 +1,21 @@
+{
+  "decision_id": "33333333-4444-4555-8666-777777777777",
+  "proposal_id": "6f1c2a3e-8b4d-4e5f-9a1b-2c3d4e5f6a7b",
+  "outcome": "NEEDS_APPROVAL",
+  "reasons": [
+    {
+      "code": "RISK_HIGH",
+      "message": "high-risk action at L2 requires one approval"
+    }
+  ],
+  "approvals_required": 1,
+  "policy_version": "stf-policy@0.1.0",
+  "autonomy": "L2",
+  "state_versions": {
+    "oven.zone[2].mode": 17,
+    "oven.zone[2].temp": 903
+  },
+  "proposal_hash": "b7600385ea07a7550ba9010a0499296bd5bcd5e6b4f8583c3b50c6be7c05fb60",
+  "latency_ms": 3.2,
+  "decided_at": "2026-10-30T10:00:00.012Z"
+}

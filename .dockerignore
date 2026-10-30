@@ -20,3 +20,6 @@ _to_delete/
 scripts/
 *.md
 backend/messages.jsonl
+
+# NEXUS is a separate project built in nexus/ (see nexus/README.md); never part of this image.
+nexus/

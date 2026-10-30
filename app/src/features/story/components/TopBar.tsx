@@ -6,18 +6,80 @@ import { CHAPTERS } from '../lib/chapters';
 import { useStory } from '../lib/store';
 import { useScramble } from '../lib/useScramble';
 
-const clock = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-});
+/* The visitor's place, looked up from their IP (GeoJS, no key, CORS-open).
+   The IP changes without a reload when a VPN connects or drops, so the lookup
+   runs again whenever the network changes, the tab comes back into view, and
+   every minute while it is visible. Paderborn is shown until the first answer;
+   a failed lookup keeps whatever was shown last. */
+type Place = { lat: number; lon: number; label: string; tz: string };
+const HOME: Place = { lat: 51.7189, lon: 8.7575, label: 'Paderborn, DE', tz: 'Europe/Berlin' };
+const RECHECK_MS = 60_000;
 
-/** Local time in Paderborn, ticking. Its own component so only it re-renders. */
-function Clock() {
-  const [now, setNow] = useState(() => clock.format(new Date()));
+async function visitorPlace(): Promise<Place | null> {
+  try {
+    const r = await fetch('https://get.geojs.io/v1/ip/geo.json', { cache: 'no-store' });
+    if (!r.ok) return null;
+    const g = await r.json();
+    const lat = Number(g.latitude), lon = Number(g.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    const tz = g.timezone && Intl.supportedValuesOf?.('timeZone').includes(g.timezone) ? g.timezone : HOME.tz;
+    return { lat, lon, tz, label: [g.city || g.region || g.country, g.country_code].filter(Boolean).join(', ') };
+  } catch {
+    return null;
+  }
+}
+
+function usePlace() {
+  const [place, setPlace] = useState(HOME);
   useEffect(() => {
-    const t = setInterval(() => setNow(clock.format(new Date())), 1000);
-    return () => clearInterval(t);
+    let live = true;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      const p = await visitorPlace();
+      busy = false;
+      if (live && p) setPlace((old) => (old.lat === p.lat && old.lon === p.lon && old.tz === p.tz ? old : p));
+    };
+    // A VPN toggle drops the connection for a moment; wait for the new route.
+    const soon = () => setTimeout(check, 1500);
+    const net = (navigator as Navigator & { connection?: EventTarget }).connection;
+    check();
+    const t = setInterval(check, RECHECK_MS);
+    window.addEventListener('online', soon);
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', check);
+    net?.addEventListener('change', soon);
+    return () => {
+      live = false;
+      clearInterval(t);
+      window.removeEventListener('online', soon);
+      window.removeEventListener('focus', check);
+      document.removeEventListener('visibilitychange', check);
+      net?.removeEventListener('change', soon);
+    };
   }, []);
-  return <span className="tabular-nums">{now} CET</span>;
+  return place;
+}
+
+const coord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(4)}°${v >= 0 ? pos : neg}`;
+
+/** Local time where the visitor is, ticking. Its own component so only it re-renders. */
+function Clock({ tz }: { tz: string }) {
+  const fmt = () => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZoneName: 'short',
+    }).formatToParts(new Date());
+    const zone = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    return `${parts.filter((p) => p.type !== 'timeZoneName').map((p) => p.value).join('').trim()} ${zone}`;
+  };
+  const [now, setNow] = useState(fmt);
+  useEffect(() => {
+    const t = setInterval(() => setNow(fmt()), 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <span className="tabular-nums">{now}</span>;
 }
 
 /* Header, in two tiers that read as one instrument:
@@ -31,6 +93,7 @@ export default function TopBar() {
   const chapter = useStory((s) => s.chapter);
   const motion = useStory((s) => s.motion);
   const name = useScramble('SOHAM PATEL', motion);
+  const place = usePlace();
   const [folded, setFolded] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -66,9 +129,9 @@ export default function TopBar() {
           <span className="hidden sm:inline">/ Software engineer</span>
         </span>
         <span className="hidden items-center gap-5 whitespace-nowrap md:flex">
-          <span>51.7189°N 8.7575°E</span>
-          <span>Paderborn, DE</span>
-          <Clock />
+          <span>{coord(place.lat, 'N', 'S')} {coord(place.lon, 'E', 'W')}</span>
+          <span>{place.label}</span>
+          <Clock key={place.tz} tz={place.tz} />
         </span>
         <button type="button" onClick={copyEmail} className="flex items-center gap-2 whitespace-nowrap hover:text-fg">
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#34d399', boxShadow: '0 0 8px #34d399' }} />

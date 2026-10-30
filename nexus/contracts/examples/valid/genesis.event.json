@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "stream": "session/0b7e9c1d-2f3a-4b5c-8d6e-7f8091a2b3c4",
+  "seq": 1,
+  "type": "session.opened",
+  "payload": {
+    "user": "soham"
+  },
+  "actor": {
+    "kind": "human",
+    "id": "soham"
+  },
+  "ts": "2026-10-30T09:59:58Z",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "prev_hash": null,
+  "hash": "ce36863f51b6baf9d16397ffb3e9af506b284a816f72d487e55943c1fd974d6d"
+}

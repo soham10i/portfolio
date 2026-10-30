@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/event.schema.json",
+  "title": "Event",
+  "description": "One entry in an append-only, hash-chained stream. Every state change, decision, model call and approval is an event; state and audit are projections of events. Hashing (implemented in P1): hash = sha256(JCS(event without 'hash')), where JCS is RFC 8785 canonical JSON, and prev_hash is the hash of the previous event in the same stream.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "stream", "seq", "type", "payload", "actor", "ts", "trace_id", "prev_hash", "hash"],
+  "properties": {
+    "schema_version": {"const": "1"},
+    "stream": {"description": "Stream name, e.g. 'session/<uuid>' or 'pack/stf'.", "type": "string", "pattern": "^[a-z][a-z0-9_]*(/[a-z0-9_-]+)*$", "maxLength": 256},
+    "seq": {"description": "Position in the stream, starting at 1, no gaps.", "type": "integer", "minimum": 1},
+    "type": {"description": "Dotted event type, e.g. 'proposal.created', 'decision.made'.", "type": "string", "pattern": "^[a-z]+(\\.[a-z_]+)+$", "maxLength": 128},
+    "payload": {"description": "Event body; its shape is defined per event type.", "type": "object"},
+    "actor": {"$ref": "common.schema.json#/$defs/actor"},
+    "ts": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "trace_id": {"$ref": "common.schema.json#/$defs/trace_id"},
+    "prev_hash": {
+      "description": "Hash of the previous event; null only for seq 1 (rule PREV_HASH_RULE).",
+      "oneOf": [{"$ref": "common.schema.json#/$defs/sha256_hex"}, {"type": "null"}]
+    },
+    "hash": {"$ref": "common.schema.json#/$defs/sha256_hex"}
+  }
+}

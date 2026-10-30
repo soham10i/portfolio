@@ -1,0 +1,41 @@
+# INVALID: action without risk. Expected: SCHEMA.
+schema_version: '1'
+pack: echo
+version: 0.1.0
+owner: soham
+title: Echo
+description: Writes a message to stdout. Exists to exercise propose → gate → execute
+  → verify → audit.
+tags:
+- demo
+observables:
+- id: echo.last_message
+  type: string
+  max_age_s: 60
+  description: The last message written.
+actions:
+- id: echo.say
+  title: Say something
+  autonomy: L3
+  params:
+    type: object
+    properties:
+      text:
+        type: string
+        minLength: 1
+        maxLength: 200
+    required:
+    - text
+    additionalProperties: false
+  preconditions: []
+  effects:
+  - state.echo.last_message == params.text
+  verify_within_s: 5
+  compensation:
+    action: echo.say
+    params:
+      text: '''(retracted) '' + params.text'
+  idempotent: true
+connector:
+  kind: python
+  module: nexus_packs.echo.binding

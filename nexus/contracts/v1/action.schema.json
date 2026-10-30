@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/action.schema.json",
+  "title": "Action",
+  "description": "One capability an agent may PROPOSE. Declared in a pack manifest. The runtime validates, gates, executes, verifies and audits it; the model never executes it directly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "risk", "params", "preconditions", "effects", "autonomy"],
+  "properties": {
+    "id": {"description": "Action id, unique within the pack.", "$ref": "common.schema.json#/$defs/action_id"},
+    "title": {"description": "Short human-readable name.", "type": "string", "minLength": 1, "maxLength": 120},
+    "description": {"description": "What the action does and when to use it; shown to the planner.", "type": "string", "maxLength": 2000},
+    "risk": {"description": "Risk tier; drives approval routing.", "$ref": "common.schema.json#/$defs/risk"},
+    "autonomy": {"description": "Current autonomy level. Always explicit; promotion happens by event, not by editing defaults.", "$ref": "common.schema.json#/$defs/autonomy"},
+    "params": {"description": "JSON Schema of the parameters. Restricted to a closed object of typed scalar properties.", "$ref": "#/$defs/params_schema"},
+    "preconditions": {
+      "description": "CEL expressions over fresh world state and params; all must hold for the gate to allow.",
+      "type": "array",
+      "items": {"$ref": "common.schema.json#/$defs/cel_expr"},
+      "maxItems": 32
+    },
+    "effects": {
+      "description": "CEL expressions that must hold after execution; checked by the verifier.",
+      "type": "array",
+      "items": {"$ref": "common.schema.json#/$defs/cel_expr"},
+      "maxItems": 32
+    },
+    "envelope": {
+      "description": "Named numeric limits enforced by the gate and again by the connector, e.g. {'temp_max': 240}.",
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,63}$"},
+      "additionalProperties": {"type": "number"}
+    },
+    "verify_within_s": {"description": "Seconds within which the effects must be observed.", "type": "integer", "minimum": 1, "maximum": 3600},
+    "compensation": {
+      "description": "Action that undoes this one if verification fails. Params are CEL over 'params' and 'prev' (state before execution).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "params"],
+      "properties": {
+        "action": {"description": "Action id in the same pack.", "$ref": "common.schema.json#/$defs/action_id"},
+        "params": {
+          "description": "Parameter name to CEL expression.",
+          "type": "object",
+          "additionalProperties": {"$ref": "common.schema.json#/$defs/cel_expr"}
+        }
+      }
+    },
+    "sandbox": {"description": "Id of a sandbox declared in the manifest, run before execution.", "$ref": "common.schema.json#/$defs/id_segment"},
+    "approvers": {"description": "Number of distinct humans who must approve when approval is required.", "type": "integer", "minimum": 1, "maximum": 2},
+    "rate_limit": {
+      "description": "At most 'max' executions per 'per_s' seconds, per session.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max", "per_s"],
+      "properties": {
+        "max": {"description": "Executions allowed in the window.", "type": "integer", "minimum": 1},
+        "per_s": {"description": "Window length in seconds.", "type": "integer", "minimum": 1}
+      }
+    },
+    "idempotent": {"description": "True if executing twice with the same params has the same effect as once.", "type": "boolean", "default": false}
+  },
+  "allOf": [
+    {
+      "description": "high and critical actions never run without a human: autonomy is capped at L2.",
+      "if": {"required": ["risk"], "properties": {"risk": {"enum": ["high", "critical"]}}},
+      "then": {"properties": {"autonomy": {"enum": ["L0", "L1", "L2"]}}}
+    },
+    {
+      "description": "critical actions need two approvers.",
+      "if": {"required": ["risk"], "properties": {"risk": {"const": "critical"}}},
+      "then": {"required": ["approvers"], "properties": {"approvers": {"const": 2}}}
+    },
+    {
+      "description": "Acting without per-execution approval (L3/L4) requires verification and a way back.",
+      "if": {"required": ["autonomy"], "properties": {"autonomy": {"enum": ["L3", "L4"]}}},
+      "then": {"required": ["verify_within_s", "compensation"]}
+    }
+  ],
+  "$defs": {
+    "params_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "properties", "required", "additionalProperties"],
+      "properties": {
+        "type": {"const": "object"},
+        "properties": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,47}$"},
+          "additionalProperties": {"$ref": "#/$defs/param"}
+        },
+        "required": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "additionalProperties": {"const": false}
+      }
+    },
+    "param": {
+      "description": "One typed parameter. Only these keywords are allowed, so a typo fails validation instead of being ignored.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {"enum": ["number", "integer", "boolean", "string"]},
+        "description": {"type": "string", "maxLength": 500},
+        "unit": {"type": "string", "maxLength": 32},
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"},
+        "exclusiveMinimum": {"type": "number"},
+        "exclusiveMaximum": {"type": "number"},
+        "enum": {"type": "array", "minItems": 1, "uniqueItems": true},
+        "minLength": {"type": "integer", "minimum": 0},
+        "maxLength": {"type": "integer", "minimum": 0},
+        "pattern": {"type": "string"},
+        "default": {}
+      }
+    }
+  }
+}

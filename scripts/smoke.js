@@ -143,7 +143,7 @@ const checks = [
     if (missing.length) throw new Error(`missing: ${missing.join(', ')}`);
     if (res.headers.get('x-powered-by')) throw new Error('x-powered-by is still advertised');
     const csp = res.headers.get('content-security-policy') || '';
-    if (!csp.includes('sha256-rBlgI8d9oiCCW05FqZ/z2o5CdA0UPPsjTmDgxgAk2P8=')) {
+    if (!csp.includes('sha256-keXAbiEIOMjudanlCId3M7CVgHP/t27PkXBIHzNWrNs=')) {
       throw new Error('CSP missing valid sha256 hash for inline theme script');
     }
     const perm = res.headers.get('permissions-policy') || '';

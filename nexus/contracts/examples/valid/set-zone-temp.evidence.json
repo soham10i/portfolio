@@ -1,0 +1,116 @@
+{
+  "proposal": {
+    "proposal_id": "6f1c2a3e-8b4d-4e5f-9a1b-2c3d4e5f6a7b",
+    "session_id": "0b7e9c1d-2f3a-4b5c-8d6e-7f8091a2b3c4",
+    "plan_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "action": "stf:oven.set_zone_temp",
+    "params": {
+      "zone": 2,
+      "temp": 240
+    },
+    "rationale": "The user asked to set zone two to 240 degrees; zone 2 is idle.",
+    "context": [
+      {
+        "source": "user",
+        "ref": "msg/42",
+        "triggered": true
+      },
+      {
+        "source": "tool",
+        "ref": "read/oven.zone[2].mode",
+        "triggered": false
+      },
+      {
+        "source": "doc",
+        "ref": "corpus/oven.md#L10-L24",
+        "triggered": false
+      }
+    ],
+    "proposer": {
+      "kind": "agent",
+      "id": "planner"
+    },
+    "idempotency_key": "6f1c2a3e-zone2-240",
+    "created_at": "2026-10-30T10:00:00Z"
+  },
+  "decision": {
+    "decision_id": "33333333-4444-4555-8666-777777777777",
+    "proposal_id": "6f1c2a3e-8b4d-4e5f-9a1b-2c3d4e5f6a7b",
+    "outcome": "NEEDS_APPROVAL",
+    "reasons": [
+      {
+        "code": "RISK_HIGH",
+        "message": "high-risk action at L2 requires one approval"
+      }
+    ],
+    "approvals_required": 1,
+    "policy_version": "stf-policy@0.1.0",
+    "autonomy": "L2",
+    "state_versions": {
+      "oven.zone[2].mode": 17,
+      "oven.zone[2].temp": 903
+    },
+    "proposal_hash": "b7600385ea07a7550ba9010a0499296bd5bcd5e6b4f8583c3b50c6be7c05fb60",
+    "latency_ms": 3.2,
+    "decided_at": "2026-10-30T10:00:00.012Z"
+  },
+  "checks": [
+    {
+      "name": "schema",
+      "passed": true
+    },
+    {
+      "name": "taint",
+      "passed": true,
+      "detail": "triggered by a user message"
+    },
+    {
+      "name": "precondition: zone 2 idle",
+      "passed": true
+    },
+    {
+      "name": "envelope: temp_max 240",
+      "passed": true
+    }
+  ],
+  "simulation": {
+    "ran": true,
+    "sandbox": "stf_sim",
+    "passed": true,
+    "summary": "30 virtual s, no invariant violated",
+    "trace_ref": "sim/7d1e"
+  },
+  "approvals": [
+    {
+      "approver": {
+        "kind": "human",
+        "id": "soham"
+      },
+      "proposal_hash": "b7600385ea07a7550ba9010a0499296bd5bcd5e6b4f8583c3b50c6be7c05fb60",
+      "approved_at": "2026-10-30T10:00:41Z"
+    }
+  ],
+  "execution": {
+    "status": "succeeded",
+    "idempotency_key": "6f1c2a3e-zone2-240",
+    "started_at": "2026-10-30T10:00:41.200Z",
+    "finished_at": "2026-10-30T10:00:41.350Z"
+  },
+  "verification": {
+    "status": "passed",
+    "observed": {
+      "oven.zone[2].setpoint": 240
+    }
+  },
+  "event_refs": [
+    {
+      "stream": "session/0b7e9c1d-2f3a-4b5c-8d6e-7f8091a2b3c4",
+      "seq": 2
+    },
+    {
+      "stream": "session/0b7e9c1d-2f3a-4b5c-8d6e-7f8091a2b3c4",
+      "seq": 3
+    }
+  ],
+  "chain_head": "1441ba5507f9658d9bea29b0d9567e6900468e0153fa990194e0f0f94699694b"
+}

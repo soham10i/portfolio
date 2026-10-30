@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexus.local/contracts/v1/evidence-pack.schema.json",
+  "title": "Evidence pack",
+  "description": "Everything needed to explain one action after the fact: the proposal, the decision, every check, the simulation, approvals, execution, verification, and pointers into the event chain.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal", "decision", "checks", "approvals", "execution", "verification", "event_refs", "chain_head"],
+  "properties": {
+    "proposal": {"$ref": "proposal.schema.json"},
+    "decision": {"$ref": "decision.schema.json"},
+    "checks": {
+      "description": "Each check the gate ran, in order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "passed"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 128},
+          "passed": {"type": "boolean"},
+          "detail": {"type": "string", "maxLength": 2000}
+        }
+      }
+    },
+    "simulation": {
+      "description": "Sandbox run, if the action declares one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ran"],
+      "properties": {
+        "ran": {"type": "boolean"},
+        "sandbox": {"$ref": "common.schema.json#/$defs/id_segment"},
+        "passed": {"type": "boolean"},
+        "summary": {"type": "string", "maxLength": 4000},
+        "trace_ref": {"type": "string", "maxLength": 512}
+      }
+    },
+    "approvals": {
+      "description": "Signed approvals; each signs the exact proposal hash.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["approver", "proposal_hash", "approved_at"],
+        "properties": {
+          "approver": {"$ref": "common.schema.json#/$defs/actor"},
+          "proposal_hash": {"$ref": "common.schema.json#/$defs/sha256_hex"},
+          "approved_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["not_run", "succeeded", "failed", "compensated"]},
+        "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 128},
+        "started_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+        "finished_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+        "error": {"$ref": "common.schema.json#/$defs/reason"}
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["not_run", "passed", "failed", "timed_out"]},
+        "observed": {"description": "Observed values used to verify effects.", "type": "object"}
+      }
+    },
+    "event_refs": {
+      "description": "Events that record this action.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stream", "seq"],
+        "properties": {
+          "stream": {"type": "string", "minLength": 1, "maxLength": 256},
+          "seq": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "chain_head": {"description": "Hash of the last event of this action's stream when the pack was built.", "$ref": "common.schema.json#/$defs/sha256_hex"}
+  }
+}

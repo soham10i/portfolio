@@ -17,7 +17,7 @@ export default function Hero() {
       id="hey"
       data-anchor-offset="0"
       aria-label="Introduction"
-      className="panel relative flex min-h-screen flex-col justify-between gap-12 overflow-hidden px-[var(--gutter)] pb-28 pt-[132px]"
+      className="panel relative flex min-h-[100svh] flex-col justify-between gap-8 overflow-hidden px-[var(--gutter)] pb-24 pt-[clamp(92px,13vh,132px)] sm:pb-28"
       style={{ '--t1': 'rgba(37,99,235,.20)', '--t2': 'rgba(14,143,176,.16)' } as React.CSSProperties}
     >
 
@@ -73,12 +73,12 @@ export default function Hero() {
             data-reveal="0.32"
             onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
             className="glass-ai-btn !h-14 !px-5 text-[14px]"
-            aria-label="Ask Assistant about my work"
+            aria-label="Ask Nexus about my work"
           >
             <div className="glass-ai-orb-wrap">
               <JarvisOrb size={26} />
             </div>
-            <span>Ask Assistant about my work</span>
+            <span>Ask Nexus about my work</span>
           </button>
 
           <a href="#work" data-reveal="0.35" className="lg-pill flex h-14 items-center gap-3 pl-5 pr-2 text-[14px]">

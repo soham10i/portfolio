@@ -1,0 +1,19 @@
+# A read-only pack over an OPC UA server: observables only, no actions (autonomy L0 by construction).
+schema_version: "1"
+pack: line_a
+version: 0.1.0
+owner: soham
+title: Packaging line A (read-only)
+observables:
+  - id: line.speed
+    type: number
+    unit: parts_per_min
+    max_age_s: 2
+  - id: line.running
+    type: boolean
+    max_age_s: 2
+actions: []
+connector:
+  kind: opcua
+  endpoint_env: LINE_A_OPCUA_ENDPOINT
+  namespace: urn:example:line-a

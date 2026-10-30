@@ -11,7 +11,7 @@ const DEMOS = [
   { to: '/robot', title: 'SLAM robot', note: 'LIDAR mapping and A* planning, in the browser' },
 ];
 
-/* 04 — Lab. The STF twin gets the stage: a screenshot of its live Cloud Run
+/* 03 — Lab. The STF twin gets the stage: a screenshot of its live Cloud Run
    deployment, framed as a browser window that opens the real thing, with the
    code on GitHub. Then the in-site demos. */
 export default function Lab() {
@@ -24,7 +24,7 @@ export default function Lab() {
 
       <h2
         data-reveal
-        className="mb-[clamp(40px,6vh,72px)] max-w-[20ch] t-h2"
+        className="mb-[clamp(24px,4vh,44px)] max-w-[20ch] t-h2"
       >
         A factory cell, <span className="serif text-p">simulated</span> from its PLC code.
       </h2>

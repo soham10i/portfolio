@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Feather, Moon, Sun, type LucideIcon } from 'lucide-react';
+import { Check, Droplet, Feather, Gem, Moon, Sun, type LucideIcon } from 'lucide-react';
 import { useTheme, type Theme } from '@/shared/lib/theme';
 
-/* Theme menu for the site: Dark, Light, Editorial (warm paper). The button
+/* Theme menu for the site: Dark, Light, Editorial (warm paper), Liquid (glass),
+   Slate (graphite glass). The button
    shows the current theme's icon; the menu opens above it in the bottom bar
    and below it in page headers. */
 
@@ -10,6 +11,8 @@ const OPTIONS: { key: Theme; label: string; note: string; icon: LucideIcon; swat
   { key: 'dark', label: 'Dark', note: 'Midnight, glowing scan', icon: Moon, swatch: ['#0a0f1a', '#7fb0ff'] },
   { key: 'light', label: 'Light', note: 'Cool glass, daylight', icon: Sun, swatch: ['#f4f6fb', '#2f5bea'] },
   { key: 'editorial', label: 'Editorial', note: 'Warm paper, terracotta', icon: Feather, swatch: ['#f6f1e7', '#9a3b1c'] },
+  { key: 'liquid', label: 'Liquid', note: 'Deep blue, clear glass', icon: Droplet, swatch: ['#0a1450', '#7d8cff'] },
+  { key: 'slate', label: 'Slate', note: 'Matte graphite, bevelled glass', icon: Gem, swatch: ['#68737b', '#d9e2e8'] },
 ];
 
 export default function ThemeToggle({ className = '', placement = 'up' }: { className?: string; placement?: 'up' | 'down' }) {

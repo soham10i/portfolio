@@ -56,7 +56,7 @@ function WorkCard({ p, i, total, seen, onOpen }: { p: Project; i: number; total:
   );
 }
 
-/* 03 — Work. Project cards: a real screenshot or replay when there is one,
+/* 04 — Work. Project cards: a real screenshot or replay when there is one,
    generative cover art otherwise, tilting toward the pointer. */
 export default function Work() {
   const collected = useStory((s) => s.collected);
@@ -67,7 +67,7 @@ export default function Work() {
     <section id="work" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]">
       <SectionHead label="Selected work" aside={`${collected.length} / ${PROJECTS.length} explored`} />
 
-      <div className="mb-[clamp(40px,6vh,72px)] flex flex-wrap items-end justify-between gap-6">
+      <div className="mb-[clamp(24px,4vh,44px)] flex flex-wrap items-end justify-between gap-6">
         <h2
           data-reveal
           className="max-w-[14ch] t-h2"

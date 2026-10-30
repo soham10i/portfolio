@@ -103,6 +103,66 @@ html[data-style="editorial"] :is(.story, .jarvis) {
   --card-fill: rgba(255, 252, 246, .86);
 }
 
+/* Liquid: a dark theme on a deep blue liquid ground (liquid-ground.svg).
+   Panels are clear frosted glass — a thin white fill over a real backdrop
+   blur, a lit hairline edge and a soft highlight — so the currents behind
+   show through. Text stays near-white for contrast over the brightest blue. */
+html[data-style="liquid"] :is(.story, .jarvis) {
+  --ground: #04082a;
+  --bg: #04082a;
+  --bg2: #0b1450;
+  --surf2: rgba(255, 255, 255, .08);
+  --fg: #f4f6ff;
+  --fg2: rgba(226, 231, 255, .82);
+  --fg3: rgba(196, 204, 245, .62);
+  --on-fg: #070d3a;
+  --line: rgba(255, 255, 255, .16);
+  --p: #a9b8ff;
+  --s: #c7b4ff;
+  --a: #7fe3ff;
+  --canvas: #04082a;
+  --glass-fill: rgba(255, 255, 255, .07);
+  --chrome-fill: rgba(14, 22, 84, .38);
+  --chip-fill: rgba(255, 255, 255, .1);
+  --glass-rim: rgba(255, 255, 255, .38);
+  --glass-inner: rgba(255, 255, 255, .08);
+  --glass-shadow: 0 18px 40px -24px rgba(2, 4, 40, .55);
+  --field-alpha: 1.8;
+  --card-fill: rgba(255, 255, 255, .07);
+  color-scheme: dark;
+}
+
+/* Slate: matte graphite from one six-step grey palette (#46515b #68737b
+   #848f96 #96a0a7 #bec6cb #d9e2e8). No hue at all — depth comes from light:
+   frosted slabs a step lighter than the ground, and pills and buttons as
+   bevelled glass lenses with a bright rim. Text is near-white with a soft
+   dark shadow under it, so it stays legible on the mid greys. */
+html[data-style="slate"] :is(.story, .jarvis) {
+  --ground: #5b666f;
+  --bg: #5b666f;
+  --bg2: #46515b;
+  --surf2: rgba(255, 255, 255, .08);
+  --fg: #f5f8fa;
+  --fg2: rgba(239, 244, 247, .88);
+  --fg3: rgba(228, 234, 238, .8);
+  --on-fg: #39434c;
+  --line: rgba(255, 255, 255, .2);
+  --p: #e2eaef;
+  --s: #bec6cb;
+  --a: #d9e2e8;
+  --canvas: #5b666f;
+  --glass-fill: rgba(255, 255, 255, .08);
+  --chrome-fill: rgba(78, 89, 98, .58);
+  --chip-fill: rgba(255, 255, 255, .1);
+  --glass-rim: rgba(255, 255, 255, .22);
+  --glass-inner: rgba(255, 255, 255, .06);
+  --glass-shadow: 0 30px 60px -32px rgba(30, 37, 44, .5);
+  --field-alpha: 1;
+  --card-fill: rgba(255, 255, 255, .08);
+  color-scheme: dark;
+}
+html[data-style="slate"] .story { text-shadow: 0 1px 2px rgba(38, 45, 52, .28); }
+
 .story {
   position: relative;
   min-height: 100vh;
@@ -139,49 +199,93 @@ html[data-style="editorial"] :is(.story, .jarvis) {
   text-transform: uppercase;
 }
 
-/* ---------------- gallery panels ----------------
-   Every chapter is a rounded liquid-glass panel inset from the window edge:
-   a blurred, saturated wash over the static ground gradient, a hairline
-   border with a lit top edge, and a deep, soft shadow stack for separation.
-   Two soft colour fields per section come through --t1 / --t2. */
-.story .panel {
-  --t1: rgba(77, 141, 255, .16);
-  --t2: rgba(139, 123, 255, .13);
-  position: relative;
-  width: 100%;
+/* ---------------- ground ----------------
+   One fixed gradient behind the whole page. The chapters are transparent
+   over it, so there is no seam where one section ends and the next begins;
+   the glass balls drifting above it carry the sense of scrolling. */
+.story::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background:
-    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
-    radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%);
-  overflow: clip;
-  transition: background-color .5s var(--ease-out);
+    radial-gradient(60vmax 50vmax at 88% 6%, rgba(77, 141, 255, .16), transparent 62%),
+    radial-gradient(55vmax 45vmax at 4% 40%, rgba(14, 143, 176, .12), transparent 62%),
+    radial-gradient(60vmax 50vmax at 50% 108%, rgba(139, 123, 255, .13), transparent 62%);
 }
 /* In the dark the fields need more presence to read as light, not mud. */
-html[data-theme="dark"] .story .panel {
+html[data-theme="dark"] .story::before {
   background:
-    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 60%),
-    radial-gradient(70vmax 40vmax at 85% 0%, var(--t1), transparent 55%),
-    radial-gradient(60vmax 40vmax at 0% 100%, var(--t2), transparent 60%);
+    radial-gradient(60vmax 50vmax at 88% 6%, rgba(37, 99, 235, .24), transparent 62%),
+    radial-gradient(55vmax 45vmax at 4% 40%, rgba(14, 143, 176, .2), transparent 62%),
+    radial-gradient(60vmax 50vmax at 50% 108%, rgba(79, 70, 229, .2), transparent 62%);
 }
-@media (prefers-reduced-transparency: reduce) {
-  .story .panel {
-    background: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+/* Liquid paints the blue-violet currents of liquid-ground.svg instead. */
+html[data-style="liquid"] .story::before {
+  background: #04082a url('./liquid-ground.svg') center / cover no-repeat;
+}
+/* Slate: a matte grey wash, lighter haze on the left, deepest at the
+   corners, with a fine grain so the large flat greys don't band. */
+html[data-style="slate"] .story::before {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E"),
+    radial-gradient(70vmax 60vmax at 0% 42%, rgba(150, 160, 167, .55), transparent 62%),
+    radial-gradient(55vmax 45vmax at 100% 0%, rgba(132, 143, 150, .28), transparent 60%),
+    radial-gradient(70vmax 55vmax at 100% 100%, rgba(70, 81, 91, .7), transparent 65%),
+    linear-gradient(165deg, #56616a 0%, #6b767e 40%, #626d75 70%, #4b5660 100%);
+}
+html[data-style="slate"] .glass-ball { display: none; }
+/* Editorial swaps the blue/violet fields for warm ones. */
+html[data-style="editorial"] .story::before {
+  background:
+    radial-gradient(60vmax 50vmax at 88% 6%, rgba(176, 99, 42, .13), transparent 62%),
+    radial-gradient(60vmax 50vmax at 4% 100%, rgba(154, 59, 28, .08), transparent 62%);
 }
 
-/* Editorial ignores the per-section blue/violet fields for warm ones. */
-html[data-style="editorial"] .story .panel {
-  background:
-    radial-gradient(70vmax 40vmax at 85% 0%, rgba(176, 99, 42, .13), transparent 60%),
-    radial-gradient(60vmax 40vmax at 0% 100%, rgba(154, 59, 28, .08), transparent 60%);
+.glass-balls {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.glass-ball {
+  position: absolute;
+  top: 0;
+  will-change: transform;
+  filter: drop-shadow(0 18px 40px rgba(37, 99, 235, .25));
+}
+html[data-perf="low"] .glass-ball[data-far] { display: none; }
+html[data-style="editorial"] .glass-balls { opacity: .5; }
+
+/* Liquid swaps the balls for the drifting ribbon ground (see GlassBalls). */
+.ground-drift { display: none; }
+html[data-style="liquid"] .ground-drift {
+  display: block;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 140vh;
+  background: #04082a url('./liquid-ground.svg') center top / cover no-repeat;
+  will-change: transform;
+}
+html[data-style="liquid"] .glass-ball { display: none; }
+
+/* ---------------- chapters ----------------
+   Transparent over the ground; --t1 / --t2 on a section are no longer
+   painted and are kept only so the section markup stays unchanged. */
+.story .panel {
+  position: relative;
+  width: 100%;
+  overflow: clip;
 }
 
-/* Chapter rhythm: the top padding clears the folded header (~64px) with
-   room to breathe; anchor jumps land on the panel edge (offset 0). */
+/* Chapter rhythm: the top padding just clears the folded header (~64px);
+   anchor jumps land on the panel edge (offset 0). Kept tight so chapters
+   flow into each other instead of floating in empty bands. */
 .story .chapter {
-  padding-top: clamp(88px, 10vh, 116px);
-  padding-bottom: clamp(40px, 6vh, 72px);
+  padding-top: clamp(76px, 9vh, 100px);
+  padding-bottom: clamp(16px, 3vh, 36px);
 }
 
 /* ---------------- liquid glass ---------------- */
@@ -440,7 +544,15 @@ html[data-motion="on"] .story [data-reveal] {
 
 /* Marquee (Contact) — CSS only, paused when motion is off */
 @keyframes story-marquee { to { transform: translate3d(-50%, 0, 0); } }
-.story-marquee > div { animation: story-marquee 38s linear infinite; }
+/* Runs on the compositor at the display's refresh rate; its own layer keeps
+   the text from being re-rasterised mid-move. Duration is set from the track
+   width in Contact.tsx; hovering pauses it so a name can be read. */
+.story-marquee > div {
+  animation: story-marquee var(--marquee-dur, 140s) linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.story-marquee:hover > div,
 html[data-motion="off"] .story-marquee > div { animation-play-state: paused; }
 
 /* ---------------- JARVIS ---------------- */
@@ -452,15 +564,20 @@ html[data-motion="off"] .story-marquee > div { animation-play-state: paused; }
 /* The JARVIS globe (JarvisOrb.tsx) is drawn on a canvas; CSS adds only its
    glow and the activity pulse. */
 @keyframes jg-pulse {
-  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, #4f86ff 55%, transparent); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--orb-glow) 55%, transparent); }
   100% { box-shadow: 0 0 0 10px transparent; }
 }
+/* Glow colour per theme, matching the bubble tones in chat/lib/bubble.ts. */
+:root { --orb-glow: rgba(40, 110, 255, .55); }
+html[data-style="liquid"] { --orb-glow: rgba(110, 90, 255, .55); }
+html[data-style="editorial"] { --orb-glow: rgba(176, 80, 36, .4); }
+html[data-style="slate"] { --orb-glow: rgba(36, 44, 52, .45); }
 .jarvis-globe {
   position: relative;
   display: inline-block;
   flex: none;
   border-radius: 999px;
-  filter: drop-shadow(0 6px 14px rgba(79, 134, 255, .45));
+  filter: drop-shadow(0 4px 12px var(--orb-glow));
 }
 .jarvis-globe[data-active="true"] { animation: jg-pulse 1.4s ease-out infinite; }
 html[data-motion="off"] .jarvis-globe { animation: none; }
@@ -589,3 +706,130 @@ html[data-perf="low"] .story .panel :is(.t-display, .t-h2, .t-statement, .t-clos
 .medqa-indeterminate { position: relative; }
 .medqa-indeterminate::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: inherit; background: linear-gradient(90deg, transparent, var(--a), transparent); animation: medqa-indet 1.4s ease-in-out infinite; }
 html[data-motion="off"] .medqa-sweep, html[data-motion="off"] .medqa-indeterminate::after { animation: none; }
+
+/* ---------------- liquid theme glass ----------------
+   Clear glass, only in the liquid theme. Almost no fill: the colour comes
+   from the ribbons behind, lightly blurred and brightened, so the pane reads
+   as a lens rather than a grey card. The edge is light caught in the glass —
+   a soft inner glow brightest at the top-left and bottom-right ends, plus a
+   1px masked rim that fades out along the long sides — and a faint caustic
+   sits in the upper right. No dark drop shadow: it muddied the blue. */
+html[data-style="liquid"] :is(.lg-panel, .lg-pill, .lg-chrome, .glass-ai-btn) {
+  background: linear-gradient(120deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .015) 45%, rgba(255, 255, 255, .015) 60%, rgba(255, 255, 255, .06));
+  border-color: transparent;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) brightness(1.12);
+  backdrop-filter: blur(14px) saturate(160%) brightness(1.12);
+  box-shadow:
+    inset 2px 2px 3px -1px rgba(255, 255, 255, .45),
+    inset -2px -2px 3px -1px rgba(210, 215, 255, .3),
+    inset 0 0 22px rgba(190, 200, 255, .07),
+    0 18px 40px -24px rgba(2, 4, 40, .55);
+  transition: box-shadow .35s var(--ease-out), background .35s var(--ease-out), transform .3s var(--ease-out);
+}
+html[data-style="liquid"] :is(.lg-panel, .lg-pill, .lg-chrome)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(120deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .14) 22%, rgba(255, 255, 255, .03) 45%, rgba(255, 255, 255, .03) 60%, rgba(200, 205, 255, .18) 80%, rgba(220, 225, 255, .55));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+html[data-style="liquid"] :is(.lg-panel, .lg-pill, .lg-chrome)::after {
+  background:
+    radial-gradient(38% 60% at 84% 6%, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 55%, transparent 75%),
+    radial-gradient(45% 70% at 8% 100%, rgba(170, 185, 255, .08), transparent 70%);
+}
+/* Interactive glass catches more light under the pointer. */
+html[data-style="liquid"] :is(a, button):is(.lg-panel, .lg-pill):hover {
+  background: linear-gradient(120deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .03) 45%, rgba(255, 255, 255, .03) 60%, rgba(255, 255, 255, .09));
+  box-shadow:
+    inset 2px 2px 3px -1px rgba(255, 255, 255, .6),
+    inset -2px -2px 3px -1px rgba(210, 215, 255, .42),
+    inset 0 0 26px rgba(190, 200, 255, .1),
+    0 22px 46px -24px rgba(2, 4, 40, .6);
+}
+html[data-style="liquid"] .lg-btn { background: rgba(255, 255, 255, .08); }
+html[data-style="liquid"] .lg-btn:hover { background: rgba(255, 255, 255, .14); }
+html[data-style="liquid"] .composer { background: rgba(255, 255, 255, .06); }
+html[data-style="liquid"] .composer:focus-within { background: rgba(255, 255, 255, .1); }
+/* Low-perf mode keeps the look but drops the per-frame blur. */
+html[data-style="liquid"][data-perf="low"] :is(.lg-panel, .lg-pill, .glass-ai-btn) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgba(16, 26, 96, .72);
+}
+
+/* ---------------- slate theme glass ----------------
+   Two materials, as in a frosted-glass control sheet:
+   · slabs (panels, chrome) — frosted, one step lighter than the ground, with
+     a soft hairline edge that brightens along the bottom;
+   · lenses (pills, the Nexus button) — bevelled clear glass: a thin dark
+     groove outside, a bright 1.5px rim (brightest top and bottom), shade
+     under the top rim and light pooling at the bottom inside. */
+html[data-style="slate"] :is(.lg-panel, .lg-chrome) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .05) 60%, rgba(255, 255, 255, .08));
+  border-color: rgba(255, 255, 255, .13);
+  -webkit-backdrop-filter: blur(24px) saturate(110%);
+  backdrop-filter: blur(24px) saturate(110%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    inset 0 -1px 0 rgba(255, 255, 255, .22),
+    0 30px 60px -32px rgba(30, 37, 44, .5);
+}
+html[data-style="slate"] .lg-chrome { background: var(--chrome-fill); }
+
+html[data-style="slate"] :is(.lg-pill, .glass-ai-btn) {
+  background: linear-gradient(180deg, rgba(62, 72, 81, .38) 0%, rgba(110, 121, 129, .2) 50%, rgba(200, 208, 213, .3) 100%);
+  border-color: transparent;
+  color: #eef3f6;
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  backdrop-filter: blur(10px) saturate(110%);
+  box-shadow:
+    0 0 0 1.5px rgba(52, 62, 71, .5),
+    inset 0 12px 16px -10px rgba(38, 46, 54, .5),
+    inset 0 -10px 16px -8px rgba(232, 238, 242, .32),
+    0 12px 24px -12px rgba(30, 37, 44, .55);
+  text-shadow: 0 1px 2px rgba(35, 42, 50, .45);
+  transition: box-shadow .3s var(--ease-out), background .3s var(--ease-out), transform .25s var(--ease-out);
+}
+html[data-style="slate"] :is(.lg-pill, .glass-ai-btn)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .32) 35%, rgba(255, 255, 255, .32) 65%, rgba(255, 255, 255, .95));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+html[data-style="slate"] .lg-pill::after {
+  background: radial-gradient(60% 45% at 50% 100%, rgba(240, 244, 247, .22), transparent 75%);
+}
+html[data-style="slate"] :is(a, button):is(.lg-pill, .glass-ai-btn):hover {
+  background: linear-gradient(180deg, rgba(62, 72, 81, .3) 0%, rgba(120, 131, 139, .22) 50%, rgba(214, 222, 227, .38) 100%);
+}
+html[data-style="slate"] :is(a, button):is(.lg-pill, .glass-ai-btn):active {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 1.5px rgba(52, 62, 71, .55),
+    inset 0 14px 18px -10px rgba(38, 46, 54, .6),
+    inset 0 -8px 14px -8px rgba(232, 238, 242, .26),
+    0 6px 14px -8px rgba(30, 37, 44, .55);
+}
+html[data-style="slate"] .lg-btn { background: rgba(255, 255, 255, .09); }
+html[data-style="slate"] .lg-btn:hover { background: rgba(255, 255, 255, .15); }
+html[data-style="slate"] .composer { background: rgba(255, 255, 255, .07); }
+html[data-style="slate"] .composer:focus-within { background: rgba(255, 255, 255, .11); }
+html[data-style="slate"][data-perf="low"] :is(.lg-panel, .lg-pill, .glass-ai-btn) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-style="slate"][data-perf="low"] .lg-panel { background: rgba(116, 127, 135, .9); }

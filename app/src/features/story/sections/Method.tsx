@@ -24,7 +24,7 @@ const STEPS = [
   },
 ];
 
-/* 06 — Method. Four steps, each with an example from the projects. */
+/* 05 — Method. Four steps, each with an example from the projects. */
 export default function Method() {
   return (
     <section id="method" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
@@ -33,17 +33,17 @@ export default function Method() {
 
       <h2
         data-reveal
-        className="mb-[clamp(40px,6vh,72px)] max-w-[16ch] t-h2"
+        className="mb-[clamp(24px,4vh,44px)] max-w-[16ch] t-h2"
       >
         How I <span className="serif text-p">work.</span>
       </h2>
 
       <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {STEPS.map((s, i) => (
-          <li key={s.no} data-reveal={i * 0.08} className="lg-panel flex min-h-[340px] flex-col justify-between p-6">
+          <li key={s.no} data-reveal={i * 0.08} className="lg-panel flex flex-col justify-between gap-6 p-5 sm:p-6 xl:min-h-[300px]">
             <div>
               <p className="mono text-fg3">{s.no}</p>
-              <h3 className="mt-6 text-[clamp(34px,3vw,46px)] font-medium tracking-[-.04em]">{s.title}</h3>
+              <h3 className="mt-4 text-[clamp(34px,3vw,46px)] font-medium tracking-[-.04em]">{s.title}</h3>
               <p className="t-body mt-4">{s.text}</p>
             </div>
             <p className="mt-8 border-t border-[color:var(--line)] pt-4 text-[13px] leading-relaxed text-fg">
