@@ -25,7 +25,7 @@ Location: Paderborn, Germany — open to relocation across Germany and the EU
 Email: soham.patel.2201@gmail.com
 GitHub: github.com/soham10i
 LinkedIn: linkedin.com/in/soham-patel-10i
-Availability: from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany
+Availability: available now · EU Blue Card eligible · no visa sponsorship required for Germany
 Interested in: robotics software, industrial automation, perception, digital twins, and backend/data roles around them.
 
 ## HOW SOHAM WORKS

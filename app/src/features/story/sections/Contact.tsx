@@ -41,8 +41,9 @@ export default function Contact() {
 
         <div data-reveal className="mt-8 max-w-[760px]">
         <p className="t-lead">
-          I am looking for a software role close to physical systems: robotics, simulation, testing or industrial
-          data. Email is the best way to reach me.
+          Building robots, factory twins or perception systems? I'd like to hear about it. I am looking for a
+          software role close to physical systems, based in Paderborn and happy to relocate across Germany and
+          the EU. Email reaches me fastest, and I reply to every message.
         </p>
         <ul className="mt-6 flex max-w-[720px] flex-wrap gap-1.5">
           {FIT.map((f) => (

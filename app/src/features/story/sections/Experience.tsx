@@ -17,7 +17,7 @@ export default function Experience() {
         From backend services <span className="serif text-a">to physical systems.</span>
       </h2>
       <p data-reveal className="-mt-[clamp(16px,3vh,40px)] mb-[clamp(24px,4vh,40px)] t-lead">
-        Four industry roles in India — healthcare data, payments, and the teams in between. Newest first.
+        Three industry roles in India — healthcare data, payments, full-stack — and a teaching role in Germany. Newest first.
       </p>
 
       <ol className="content-list border-t border-[color:var(--line)]">

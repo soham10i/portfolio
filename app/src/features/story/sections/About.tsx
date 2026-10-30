@@ -2,8 +2,8 @@ import type React from 'react';
 import { DOMAINS, HERO_STATS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 
-/* 02 — About. The story in three short paragraphs, four numbers, then the
-   four areas of work as an index. */
+/* 02 — About. The story in three short paragraphs, where it is going, four
+   numbers, then the four areas of work as an index. */
 export default function About() {
   return (
     <section id="about" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
@@ -24,13 +24,23 @@ export default function About() {
           payment APIs, and at Altera I built Azure data pipelines for clinical software.
         </p>
         <p>
-          In 2024 I moved to Germany to study AI at OTH Amberg-Weiden. There my projects moved to physical
-          systems: a factory cell simulated from its PLC code, a robot that maps mazes with LIDAR, and indoor
-          tracking with BLE beacons.
+          That work recorded what happened in the world; I wanted to write software that acts in it. So in 2024
+          I moved to Germany to study AI at OTH Amberg-Weiden, and my projects moved to physical systems: a
+          factory cell simulated from its PLC code, a robot that maps mazes with LIDAR, indoor tracking with
+          BLE beacons.
         </p>
         <p>
           Now I study Computer Engineering at Paderborn University, focused on robotics: state estimation,
           perception, planning and control, tested in simulation before they run on hardware.
+        </p>
+      </div>
+
+      <div data-reveal className="lg-panel mt-10 max-w-[760px] p-6 md:p-8">
+        <p className="mono !text-[10.5px] tracking-[.14em] uppercase text-fg3">Where I'm headed</p>
+        <p className="t-lead mt-3">
+          Robots that work outside the lab need software you can trust before it touches hardware: estimators
+          that report their own error, perception that runs on the device, and simulations checked against the
+          real machine. That is the work I want to do next, in a team that ships robots or industrial systems.
         </p>
       </div>
 

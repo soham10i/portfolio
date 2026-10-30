@@ -324,7 +324,7 @@ export const HERO_STATS = [
   { value: '2.5 years', label: 'Industry experience' },
   { value: '4', label: 'Roles in software teams' },
   { value: '9', label: 'Projects with write-ups' },
-  { value: 'Sept 2026', label: 'Available from' },
+  { value: 'Now', label: 'Available' },
 ];
 
 export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azure', 'Three.js'];
@@ -334,5 +334,5 @@ export const CONTACT = {
   github: 'https://github.com/soham10i',
   linkedin: 'https://www.linkedin.com/in/soham-patel-10i/',
   location: 'Paderborn, Germany — open to relocation across Germany and the EU',
-  availability: 'Available from September 2026 · EU Blue Card eligible · no visa sponsorship required for Germany',
+  availability: 'Available now · EU Blue Card eligible · no visa sponsorship required for Germany',
 };

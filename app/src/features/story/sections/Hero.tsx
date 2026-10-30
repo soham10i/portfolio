@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
 
-/* 01 — Intro. Who this is in two sentences, then four measured results, each
-   opening its project. The name is in the status line and the header. */
+/* 01 — Intro. Who this is in two sentences, then the two strongest measured
+   results, each opening its project. The name is in the status line and the header. */
 
 const SPECS = [
   { id: 'digital-twin', domain: 'Digital twin', value: '56/56', note: 'PLC-derived checks passed · 1.2 mm RMS' },
-  { id: 'slam', domain: 'SLAM · LIDAR', value: '831', note: 'poses of a recorded maze run, replayed in 3D' },
-  { id: 'embedded-intelligence', domain: 'Sensor fusion', value: '1.79 m', note: 'RMSE · BLE + IMU particle filter, 50 Hz sim' },
   { id: 'scene', domain: 'Computer vision', value: 'On-device', note: 'YOLOv8 on ONNX Runtime Web, in your browser' },
 ];
 
@@ -30,7 +28,7 @@ export default function Hero() {
         <p data-reveal="0.08" className="text-right">
           M.Sc. Computer Engineering · Paderborn
           <br />
-          <span className="text-fg3">Available from September 2026</span>
+          <span className="text-fg3">Available now</span>
         </p>
       </div>
 
@@ -52,7 +50,7 @@ export default function Hero() {
       </div>
 
       <div className="relative flex flex-col gap-5">
-        <ul data-reveal="0.26" className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <ul data-reveal="0.26" className="grid max-w-[760px] grid-cols-1 gap-2.5 sm:grid-cols-2">
           {SPECS.map((s) => (
             <li key={s.id}>
               <Link
