@@ -63,6 +63,9 @@ service. The portfolio becomes one of its clients.
 
 ## Current position
 
-- **Done, awaiting review:** P0 — contracts and repository (`docs/parts/P0.md`, report in
-  `docs/parts/P0.report.md`). All acceptance items A1–A12 pass; nothing is committed yet.
-- **Next:** P1 — event store and world state.
+- **Done:** P0 — contracts and repository (`docs/parts/P0.md`, report in
+  `docs/parts/P0.report.md`).
+- **Done, awaiting review:** P1 — event store and world state (`docs/parts/P1.md`, report in
+  `docs/parts/P1.report.md`, ADR-0008). All acceptance items A1–A12 pass; nothing is committed.
+- **Next:** P2 — policy engine and gate. Blocked on the owner's answer to Q2 (structured
+  envelope).

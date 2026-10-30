@@ -76,11 +76,31 @@ def test_chain_into_a_self_compensating_action_is_allowed():
 
 def test_envelope_param_mismatch_in_pack_and_action():
     doc = base("stf.pack.yaml")
-    doc["actions"][1]["envelope"]["pressure_min"] = 1
-    assert codes("pack", doc) == [("ENVELOPE_PARAM_MISMATCH", "/actions/1/envelope/pressure_min")]
+    doc["actions"][1]["envelope"]["params"]["pressure"] = {"min": 1}
+    assert codes("pack", doc) == [("ENVELOPE_PARAM_MISMATCH", "/actions/1/envelope/params/pressure")]
     action = base("echo-say.action.yaml")
-    action["envelope"] = {"text_max": 10, "volume_max": 3, "budget": 5}  # no suffix: not checked
-    assert codes("action", action) == [("ENVELOPE_PARAM_MISMATCH", "/envelope/volume_max")]
+    action["envelope"] = {"params": {"volume": {"max": 3}}, "limits": {"text_max": 10, "budget": 5}}
+    assert codes("action", action) == [("ENVELOPE_PARAM_MISMATCH", "/envelope/params/volume")]
+
+
+def test_envelope_bounds_must_be_numeric_params_and_not_inverted():
+    action = base("echo-say.action.yaml")
+    action["envelope"] = {"params": {"text": {"max": 3}}}
+    assert codes("action", action) == [("ENVELOPE_PARAM_MISMATCH", "/envelope/params/text")]
+    doc = base("stf.pack.yaml")
+    doc["actions"][1]["envelope"]["params"]["temp"] = {"min": 200, "max": 180}
+    assert codes("pack", doc) == [("ENVELOPE_PARAM_MISMATCH", "/actions/1/envelope/params/temp")]
+    doc["actions"][1]["envelope"]["params"]["temp"] = {"min": 180, "max": 180}
+    assert codes("pack", doc) == []
+
+
+@pytest.mark.parametrize(
+    "envelope", [{}, {"params": {"temp": {}}}, {"temp_max": 240}, {"params": {"temp": {"max": "240"}}}]
+)
+def test_envelope_shape_is_enforced_by_the_schema(envelope):
+    doc = base("stf.pack.yaml")
+    doc["actions"][1]["envelope"] = envelope
+    assert {code for code, _ in codes("pack", doc)} == {"SCHEMA"}
 
 
 @pytest.mark.parametrize("path", ["../x", "a/../../b", "/etc", "~/x", "C:/x", "file:///etc", "https://x/y"])

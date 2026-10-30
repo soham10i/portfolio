@@ -115,6 +115,28 @@ class Compensation(Contract):
     params: dict[str, CelExpr]
 
 
+class Bound(Contract):
+    min: float | None = None
+    max: float | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> Bound:
+        if self.min is None and self.max is None:
+            raise ValueError("a bound needs min, max or both")
+        return self
+
+
+class Envelope(Contract):
+    params: dict[ParamName, Bound] | None = None
+    limits: dict[EnvelopeKey, float] | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self) -> Envelope:
+        if self.params is None and self.limits is None:
+            raise ValueError("an envelope needs params, limits or both")
+        return self
+
+
 class RateLimit(Contract):
     max: Annotated[int, Field(ge=1)]
     per_s: Annotated[int, Field(ge=1)]
@@ -129,7 +151,7 @@ class Action(Contract):
     params: ParamsSchema
     preconditions: Annotated[list[CelExpr], Field(max_length=32)]
     effects: Annotated[list[CelExpr], Field(max_length=32)]
-    envelope: dict[EnvelopeKey, float] | None = None
+    envelope: Envelope | None = None
     verify_within_s: Annotated[int, Field(ge=1, le=3600)] | None = None
     compensation: Compensation | None = None
     sandbox: IdSegment | None = None

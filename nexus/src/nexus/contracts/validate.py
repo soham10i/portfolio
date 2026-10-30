@@ -128,15 +128,19 @@ def _rule_compensation_loop(doc: Mapping[str, Any], base: str) -> Iterator[Valid
 
 
 def _envelope_issues(action: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
-    params = set(action["params"]["properties"])
-    for key in action.get("envelope", {}):
-        for suffix in ("_max", "_min"):
-            if key.endswith(suffix) and key[: -len(suffix)] not in params:
-                yield ValidationIssue(
-                    f"{base}/envelope/{key}",
-                    "ENVELOPE_PARAM_MISMATCH",
-                    f"envelope '{key}' limits param '{key[: -len(suffix)]}', which is not declared",
-                )
+    """Every bounded param exists and is numeric, and no bound is inverted (ADR-0009)."""
+    params = action["params"]["properties"]
+    for name, bound in action.get("envelope", {}).get("params", {}).items():
+        pointer = f"{base}/envelope/params/{name}"
+        if name not in params:
+            message = f"envelope bounds param '{name}', which is not declared"
+        elif params[name]["type"] not in ("number", "integer"):
+            message = f"envelope bounds param '{name}', which is a {params[name]['type']}, not a number"
+        elif "min" in bound and "max" in bound and bound["min"] > bound["max"]:
+            message = f"envelope bounds on '{name}' are inverted: min {bound['min']} > max {bound['max']}"
+        else:
+            continue
+        yield ValidationIssue(pointer, "ENVELOPE_PARAM_MISMATCH", message)
 
 
 def _rule_envelope_manifest(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
@@ -146,6 +150,33 @@ def _rule_envelope_manifest(doc: Mapping[str, Any], base: str) -> Iterator[Valid
 
 def _rule_envelope_action(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
     yield from _envelope_issues(doc, base)
+
+
+def _cel_issues(action: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
+    """Every CEL expression in an action parses (ADR-0011)."""
+    from ..cel import syntax_error  # celpy is only needed once a document is structurally valid
+
+    sources = [
+        (f"{base}/{field}/{i}", src)
+        for field in ("preconditions", "effects")
+        for i, src in enumerate(action[field])
+    ]
+    comp = action.get("compensation")
+    if comp:
+        sources += [(f"{base}/compensation/params/{name}", src) for name, src in comp["params"].items()]
+    for pointer, src in sources:
+        error = syntax_error(src)
+        if error:
+            yield ValidationIssue(pointer, "CEL_SYNTAX", f"'{src}' {error}"[:MAX_MESSAGE])
+
+
+def _rule_cel_manifest(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
+    for i, action in enumerate(doc["actions"]):
+        yield from _cel_issues(action, f"{base}/actions/{i}")
+
+
+def _rule_cel_action(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
+    yield from _cel_issues(doc, base)
 
 
 def _escapes(path: str) -> bool:
@@ -216,9 +247,10 @@ RULES: dict[Kind, list[Rule]] = {
         _rule_unknown_compensation,
         _rule_compensation_loop,
         _rule_envelope_manifest,
+        _rule_cel_manifest,
         _rule_path_escape,
     ],
-    Kind.ACTION: [_rule_envelope_action],
+    Kind.ACTION: [_rule_envelope_action, _rule_cel_action],
     Kind.PROPOSAL: [_rule_trigger_count],
     Kind.DECISION: [_rule_approvals],
     Kind.EVIDENCE: [_nested(_rule_trigger_count, "proposal"), _nested(_rule_approvals, "decision")],
@@ -233,6 +265,7 @@ SEMANTIC_CODES = frozenset(
         "UNKNOWN_COMPENSATION",
         "SELF_COMPENSATION_LOOP",
         "ENVELOPE_PARAM_MISMATCH",
+        "CEL_SYNTAX",
         "PATH_ESCAPE",
         "APPROVALS_MISMATCH",
         "PREV_HASH_RULE",

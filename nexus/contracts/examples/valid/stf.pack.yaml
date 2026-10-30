@@ -55,8 +55,10 @@ actions:
     effects:
       - "state.oven.zone[params.zone].setpoint == params.temp"
     envelope:
-      temp_max: 240
-      temp_ramp_degc_per_minute: 10
+      params:
+        temp: {max: 240}
+      limits:
+        temp_ramp_degc_per_minute: 10
     verify_within_s: 120
     compensation:
       action: oven.set_zone_temp
@@ -79,7 +81,8 @@ actions:
     effects:
       - "state.conveyor.speed == params.speed"
     envelope:
-      speed_max: 1
+      params:
+        speed: {max: 1}
     sandbox: stf_sim
   - id: vgr.sweep_home
     title: Send the vacuum gripper home

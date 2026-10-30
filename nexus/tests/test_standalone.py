@@ -15,7 +15,16 @@ SKIP_DIRS = {".venv", ".git", ".pytest_cache", ".ruff_cache", "__pycache__", "bu
 TEXT_SUFFIXES = {".py", ".md", ".toml", ".yaml", ".yml", ".json", ".cfg", ".ini", ".txt", ""}
 SKIP_FILES = {"uv.lock", "LICENSE"}
 # Third-party top-level modules our declared dependencies provide.
-DEPENDENCY_MODULES = {"jsonschema", "referencing", "pydantic", "yaml", "pytest", "asyncpg"}
+DEPENDENCY_MODULES = {
+    "jsonschema",
+    "referencing",
+    "pydantic",
+    "yaml",
+    "pytest",
+    "asyncpg",
+    "rfc8785",
+    "celpy",
+}
 
 LINK = re.compile(r"(?:\]\(|`|\"|'|\s)((?:\.\./)+[^\s)`\"']*)")
 ABSOLUTE = re.compile(r"(?<![\w.:/])(/Users/|/home/|/private/|/tmp/|[A-Z]:\\\\)")

@@ -5,7 +5,7 @@ used, and who decides. Resolved entries move to an ADR.
 
 ## P0
 
-### Q1. May an action compensate with itself?
+### Q1. May an action compensate with itself? — resolved: yes (ADR-0010)
 
 The brief names the rule `SELF_COMPENSATION_LOOP` but defines it as "compensation chains must not
 cycle (A→B→A)". Restoring a previous setpoint is naturally done by the same action
@@ -15,7 +15,7 @@ cycle (A→B→A)". Restoring a previous setpoint is naturally done by the same 
 compensated. Only cycles through at least one other action are rejected. Every action on the
 cycle is reported. **Decides:** owner, before P3 (execution and rollback).
 
-### Q2. Envelope keys that end in `_min` or `_max` but are not parameter bounds
+### Q2. Envelope keys that end in `_min` or `_max` but are not parameter bounds — resolved: structured envelope (ADR-0009)
 
 `ENVELOPE_PARAM_MISMATCH` treats any envelope key ending in `_max`/`_min` as a bound on the param
 named by the prefix. A key like `temp_rate_max_degc_per_min` is therefore read as a bound on a

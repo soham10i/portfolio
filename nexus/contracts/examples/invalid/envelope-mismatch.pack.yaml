@@ -1,4 +1,4 @@
-# INVALID: rpm_max limits a param 'rpm' that does not exist. Expected: ENVELOPE_PARAM_MISMATCH.
+# INVALID: the envelope bounds a param 'rpm' that does not exist. Expected: ENVELOPE_PARAM_MISMATCH.
 schema_version: '1'
 pack: stf
 version: 0.1.0
@@ -83,8 +83,10 @@ actions:
   effects:
   - state.oven.zone[params.zone].setpoint == params.temp
   envelope:
-    temp_max: 240
-    temp_ramp_degc_per_minute: 10
+    params:
+      temp: {max: 240}
+    limits:
+      temp_ramp_degc_per_minute: 10
   verify_within_s: 120
   compensation:
     action: oven.set_zone_temp
@@ -112,7 +114,8 @@ actions:
   effects:
   - state.conveyor.speed == params.speed
   envelope:
-    rpm_max: 3
+    params:
+      rpm: {max: 3}
   sandbox: stf_sim
 - id: vgr.sweep_home
   title: Send the vacuum gripper home

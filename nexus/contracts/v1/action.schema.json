@@ -26,10 +26,24 @@
       "maxItems": 32
     },
     "envelope": {
-      "description": "Named numeric limits enforced by the gate and again by the connector, e.g. {'temp_max': 240}.",
+      "description": "Operating envelope (ADR-0009). 'params' bounds numeric params and is enforced by the gate and again by the connector; 'limits' are named limits the connector enforces, such as a ramp rate.",
       "type": "object",
-      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,63}$"},
-      "additionalProperties": {"type": "number"}
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "params": {
+          "description": "Param name to inclusive bounds, e.g. {'temp': {'max': 240}}. Each param must be declared and numeric (rule ENVELOPE_PARAM_MISMATCH).",
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,47}$"},
+          "additionalProperties": {"$ref": "#/$defs/bound"}
+        },
+        "limits": {
+          "description": "Named numeric limits, e.g. {'temp_ramp_degc_per_minute': 10}. Available to CEL as envelope.limits.",
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,63}$"},
+          "additionalProperties": {"type": "number"}
+        }
+      }
     },
     "verify_within_s": {"description": "Seconds within which the effects must be observed.", "type": "integer", "minimum": 1, "maximum": 3600},
     "compensation": {
@@ -78,6 +92,16 @@
     }
   ],
   "$defs": {
+    "bound": {
+      "description": "Inclusive bounds on one param; at least one of min and max.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": {"type": "number"},
+        "max": {"type": "number"}
+      }
+    },
     "params_schema": {
       "type": "object",
       "additionalProperties": false,

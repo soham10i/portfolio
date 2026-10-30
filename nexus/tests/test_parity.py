@@ -20,6 +20,7 @@ SEMANTIC_ONLY = {
     "dup-action.pack.yaml",
     "dup-observable.pack.yaml",
     "envelope-mismatch.pack.yaml",
+    "cel-syntax.pack.yaml",
     "path-escape.pack.yaml",
     "prev-hash.event.yaml",
     "trigger-count.proposal.yaml",
