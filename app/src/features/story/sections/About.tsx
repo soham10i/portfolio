@@ -1,62 +1,84 @@
 import type React from 'react';
-import { DOMAINS, HERO_STATS } from '@/shared/data/portfolio';
+import { DOMAINS } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 
-/* 04 — About. One statement, three short factual paragraphs, four numbers,
-   then the four areas of work as an index. Everything here is a shipped
-   result or a current role — no roadmap, no aspirations. */
+/* 02 — About. Directly under the intro: a two-sentence summary, the three
+   stages of the background as short cards (when, where, what was done), then
+   the four areas of work as an index. Plain facts only; every figure here is
+   also in the Experience or Education data. */
+
+const STAGES = [
+  {
+    when: '2021 – 2024',
+    where: 'India · industry',
+    title: 'Backend and data engineering',
+    body:
+      'REST APIs in FastAPI and Django for a payments platform handling about 2,000 transactions a day. ' +
+      'Azure ETL pipelines for clinical audit-log data, with retrieval about 30% faster. ' +
+      'Before that, a full-stack internship (Angular, ASP.NET Core).',
+  },
+  {
+    when: 'Oct 2024 – Aug 2026',
+    where: 'OTH Amberg-Weiden',
+    title: 'Graduate study in applied AI',
+    body:
+      'Deep learning and advanced learning algorithms, computer vision, generative and diffusion models, ' +
+      'digital twins and embedded intelligence. Presented Cor2Vox (3D shape-to-image diffusion) at the ' +
+      'AI Conference 2025. Teaching assistant for a Master’s data-analysis module.',
+  },
+  {
+    when: 'Now',
+    where: 'Paderborn University',
+    title: 'M.Sc. Computer Engineering',
+    body:
+      'Robotics and embedded systems: state estimation, perception, planning and control, ' +
+      'tested in simulation before hardware; AI hardware for inference and chip design.',
+  },
+];
+
 export default function About() {
   return (
     <section id="about" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(14,143,176,.14)', '--t2': 'rgba(37,99,235,.12)' } as React.CSSProperties}>
-      <SectionHead label="About" />
+      <SectionHead label="About" aside="2.5 years in industry" />
 
-      <p
-        data-reveal
-        className="t-statement max-w-[24ch]"
-      >
-        I work on software that <span className="serif text-p">senses</span>,{' '}
-        <span className="serif text-a">models</span> and acts in the real world.
+      <h2 data-reveal className="mx-auto mb-3 max-w-[20ch] text-center t-h2">
+        From backend systems to <span className="serif text-p">robotics software.</span>
+      </h2>
+      <p data-reveal className="mx-auto max-w-[62ch] text-center t-lead">
+        I write and test software for systems that sense and act: state estimation, perception and
+        simulation. Before that, I built backend services and data pipelines for payments and healthcare.
       </p>
 
-      <div data-reveal className="mt-10 grid max-w-[1100px] t-body gap-6 md:grid-cols-3">
-        <p>
-          2.5 years of industry work in India: REST APIs for a payments platform processing about 2,000
-          transactions a day (Electrum), then Azure data pipelines for clinical software, where retrieval
-          became about 30% faster (Altera Digital Health).
-        </p>
-        <p>
-          Since 2024, based in Germany. Graduate AI coursework at OTH Amberg-Weiden (45 ECTS, GPA 2.0) —
-          the tabletop-factory twin, the Webots SLAM robot and the diffusion work on this site are outputs
-          of that programme. Teaching assistant for a Master's data-analysis module with 30 students.
-        </p>
-        <p>
-          Now M.Sc. Computer Engineering at Paderborn University, focused on robotics and embedded systems:
-          state estimation, perception, planning and control, verified in simulation before hardware.
-        </p>
-      </div>
-
-      <div className="mt-[clamp(28px,5vh,52px)] grid grid-cols-2 gap-3 md:grid-cols-4">
-        {HERO_STATS.map((s, i) => (
-          <div key={s.label} data-reveal={i * 0.06} className="lg-panel p-5 md:p-6">
-            <p className="text-[clamp(30px,3.6vw,52px)] font-medium tracking-[-.04em]">{s.value}</p>
-            <p className="mt-2 text-[13px] text-fg2">{s.label}</p>
-          </div>
+      <ol className="mx-auto mt-[clamp(28px,5vh,48px)] grid max-w-[760px] gap-3 xl:max-w-[1180px] xl:grid-cols-3">
+        {STAGES.map((s, i) => (
+          <li key={s.title} data-reveal={i * 0.06} className="lg-panel flex flex-col p-5 md:p-6">
+            <p className="mono flex flex-wrap items-center gap-x-2 !text-[10px] text-fg3">
+              <span>{s.when}</span>
+              <span aria-hidden>·</span>
+              <span>{s.where}</span>
+            </p>
+            <h3 className="mt-3 text-[clamp(18px,1.5vw,21px)] font-medium leading-snug tracking-[-.02em] text-fg">
+              {s.title}
+            </h3>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-fg2">{s.body}</p>
+          </li>
         ))}
-      </div>
+      </ol>
 
-      <ol className="content-list mt-[clamp(28px,5vh,52px)] border-t border-[color:var(--line)]">
+      <p data-reveal className="mono mb-1 mt-[clamp(36px,6vh,60px)] text-center !text-[10.5px] text-fg3">Areas of work</p>
+      <ol className="measure content-list border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
           <li
             key={d.no}
             data-reveal
-            className="grid gap-3 border-b border-[color:var(--line)] py-7 md:grid-cols-[80px_1fr_1.3fr] md:gap-8"
+            className="grid gap-3 border-b border-[color:var(--line)] py-6 md:grid-cols-[56px_minmax(0,1fr)_minmax(0,1.5fr)] md:gap-8"
           >
-            <span className="mono pt-2 text-fg3">{d.no}</span>
-            <h3 className="text-[clamp(22px,2.4vw,34px)] font-medium tracking-[-.03em]">{d.title}</h3>
+            <span className="mono pt-1.5 text-fg3">{d.no}</span>
+            <h3 className="text-[clamp(20px,2vw,28px)] font-medium leading-tight tracking-[-.03em]">{d.title}</h3>
             <div>
-              <p className="t-body">{d.claim}</p>
-              <ul className="mt-4 flex flex-wrap gap-1.5">
+              <p className="max-w-[64ch] text-[15px] leading-relaxed text-fg2">{d.claim}</p>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
                 {d.items.map((it) => (
                   <li key={it} className="lg-pill px-3 py-1 text-[12px] text-fg2">{it}</li>
                 ))}

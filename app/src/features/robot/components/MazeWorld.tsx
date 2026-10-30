@@ -61,7 +61,9 @@ export default function MazeWorld({
 
   // Keep callbacks in refs so the element is mounted exactly once.
   const cb = useRef({ onReady, onWorldLoaded, onError, onState });
-  cb.current = { onReady, onWorldLoaded, onError, onState };
+  useEffect(() => {
+    cb.current = { onReady, onWorldLoaded, onError, onState };
+  });
 
   useEffect(() => {
     let dead = false;

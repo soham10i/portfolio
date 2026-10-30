@@ -353,13 +353,29 @@ async function ask({ question, options, topK = 5, doNli = true, useExternal = tr
 /* ------------------------------------------------------------------ */
 /* Follow-up support                                                   */
 
+/* Bounded: sessions idle for 30 minutes are dropped, and past 500 live
+   sessions the least recently used one goes first. A Map iterates in
+   insertion order, so re-inserting on each touch keeps the oldest at the
+   front. */
 const conversations = new Map();
+const MAX_CONVERSATIONS = 500;
+const CONVERSATION_TTL_MS = 30 * 60 * 1000;
+
+setInterval(() => {
+  const cutoff = Date.now() - CONVERSATION_TTL_MS;
+  for (const [id, c] of conversations) if (c.touchedAt < cutoff) conversations.delete(id);
+}, 5 * 60 * 1000).unref();
 
 function getConversation(sessionId) {
-  if (!conversations.has(sessionId)) {
-    conversations.set(sessionId, { history: [], lastResult: null });
+  let conv = conversations.get(sessionId);
+  if (conv) conversations.delete(sessionId);
+  else conv = { history: [], lastResult: null };
+  conv.touchedAt = Date.now();
+  conversations.set(sessionId, conv);
+  while (conversations.size > MAX_CONVERSATIONS) {
+    conversations.delete(conversations.keys().next().value);
   }
-  return conversations.get(sessionId);
+  return conv;
 }
 
 async function followUp({ sessionId, question, topK = 5 }) {

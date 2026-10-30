@@ -3,9 +3,8 @@ import { EDUCATION, LANGUAGES } from '@/shared/data/portfolio';
 import SectionHead from '../components/SectionHead';
 import Timeline from '../components/Timeline';
 
-/* 05 — Education. Four degrees on the same rail visual as Experience, so a
-   reader sees the two timelines as one path: India (B.Sc., M.Sc. IT) →
-   Germany (graduate AI coursework, M.Sc. Computer Engineering). Newest first. */
+/* 05 — Education. Four entries on a timeline rail, newest first: what each
+   covered and the grade, nothing more. */
 export default function Education() {
   const entries = EDUCATION.map((e) => ({
     period: e.period,
@@ -13,24 +12,27 @@ export default function Education() {
     place: `${e.institution} · ${e.location}`,
     lead: e.grade,
     body: e.focus,
+    points: e.points,
   }));
 
   return (
     <section id="education" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]"
       style={{ '--t1': 'rgba(139,92,246,.13)', '--t2': 'rgba(16,185,129,.10)' } as React.CSSProperties}>
-      <SectionHead label="Education" aside={`${EDUCATION.length} degrees`} />
+      <SectionHead label="Education" aside={`${EDUCATION.length} programmes`} />
 
-      <h2 data-reveal className="mb-3 max-w-[18ch] t-h2">
-        Four degrees, <span className="serif text-s">one direction.</span>
+      <h2 data-reveal className="mx-auto mb-3 max-w-[18ch] text-center t-h2">
+        Academic background
       </h2>
-      <p data-reveal className="mb-[clamp(20px,3vh,32px)] t-lead">
-        Computer science in India, then AI and robotics in Germany. Newest first.
+      <p data-reveal className="mx-auto mb-[clamp(20px,3vh,32px)] max-w-[64ch] text-center t-lead">
+        Degrees and coursework, newest first.
       </p>
 
-      <Timeline entries={entries} accent="var(--s)" />
+      <div className="measure">
+        <Timeline entries={entries} accent="var(--s)" />
+      </div>
 
-      <div data-reveal className="mt-[clamp(24px,4vh,40px)]">
-        <p className="mono mb-4 !text-[10.5px] uppercase tracking-wider text-fg3">Languages</p>
+      <div data-reveal className="measure mt-[clamp(36px,6vh,60px)]">
+        <p className="mono mb-4 text-center !text-[10.5px] text-fg3">Languages</p>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {LANGUAGES.map((l) => {
             const parts = l.level.split(' · ');

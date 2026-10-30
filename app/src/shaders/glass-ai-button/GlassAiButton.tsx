@@ -19,7 +19,8 @@ export function GlassAiButton({
   const [documentVisible, setDocumentVisible] = useState(() => (
     typeof document === "undefined" || !document.hidden
   ));
-  const [hostVisible, setHostVisible] = useState(false);
+  // Without IntersectionObserver there is no way to know, so assume visible.
+  const [hostVisible, setHostVisible] = useState(() => typeof IntersectionObserver === "undefined");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -41,10 +42,7 @@ export function GlassAiButton({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return undefined;
-    if (typeof IntersectionObserver === "undefined") {
-      setHostVisible(true);
-      return undefined;
-    }
+    if (typeof IntersectionObserver === "undefined") return undefined;
     const observer = new IntersectionObserver(([entry]) => {
       setHostVisible(entry?.isIntersecting ?? true);
     }, { rootMargin: "80px" });
@@ -61,9 +59,12 @@ export function GlassAiButton({
 
   const mounted = hostVisible && documentVisible;
 
-  useEffect(() => {
+  // A fresh iframe has to load again, so reset `ready` whenever it remounts.
+  const [prevMounted, setPrevMounted] = useState(mounted);
+  if (prevMounted !== mounted) {
+    setPrevMounted(mounted);
     setReady(false);
-  }, [mounted]);
+  }
 
   return (
     <div

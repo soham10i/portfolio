@@ -27,16 +27,16 @@ export default function Blog() {
       style={{ '--t1': 'rgba(37,99,235,.10)', '--t2': 'rgba(14,143,176,.08)' } as React.CSSProperties}>
       <SectionHead label="Blog" aside={posts ? `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}` : undefined} />
 
-      <div className="mb-[clamp(28px,4vh,48px)] flex flex-wrap items-end justify-between gap-6">
+      <div className="mb-[clamp(28px,4vh,48px)] flex flex-col items-center gap-4 text-center">
         <h2 data-reveal className="t-h2 max-w-[16ch]">
           Written out <span className="serif text-p">in full.</span>
         </h2>
-        <p data-reveal className="t-body max-w-[42ch]">
+        <p data-reveal className="t-body max-w-[56ch]">
           Longer posts from my studies and projects, with every step shown.
         </p>
       </div>
 
-      <div data-reveal className="content-list border-t border-[color:var(--line)]">
+      <div data-reveal className="measure content-list border-t border-[color:var(--line)]">
         {failed && <p className="t-body py-6">Posts could not be loaded right now. <Link to="/blog" className="underline">Open the blog</Link>.</p>}
         {!failed && posts === null && <div className="my-5 h-16 animate-pulse rounded-[12px] bg-[color:var(--surf2)]" />}
         {posts?.map((p) => (
@@ -55,7 +55,7 @@ export default function Blog() {
         ))}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="measure mt-6 flex justify-center">
         <Link to="/blog" className="lg-pill inline-flex h-11 items-center gap-2 px-5 text-[14px]">
           All posts <ArrowUpRight className="h-4 w-4" />
         </Link>

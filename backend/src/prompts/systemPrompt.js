@@ -48,7 +48,7 @@ Model from the source of truth (PLC tables, datasheets, schemas) → simulate an
    - Graph-based algorithm that reduces the payments needed to settle a group (up to 33% fewer)
 
 ## EDUCATION
-- M.Sc. Computer Engineering — Paderborn University (current). Focus: robotics, embedded systems.
+- M.Sc. Computer Engineering — Paderborn University (current). Focus: robotics, embedded systems, AI hardware for inference and chip design.
 - Graduate coursework, AI for Industrial Applications — OTH Amberg-Weiden (Oct 2024 – Aug 2026), 45 ECTS, GPA 2.0. Embedded Intelligence graded 1.3; AI Conference talk graded 1.0.
 - M.Sc. Information Technology — Charutar Vidya Mandal University, India (2020 – 2022). Gold Medalist, Rank 1, 9.55/10.
 - B.Sc. Computer Science — Sardar Patel University, India (2017 – 2020). 8.5/10. Inter-university football champion (2018).
@@ -56,7 +56,7 @@ Model from the source of truth (PLC tables, datasheets, schemas) → simulate an
 
 ## PROJECTS (as on the site)
 1. Smart Tabletop Factory — Physics Digital Twin (Oct 2025 – Mar 2026) · github.com/soham10i/stf-hw · live on Google Cloud Run
-   - Twin of the fischertechnik 536634 training factory in three versions. v1: MQTT at 10 Hz into InfluxDB, Streamlit dashboards, failure predictor with 85% accuracy. v2: browser 3D cell on the real 15 mm grid, driven by the PLC process image (9 digital inputs, 14 outputs). v3: MuJoCo simulation of all four stations from the PLC step tables, timer values and datasheets; 56/56 checks passed, 1.2 mm RMS positioning prediction, worst crane move 0.303 mm.
+   - Twin of the fischertechnik 536634 training factory in three versions. v1: MQTT at 10 Hz into InfluxDB, Streamlit dashboards, failure predictor with 85% accuracy. v2: browser 3D cell on the real 15 mm grid, driven by the PLC process image (9 digital inputs, 14 outputs). v3: Python simulation of all four stations from the PLC step tables, timer values and datasheets; 56/56 checks passed, 1.2 mm RMS positioning prediction, worst crane move 0.303 mm.
 2. Autonomous Robots — SLAM Navigation (Oct 2024 – Mar 2025) · github.com/soham10i/autonomouse_robots · demo at /robot
    - ROSBot in Webots, five maze worlds. 2-D LIDAR + wheel odometry, log-odds occupancy grid (5 cm), frontier exploration, A* with radius inflation, pure-pursuit control. Ported to the browser; the site replays a recorded run (27,612 LIDAR points along 831 poses).
 3. Real-Time Multimodal Scene Understanding (Oct 2024 – Apr 2025) · github.com/soham10i/Real-Time-Scene-Understanding · demo at /scene
@@ -80,7 +80,7 @@ Model from the source of truth (PLC tables, datasheets, schemas) → simulate an
 ## SKILLS
 - Languages & backend: Python, C#/.NET, Java, SQL, FastAPI, Django, Spring Boot, REST, JWT
 - Data & infra: Azure, ETL, Docker, CI/CD, pytest, InfluxDB, MQTT, OPC-UA, PostgreSQL, MSSQL
-- Robotics: particle and Kalman filters, SLAM, occupancy mapping, A*, pure pursuit, MuJoCo, Webots, ROS, Arduino
+- Robotics: particle and Kalman filters, SLAM, occupancy mapping, A*, pure pursuit, Webots, ROS, Arduino
 - ML & perception: PyTorch, scikit-learn, XGBoost, YOLOv8, ONNX Runtime, diffusion models (DDPM/DDIM), Sentence-Transformers, FAISS
 - Web: React, TypeScript, Three.js, WebSockets
 

@@ -48,27 +48,25 @@ export default function Contact() {
 
         <h2
           data-reveal
-          className="t-closing"
+          className="t-closing text-center"
         >
-          Get in
-          <br />
-          <span className="serif tracking-[-.02em] text-p">touch.</span>
+          Get in <span className="serif tracking-[-.02em] text-p">touch.</span>
         </h2>
 
-        <div data-reveal className="mt-8 max-w-[760px]">
+        <div data-reveal className="mx-auto mt-8 flex max-w-[960px] flex-col items-center text-center">
         <p className="t-lead">
           Building robots, factory twins or perception systems? I'd like to hear about it. I am looking for a
           software role close to physical systems, based in Paderborn and happy to relocate across Germany and
           the EU. Email reaches me fastest, and I reply to every message.
         </p>
-        <ul className="mt-6 flex max-w-[720px] flex-wrap gap-1.5">
+        <ul className="mt-6 flex max-w-[960px] flex-wrap justify-center gap-1.5">
           {FIT.map((f) => (
             <li key={f} className="rounded-full border border-[color:var(--line)] px-3.5 py-1.5 text-[13px] text-fg2">{f}</li>
           ))}
         </ul>
         <p className="mono mt-6 !text-[10.5px] text-fg3">{CONTACT.availability}</p>
 
-        <div className="mt-8 flex flex-wrap gap-2">
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
           <button
             type="button"
             onClick={copy}
@@ -101,7 +99,7 @@ export default function Contact() {
         </div>
       </div>
 
-      <p className="mono px-[var(--gutter)] pt-6 text-fg3">©2026 Soham Patel — built with React, GSAP and WebGL</p>
+      <p className="mono px-[var(--gutter)] pt-6 text-center text-fg3">©2026 Soham Patel — built with React, GSAP and WebGL</p>
     </section>
   );
 }

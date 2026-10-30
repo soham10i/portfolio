@@ -30,6 +30,7 @@ import { describeFrame, summariseLog } from '@/features/scene-lab/lib/localNarra
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE ?? '/api';
 const MAX_VIDEO_SECONDS = 240;          // 4 minutes, checked before any decode
 const MAX_VIDEO_BYTES = 300 * 1024 * 1024;   // 300 MB, checked before the file is even opened
+const MAX_UPSCALE_BYTES = 40 * 1024 * 1024;   // 40 MB, the server's cap for /scene/interpolate
 const KEYFRAME_MIN_GAP_MS = 1500;       // never narrate faster than this
 const KEYFRAME_MAX_GAP_MS = 4000;       // ...but never go longer than this either
 const SCENE_CHANGE_THRESHOLD = 0.04;    // mean abs luma delta that counts as a new scene
@@ -170,10 +171,10 @@ export default function SceneLab() {
      would burn the main thread for images nobody has asked about yet. */
   useEffect(() => {
     const captioned = keyframes.filter((k) => k.thumb);
-    if (captioned.length === 0) { setSheet(null); return; }
     let dead = false;
-    setSheetBusy(true);
     const t = window.setTimeout(async () => {
+      if (captioned.length === 0) { setSheet(null); return; }
+      setSheetBusy(true);
       /* Oldest first, newest last: the sheet reads left-to-right as time. The
          component's own keyframe list is newest-first. */
       const ordered = [...captioned].reverse().slice(-MAX_SHEET_FRAMES)
@@ -186,8 +187,8 @@ export default function SceneLab() {
       } finally {
         if (!dead) setSheetBusy(false);
       }
-    }, 400);
-    return () => { dead = true; window.clearTimeout(t); setSheetBusy(false); window.clearTimeout(t); };
+    }, captioned.length === 0 ? 0 : 400);
+    return () => { dead = true; window.clearTimeout(t); setSheetBusy(false); };
   }, [keyframes]);
 
   /* Ask the backend whether the captioning service is awake, so the UI can be
@@ -379,8 +380,12 @@ export default function SceneLab() {
     if (running) { autoSummarised.current = false; return; }
     if (autoSummarised.current) return;
     if (keyframes.length === 0) return;
-    autoSummarised.current = true;
-    void summarise(keyframes);
+    // Deferred a tick: summarise sets state, which must not happen inside the effect body.
+    const t = window.setTimeout(() => {
+      autoSummarised.current = true;
+      void summarise(keyframes);
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [running, source, keyframes, summarise]);
 
   useEffect(() => {
@@ -645,8 +650,8 @@ export default function SceneLab() {
     setLastFrame(null);
     cancelScan.current = false;
 
-    if (file.size > MAX_VIDEO_BYTES) {
-      setNotice(`That file is ${Math.round(file.size / 1048576)} MB — the limit is ${MAX_VIDEO_BYTES / 1048576} MB.`);
+    if (file.size > MAX_UPSCALE_BYTES) {
+      setNotice(`That file is ${Math.round(file.size / 1048576)} MB — upscaling takes videos up to ${MAX_UPSCALE_BYTES / 1048576} MB.`);
       return;
     }
 

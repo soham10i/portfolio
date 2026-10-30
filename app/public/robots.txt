@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://portfolio-500754517962.europe-west1.run.app/sitemap.xml
+Sitemap: https://www.sohampatel.dev/sitemap.xml

@@ -24,16 +24,16 @@ export default function Lab() {
 
       <h2
         data-reveal
-        className="mb-[clamp(24px,4vh,44px)] max-w-[20ch] t-h2"
+        className="mx-auto mb-[clamp(24px,4vh,44px)] max-w-[20ch] text-center t-h2"
       >
         A factory cell, <span className="serif text-p">simulated</span> from its PLC code.
       </h2>
 
-      <div data-reveal>
+      <div data-reveal className="measure">
         <LiveShot project={twin} />
       </div>
 
-      <article data-reveal className="lg-panel mt-3 grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
+      <article data-reveal className="measure lg-panel mt-3 grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
         <div>
           <p className="mono mb-3 text-fg3">Featured · {twin.timeline}</p>
           <p className="t-body max-w-[60ch]">
@@ -62,7 +62,7 @@ export default function Lab() {
         </div>
       </article>
 
-      <ul className="mt-3 grid gap-3 md:grid-cols-3">
+      <ul className="measure mt-3 grid gap-3 md:grid-cols-3">
         {DEMOS.map((d, i) => (
           <li key={d.to} data-reveal={i * 0.08}>
             <Link to={d.to} className="lg-panel group flex h-full items-start justify-between gap-4 p-6">

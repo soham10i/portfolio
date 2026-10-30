@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { lenis } from '@/shared/lib/lenis';
 import { currentTone, paintBubble } from '@/features/chat/lib/bubble';
+import { isLowPerf } from '@/shared/lib/perf';
 
 /* Glass balls floating behind the chapters, so scrolling is visible as depth.
  *
@@ -10,7 +11,7 @@ import { currentTone, paintBubble } from '@/features/chat/lib/bubble';
  * drives Lenis, every ball rises at its own rate with the scroll position and
  * wraps around the viewport, so there are always a few in view on a long page.
  * Far balls are smaller, slower and slightly blurred. Motion off → they stay
- * where they are; low-perf mode keeps only the near ones.
+ * where they are; low-power mode (phones) hides them and runs no loop at all.
  *
  * The liquid theme hides the balls (seen through frosted glass they read as
  * smudges) and shows .ground-drift instead: its blue ribbons, taller than the
@@ -31,7 +32,7 @@ export default function GlassBalls() {
 
   useEffect(() => {
     const root = layer.current;
-    if (!root) return;
+    if (!root || isLowPerf()) return;
     const nodes = Array.from(root.querySelectorAll<HTMLDivElement>('.glass-ball'));
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -46,10 +47,16 @@ export default function GlassBalls() {
     const themeWatch = new MutationObserver(paint);
     themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-style'] });
 
+    let lastScroll = NaN;
+    let lastVh = NaN;
     const place = () => {
       const moving = document.documentElement.dataset.motion !== 'off';
       const scroll = moving ? lenis.scroll : 0;
       const vh = window.innerHeight;
+      // The ticker runs every frame; only touch the DOM when something moved.
+      if (scroll === lastScroll && vh === lastVh) return;
+      lastScroll = scroll;
+      lastVh = vh;
       nodes.forEach((node, i) => {
         const b = BALLS[i];
         const span = vh + b.size * 2;

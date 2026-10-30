@@ -19,12 +19,12 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
     approach: [
       'Modelled all four stations of the fischertechnik 536634 cell from the controller rather than from photographs: the manufacturer’s PLC step tables, TON timer literals and component datasheets.',
       'Solved the suction gripper’s three pulse-to-metre scales from the sorting line’s three collinear bays, because the PLC gives it no soft limits to read them from.',
-      'Ran the cell as a MuJoCo rigid-body simulation and verified it against 56 checks; the worst crane move lands within 0.303 mm, inside the PLC’s own 15-pulse window.',
+      'Ran the cell as a Python simulation and verified it against 56 checks; the worst crane move lands within 0.303 mm, inside the PLC’s own 15-pulse window.',
       'Served the twin as a web app on Google Cloud Run, with the live 3D cell, its process image and the production cycle in the browser.',
     ],
     architecture: [
       { tier: 'Sources', parts: ['Siemens SCL step tables', 'Timer literals', 'Belegungsplan I/O', 'Datasheets'] },
-      { tier: 'Model', parts: ['OpenSCAD', 'MJCF', 'MuJoCo physics'] },
+      { tier: 'Model', parts: ['OpenSCAD', 'Python simulation', 'NumPy'] },
       { tier: 'Service', parts: ['FastAPI', 'WebSockets', 'MQTT / OPC-UA adapters'] },
       { tier: 'Web', parts: ['Three.js cell view', 'Process image', 'Cloud Run'] },
     ],
@@ -35,7 +35,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetailContent> = {
       { label: 'Process image', value: '9 DI · 14 DO', color: 'var(--s)' },
     ],
     timeline: [
-      { phase: 'v3.0 — Physics twin', desc: 'MuJoCo simulation of all four stations from the PLC sources, predicting positioning to 1.2 mm RMS over 120 mm without prior measurement data.' },
+      { phase: 'v3.0 — Physics twin', desc: 'Python simulation of all four stations from the PLC sources, predicting positioning to 1.2 mm RMS over 120 mm without prior measurement data.' },
       { phase: 'v2.0 — Live 3D twin', desc: 'Three.js cell on the real 15 mm grid, driven by the 9 DI / 14 DO process image over WebSockets, with an MQTT/OPC-UA adapter layer.' },
       { phase: 'v1.0 — Maintenance dashboard', desc: 'MQTT ingestion at 10 Hz, InfluxDB history and Streamlit dashboards, with an 85%-accurate failure predictor, all containerised.' },
     ],

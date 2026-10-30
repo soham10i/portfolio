@@ -44,7 +44,9 @@ export default function ScenarioPanel({
   const [error, setError] = useState('');
   const timer = useRef<number | null>(null);
   const latest = useRef(value);
-  latest.current = value;
+  useEffect(() => {
+    latest.current = value;
+  }, [value]);
 
   /* Debounced autosave. Typing a sentence should not be twenty PUTs, and
      making the visitor find a Save button for a single text field is worse. */

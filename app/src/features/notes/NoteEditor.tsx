@@ -51,7 +51,7 @@ export default function NoteEditor() {
   const pickPalette = (k: PaletteKey) => { setPalette(k); storePalette(k); };
 
   const [token, setTokenState] = useState(getToken);
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(() => (getToken() ? null : false));
   const [authError, setAuthError] = useState('');
 
   const [slug, setSlug] = useState(editingSlug ?? '');
@@ -72,7 +72,7 @@ export default function NoteEditor() {
   useEffect(() => {
     let dead = false;
     const t = getToken();
-    if (!t) { setAuthed(false); return; }
+    if (!t) return;
     checkToken(t)
       .then((ok) => { if (!dead) setAuthed(ok); })
       .catch(() => { if (!dead) setAuthed(false); });

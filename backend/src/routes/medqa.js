@@ -14,9 +14,18 @@
  */
 const express = require('express');
 const config = require('../config');
+const { createLimiter } = require('../middleware/rateLimit');
 const { loadIndex, getStatus, ask, followUp, randomRecord } = require('../services/medqaRag');
 
 const router = express.Router();
+
+/* Every ask and follow-up embeds text and calls the LLM, so they share the
+   chat budget. Inputs are capped before any of that work starts. */
+const limit = createLimiter({ ...config.limits.chat, message: 'Too many MedQA questions — try again in a few minutes.' });
+const MAX_QUESTION_CHARS = 2000;
+const MAX_OPTIONS = 8;
+const MAX_OPTION_CHARS = 500;
+const clampTopK = (k) => Math.min(10, Math.max(1, Number.parseInt(k, 10) || 5));
 
 const DISABLED = {
   error: 'The MedQA demo is switched off on this deployment (MEDQA_ENABLED=false). '
@@ -52,29 +61,35 @@ router.get('/sample', (req, res) => {
   res.json({ sample });
 });
 
-router.post('/ask', async (req, res) => {
-  const { question, options, topK = 5, doNli = true } = req.body || {};
-  if (!question || typeof question !== 'string') {
-    return res.status(400).json({ error: 'question is required' });
+router.post('/ask', limit, async (req, res) => {
+  const { question, options, topK, doNli = true } = req.body || {};
+  if (!question || typeof question !== 'string' || question.length > MAX_QUESTION_CHARS) {
+    return res.status(400).json({ error: `question is required (max ${MAX_QUESTION_CHARS} characters)` });
   }
-  if (!options || typeof options !== 'object') {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
     return res.status(400).json({ error: 'options object is required' });
   }
+  const entries = Object.entries(options);
+  if (!entries.length || entries.length > MAX_OPTIONS
+      || entries.some(([k, v]) => k.length > 8 || typeof v !== 'string' || v.length > MAX_OPTION_CHARS)) {
+    return res.status(400).json({ error: `options must be 1–${MAX_OPTIONS} short text answers` });
+  }
   try {
-    res.json(await ask({ question, options, topK, doNli }));
+    res.json(await ask({ question, options, topK: clampTopK(topK), doNli: doNli !== false }));
   } catch (err) {
     console.error('[MedQA /ask]', err);
     res.status(500).json({ error: 'MedQA failed to answer. Try again.' });
   }
 });
 
-router.post('/followup', async (req, res) => {
-  const { sessionId, question, topK = 5 } = req.body || {};
-  if (!sessionId || !question) {
+router.post('/followup', limit, async (req, res) => {
+  const { sessionId, question, topK } = req.body || {};
+  if (typeof sessionId !== 'string' || !/^[\w-]{1,64}$/.test(sessionId)
+      || typeof question !== 'string' || !question || question.length > MAX_QUESTION_CHARS) {
     return res.status(400).json({ error: 'sessionId and question are required' });
   }
   try {
-    res.json(await followUp({ sessionId, question, topK }));
+    res.json(await followUp({ sessionId, question, topK: clampTopK(topK) }));
   } catch (err) {
     console.error('[MedQA /followup]', err);
     res.status(500).json({ error: 'MedQA failed to answer. Try again.' });

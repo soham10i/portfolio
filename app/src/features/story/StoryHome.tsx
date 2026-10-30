@@ -37,9 +37,9 @@ export default function StoryHome() {
 
       <main className="relative z-[1]">
         <Hero />
+        <About />
         <Work />
         <Experience />
-        <About />
         <Education />
         <Method />
         <Lab />

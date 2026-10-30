@@ -10,7 +10,9 @@ const config = require('../config');
  *   - blob: workers and wasm-unsafe-eval for onnxruntime-web
  *   - blob: media for the visitor's own uploaded video and camera stream
  *   - data: images for keyframe thumbnails
- * Everything else is denied. Note there is no external script host: three.js,
+ * Everything else is denied. There is no 'unsafe-eval': nothing in the built
+ * bundle or the vendored libraries calls eval or new Function, and WebAssembly
+ * only needs 'wasm-unsafe-eval'. Note there is no external script host: three.js,
  * onnxruntime, KaTeX and marked are all served from this origin. */
 const CSP = [
   "default-src 'self'",
@@ -18,7 +20,7 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: 'sha256-keXAbiEIOMjudanlCId3M7CVgHP/t27PkXBIHzNWrNs='",
+  "script-src 'self' 'wasm-unsafe-eval' blob: 'sha256-keXAbiEIOMjudanlCId3M7CVgHP/t27PkXBIHzNWrNs='",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",

@@ -1,152 +1,192 @@
-# Portfolio — Soham Patel
+# Soham Patel — Portfolio
 
-A portfolio that runs its own demos. Every interactive piece on the site is the
-real thing executing in front of the visitor: object detection runs in their
-browser, the digital twin steps a live simulation, the assistant streams tokens
-from a hosted model. Nothing on it is a screenshot of something that once worked.
+A portfolio that runs its own demos. Object detection runs in the visitor's
+browser, the digital twin steps a live simulation, and the assistant streams
+answers from a hosted model. Nothing here is a screenshot of something that
+once worked.
 
-**Live:** https://portfolio-500754517962.europe-west1.run.app — one Cloud Run
-service (europe-west1) built from `backend/Dockerfile` via `cloudbuild.yaml`.
-It scales to zero when idle, so the first visit can take a few seconds to wake.
+**Live site:** [www.sohampatel.dev](https://www.sohampatel.dev)
+
+> The site runs on Google Cloud Run and scales to zero when idle, so the first
+> visit after a quiet period can take a few seconds to wake up.
 
 ---
 
-## What is actually running
+## Contents
 
-| Route | What it does | Where the compute happens |
+- [What's on the site](#whats-on-the-site)
+- [Tech stack](#tech-stack)
+- [Quick start](#quick-start)
+- [Project layout](#project-layout)
+- [How it fits together](#how-it-fits-together)
+- [Model providers](#model-providers)
+- [Deploying](#deploying)
+- [Further documentation](#further-documentation)
+
+---
+
+## What's on the site
+
+| Page | What it does | Where it runs |
 |---|---|---|
-| `/` | Portfolio, with a streaming assistant ("JARVIS") that answers from a grounded system prompt | model call is server-side |
-| `/scene` | **SceneLab** — YOLOv8n-seg object detection on webcam or an uploaded clip, keyframe captioning, and grounded Q&A over the resulting keyframe log | detection in the **visitor's browser** (ONNX Runtime Web); captioning server-side |
-| `/medqa` | Retrieval-augmented medical QA over a local corpus, with NLI verification of the generated answer | Node, in-process embeddings |
-| `/project/digital-twin` | Smart Tabletop Factory digital twin — the live deployment framed in the page, code on [GitHub](https://github.com/soham10i/stf-hw) | Google Cloud Run |
-| `/robot` | SLAM / maze navigation replay | browser |
-| `/notes` | Long-form technical write-ups, editable with an admin token | server |
+| `/` | The portfolio, with **Nexus**, an assistant that answers questions about my work from the facts on the site | Model call on the server |
+| `/scene` | **SceneLab**: YOLOv8n-seg object detection on a webcam or an uploaded clip, keyframe captions, and Q&A over what was seen | Detection in the **browser** (ONNX Runtime Web); captions on the server |
+| `/medqa` | Medical question answering with retrieval, plus a check that the answer is supported by the sources | Node, in-process embeddings |
+| `/project/:id` | Project write-ups, including the Smart Tabletop Factory digital twin ([code](https://github.com/soham10i/stf-hw)) | Browser + Cloud Run |
+| `/robot` | SLAM and maze-navigation replay | Browser |
+| `/notes`, `/blog` | Long-form technical write-ups (notes are editable with an admin token) | Server |
 
-The privacy claim on `/scene` is load-bearing and worth stating plainly: camera
-frames are never uploaded. Detection runs locally, and only sampled keyframes
-are sent for captioning, and only while narration is switched on.
-
----
-
-## Architecture
-
-One Node process serves the built SPA *and* the API. That is a deliberate
-choice, not a shortcut — a single origin means no CORS to configure, no
-preflight latency, no split deploy to keep in sync, and one free instance
-instead of two.
-
-```
-                     ┌──────────────────────────────────────┐
-   visitor ────────► │  Render web service (free, 512 MB)   │
-                     │                                      │
-                     │   express                            │
-                     │     ├── /api/chat      ─┐            │
-                     │     ├── /api/scene     ─┼─► LLM      │──► Groq        (text, primary)
-                     │     ├── /api/medqa     ─┘  transport │──► OpenRouter  (text, fallback)
-                     │     ├── /api/notes                   │──► NVIDIA NIM  (vision)
-                     │     ├── /api/contact                 │
-                     │     └── static app/dist + SPA fallback
-                     └──────────────────────────────────────┘
-                                     │ optional
-                                     ▼
-                          scene-api (FastAPI + BLIP)
-                          own captioning model, when hosted
-```
-
-Every model call goes through **one transport** (`backend/src/services/llm.js`)
-speaking the OpenAI wire format. There is no vendor SDK anywhere in this
-repository, which is why swapping providers is an environment change rather
-than a code change.
-
-```
-app/          React 19 + Vite + Tailwind. Feature-sliced: src/features/<feature>/
-backend/      Express. config / middleware / services / routes, nothing else.
-scene-api/    FastAPI + BLIP captioning service (optional, deployed separately)
-training/     MedQA and BLIP fine-tuning pipelines (Colab / vast.ai)
-scripts/      dev, preview, smoke, provider probe
-docs/         deployment, providers, costs
-```
+**Privacy on `/scene`:** camera frames are never uploaded. Detection runs
+locally. Only sampled keyframes are sent for captioning, and only while
+narration is switched on.
 
 ---
 
-## Running it
+## Tech stack
+
+| Layer | Tools |
+|---|---|
+| Frontend | React 19, Vite, TypeScript, Tailwind, GSAP, Lenis |
+| Backend | Node 22, Express |
+| In-browser ML | ONNX Runtime Web (YOLOv8n-seg) |
+| Models | Groq (text), OpenRouter (text fallback), NVIDIA NIM (vision), ElevenLabs (voice) |
+| Storage | Supabase (chat history, saved scenes) |
+| Optional service | FastAPI + BLIP captioning (`scene-api/`) |
+| Hosting | Docker image on Google Cloud Run (a Render blueprint is also included) |
+
+---
+
+## Quick start
+
+**Requirements:** Node 22, npm, and [Git LFS](https://git-lfs.com) (the demo
+videos are stored in LFS).
 
 ```bash
-cp backend/.env.example backend/.env     # add one API key
+git lfs install && git lfs pull          # fetch the demo videos
+cp backend/.env.example backend/.env     # then add at least one API key
 (cd app && npm ci) && (cd backend && npm ci)
+```
 
-scripts/dev.sh up          # Vite :3000 + Express :3001, /api proxied
+Start the dev servers (Vite on `:3000`, Express on `:3001`, `/api` proxied):
+
+```bash
+scripts/dev.sh up
+```
+
+Stop them:
+
+```bash
 scripts/dev.sh down
 ```
 
-To reproduce the production topology locally — single origin, built assets,
-SPA fallback — which is where deployment-only bugs actually show up:
+Run the production setup locally (one origin, built assets). This is where
+deployment-only bugs show up:
 
 ```bash
-scripts/preview.sh         # → http://localhost:3001
+scripts/preview.sh       # → http://localhost:3001
 ```
 
-Verify a deployment, local or live:
+Check a running deployment, local or live:
 
 ```bash
-node scripts/smoke.js                            # localhost
-node scripts/smoke.js https://your.onrender.com  # production
+node scripts/smoke.js                           # localhost
+node scripts/smoke.js https://www.sohampatel.dev
 ```
 
-`smoke.js` exits with the number of failed checks, so it drops into CI unchanged.
-Checks for optional services (BLIP, MedQA) report `skip` rather than failing — a
-free-tier deploy without them is a valid deploy.
+`smoke.js` exits with the number of failed checks, so it works in CI as is.
+Optional services (BLIP, MedQA) report `skip` instead of failing.
 
-### Git LFS is required
+> **Without Git LFS** the videos are 130-byte text pointers and the video demos
+> play nothing. The build checks for this and fails loudly.
 
-The demo videos are stored in Git LFS. Without it, `git clone` gives you
-130-byte text pointers and the video demos play nothing:
+---
 
-```bash
-git lfs install && git lfs pull
+## Project layout
+
+```
+app/          React frontend, organised by feature: src/features/<feature>/
+backend/      Express API: config / middleware / services / routes
+scene-api/    FastAPI + BLIP captioning service (optional, deployed separately)
+training/     MedQA and BLIP fine-tuning pipelines (Colab / vast.ai)
+scripts/      dev, preview, smoke test, provider probe
+docs/         deployment, providers, costs
+nexus/        A separate project developed here for now; see nexus/README.md
 ```
 
-The Render build fails loudly on unfetched pointers rather than shipping a
-portfolio whose demos are broken.
+---
+
+## How it fits together
+
+One Node process serves both the built frontend and the API. One origin means
+no CORS setup, no preflight latency and no split deploy to keep in sync.
+
+```
+visitor ──► Express (one container)
+              ├── /api/chat     ─┐
+              ├── /api/scene    ─┼─► LLM transport ──► Groq        (text)
+              ├── /api/medqa    ─┘                 ──► OpenRouter  (text fallback)
+              ├── /api/tts                         ──► NVIDIA NIM  (vision)
+              ├── /api/notes
+              ├── /api/contact
+              └── static app/dist + SPA fallback
+                        │ optional
+                        ▼
+              scene-api (FastAPI + BLIP captioning)
+```
+
+Every model call goes through one transport,
+[`backend/src/services/llm.js`](backend/src/services/llm.js), which speaks the
+OpenAI wire format. There is no vendor SDK in the repo, so switching providers
+is a config change, not a code change.
 
 ---
 
 ## Model providers
 
-The assistant needs one OpenAI-compatible endpoint. Set two variables:
+The assistant needs one OpenAI-compatible endpoint. Two variables are enough:
 
 ```bash
 LLM_PROVIDER=groq
 GROQ_API_KEY=gsk_...
 ```
 
-`LLM_PROVIDER` indexes a small registry (`backend/src/config/providers.js`)
-that supplies the base URL and a model id, so only the key is a secret and the
-Render dashboard holds a provider *name* rather than a URL that goes stale.
-Explicit `LLM_API_BASE` / `LLM_MODEL` always override the preset — point it at
-a self-hosted vLLM or a local Ollama and the registry steps out of the way.
+- `LLM_PROVIDER` picks a preset from
+  [`backend/src/config/providers.js`](backend/src/config/providers.js), which
+  supplies the base URL and model id. Only the key is a secret.
+- `LLM_API_BASE` and `LLM_MODEL` override the preset, for example to point at a
+  self-hosted vLLM or a local Ollama.
 
-Free tiers churn constantly. Before trusting any model id:
+Free tiers change often. Check which model ids still answer before relying on
+them:
 
 ```bash
 scripts/probe-providers.sh
 ```
 
-See [docs/PROVIDERS.md](docs/PROVIDERS.md) for measured latencies and the
-specific failure modes each provider has already caused here.
+Measured latencies and known failure modes are in
+[docs/PROVIDERS.md](docs/PROVIDERS.md).
 
 ---
 
 ## Deploying
 
-Render Blueprint, checked in as `render.yaml`. See
+**Google Cloud Run (live).** [`cloudbuild.yaml`](cloudbuild.yaml) builds one
+image from [`backend/Dockerfile`](backend/Dockerfile) (frontend + API) and
+pushes it to Artifact Registry in `europe-west1`. API keys come from Secret
+Manager and are never set as plain environment variables. The exact deploy
+command is in the header of `cloudbuild.yaml`.
+
+**Render (alternative).** [`render.yaml`](render.yaml) is a Render Blueprint
+for a single web service. Step-by-step setup is in
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
 
-## Documentation
+## Further documentation
 
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Render setup, environment, failure modes
-- [docs/PROVIDERS.md](docs/PROVIDERS.md) — free-tier model providers, measured
-- [docs/SCENE_API.md](docs/SCENE_API.md) — hosting the BLIP captioning service on a GPU
-- [docs/COSTS.md](docs/COSTS.md) — what each piece costs at each tier
+| Document | Covers |
+|---|---|
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Setup, environment variables, failure triage |
+| [docs/PROVIDERS.md](docs/PROVIDERS.md) | Free-tier model providers, measured |
+| [docs/SCENE_API.md](docs/SCENE_API.md) | Hosting the BLIP captioning service on a GPU |
+| [docs/COSTS.md](docs/COSTS.md) | What each piece costs at each tier |

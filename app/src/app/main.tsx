@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { lenis } from '@/shared/lib/lenis'
 import { applyPalette, readStoredPalette } from '@/shared/lib/palettes'
+import { applyPerfMode } from '@/shared/lib/perf'
 import './index.css'
 import App from './App.tsx'
 
@@ -28,6 +29,7 @@ document.addEventListener('click', (e) => {
    then overrode with inline custom properties — two theming mechanisms
    fighting over the same tokens. Only the palette system remains.) */
 applyPalette(readStoredPalette())
+applyPerfMode()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -24,7 +24,9 @@ export default function BottomBar() {
   const current = CHAPTERS[chapter];
 
   return (
-    <div className="story-bottom pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-[var(--gutter)] pb-4">
+    /* On phones the strip around the capsule catches taps too: a thumb that
+       lands just off a button must not fall through to the card link under it. */
+    <div className="story-bottom pointer-events-auto fixed inset-x-0 bottom-0 z-[60] flex justify-center px-[var(--gutter)] pb-4 pt-2 sm:pointer-events-none sm:pt-0">
       <div className="lg-pill lg-chrome pointer-events-auto flex h-12 max-w-full items-center gap-1 pl-4 pr-1.5">
         <div className="flex min-w-0 items-center gap-3 pr-2" aria-live="polite">
           <span className="whitespace-nowrap text-[13px] font-medium text-fg">{current.label}</span>
@@ -40,7 +42,7 @@ export default function BottomBar() {
 
         <button
           type="button"
-          className="glass-ai-btn !h-8 !px-3"
+          className="glass-ai-btn !h-10 !px-3.5 sm:!h-8 sm:!px-3"
           onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
           aria-label="Ask Nexus about my work"
         >

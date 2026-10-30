@@ -256,8 +256,48 @@ html[data-style="editorial"] .story::before {
   will-change: transform;
   filter: drop-shadow(0 18px 40px rgba(37, 99, 235, .25));
 }
-html[data-perf="low"] .glass-ball[data-far] { display: none; }
-html[data-style="editorial"] .glass-balls { opacity: .5; }
+/* The balls drift behind the text, so their bright rim arcs must never win
+   against it: the layer is kept faint, and text in the themes that show balls
+   carries a soft halo in the page colour that knocks back an arc behind it. */
+.glass-balls { opacity: .42; }
+html[data-theme="light"] .glass-balls,
+html[data-style="editorial"] .glass-balls { opacity: .3; }
+html:not([data-style="slate"]):not([data-style="liquid"]) .story .panel {
+  text-shadow: 0 0 14px var(--bg), 0 0 4px var(--bg);
+}
+/* One reading width for every chapter: headings, lists, grids and timelines
+   share the same centred column, so edges line up from section to section. */
+.story .measure {
+  width: 100%;
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* The halo is only for text on the page ground. Anything with its own fill
+   (buttons, pills, cards, badges) would smear a page-coloured blur over that
+   fill, so the inherited shadow stops there. */
+.story .panel :is(button, a, .lg-pill, .lg-panel, .btn-ink, .glass-ai-btn, [class*="rounded-full"], [class*="bg-"]) {
+  text-shadow: none;
+}
+
+/* ---------------- low-power mode ----------------
+   html[data-perf="low"] is set on phones and modest hardware (shared/lib/perf.ts).
+   Everything here is a per-frame or per-tile cost on a phone GPU: backdrop
+   blur re-sampled under the fixed bars on every scroll frame, blurred drop
+   shadows, the glass balls and the text halo that exists only to separate
+   text from them. Without blur, the chrome gets a near-opaque fill so text
+   on it stays legible. */
+html[data-perf="low"] .glass-ball { display: none; }
+html[data-perf="low"] .story .panel { text-shadow: none; }
+html[data-perf="low"] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-perf="low"] :is(.lg-chrome, .glass-ai-btn) {
+  background: var(--bg2) !important;
+}
+html[data-perf="low"] .glass-ai-orb-wrap::before { animation: none; }
 
 /* Liquid swaps the balls for the drifting ribbon ground (see GlassBalls). */
 .ground-drift { display: none; }
@@ -361,10 +401,11 @@ html[data-style="liquid"] .glass-ball { display: none; }
     color-mix(in oklab, var(--bg2) 40%, transparent) 100%
   );
   border: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+  /* Kept soft: a bright inset ring read as a glare line around the edge. */
   box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
-    0 4px 16px -2px rgba(47, 91, 234, 0.12);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 4px 16px -2px rgba(47, 91, 234, 0.10);
   -webkit-backdrop-filter: blur(18px) saturate(180%);
   backdrop-filter: blur(18px) saturate(180%);
   cursor: pointer;
@@ -384,8 +425,8 @@ html[data-style="liquid"] .glass-ball { display: none; }
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.35) 0%,
-    rgba(255, 255, 255, 0.05) 45%,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.02) 45%,
     transparent 100%
   );
   pointer-events: none;
@@ -402,7 +443,7 @@ html[data-style="liquid"] .glass-ball { display: none; }
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.10),
     transparent
   );
   transform: skewX(-20deg);
@@ -415,10 +456,10 @@ html[data-style="liquid"] .glass-ball { display: none; }
   transform: translateY(-1.5px);
   border-color: color-mix(in oklab, var(--p) 45%, transparent);
   box-shadow:
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.6),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 8px 24px -4px rgba(47, 91, 234, 0.26),
-    0 0 12px 1px rgba(112, 72, 255, 0.16);
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 8px 24px -4px rgba(47, 91, 234, 0.20),
+    0 0 10px 0 rgba(112, 72, 255, 0.10);
 }
 
 .glass-ai-btn:hover::after {
@@ -753,6 +794,13 @@ html[data-style="liquid"] :is(a, button):is(.lg-panel, .lg-pill):hover {
     inset 0 0 26px rgba(190, 200, 255, .1),
     0 22px 46px -24px rgba(2, 4, 40, .6);
 }
+/* The Nexus button keeps the glass but not the bright rim the panels have. */
+html[data-style="liquid"] .glass-ai-btn {
+  box-shadow:
+    inset 1px 1px 2px -1px rgba(255, 255, 255, .22),
+    inset -1px -1px 2px -1px rgba(210, 215, 255, .14),
+    0 14px 30px -22px rgba(2, 4, 40, .5);
+}
 html[data-style="liquid"] .lg-btn { background: rgba(255, 255, 255, .08); }
 html[data-style="liquid"] .lg-btn:hover { background: rgba(255, 255, 255, .14); }
 html[data-style="liquid"] .composer { background: rgba(255, 255, 255, .06); }
@@ -809,6 +857,9 @@ html[data-style="slate"] :is(.lg-pill, .glass-ai-btn)::before {
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   pointer-events: none;
+}
+html[data-style="slate"] .glass-ai-btn::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .12) 35%, rgba(255, 255, 255, .12) 65%, rgba(255, 255, 255, .38));
 }
 html[data-style="slate"] .lg-pill::after {
   background: radial-gradient(60% 45% at 50% 100%, rgba(240, 244, 247, .22), transparent 75%);

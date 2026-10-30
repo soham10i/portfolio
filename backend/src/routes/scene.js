@@ -16,10 +16,13 @@ const sceneStore = require('../services/sceneStore');
 const prompt = require('../services/scenePrompt');
 const multer = require('multer');
 
-/* Bounded on purpose: the previous config accepted a file of any size into
-   /tmp on an instance with an ephemeral disk and no cleanup on the error
-   path, which is a slow disk-fill waiting to happen. */
-const upload = multer({ dest: '/tmp/', limits: { fileSize: 80 * 1024 * 1024, files: 1 } });
+/* Bounded on purpose. On Cloud Run /tmp is backed by the instance's memory,
+   so the file size cap is also a memory cap. Only video is accepted. */
+const upload = multer({
+  dest: '/tmp/',
+  limits: { fileSize: 40 * 1024 * 1024, files: 1, fields: 4 },
+  fileFilter: (req, file, cb) => cb(null, /^video\//.test(file.mimetype)),
+});
 const router = express.Router();
 const limit = createLimiter({
   ...config.limits.scene,
@@ -343,36 +346,61 @@ router.post('/ask/stream', limit, async (req, res) => {
   }
 });
 
-router.post('/interpolate', upload.single('file'), async (req, res) => {
+/* Interpolation proxies a whole video to the FastAPI service, so it is the
+   most expensive request this server accepts. Everything that can reject a
+   request runs before multer touches the disk: the service must be configured
+   and the visitor must have budget left. The upload itself is capped and the
+   temporary file is removed on every path, success or failure. */
+const interpolateLimit = createLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: 'Interpolation limit reached (5 videos per 10 minutes). Try again later.',
+});
+
+function requireSceneApi(req, res, next) {
   if (!config.scene.baseUrl) {
     return res.status(503).json({ error: 'Backend API is not configured (missing SCENE_API_BASE)' });
   }
+  next();
+}
+
+function receiveVideo(req, res, next) {
+  upload.single('file')(req, res, (err) => {
+    if (!err) return next();
+    const tooBig = err.code === 'LIMIT_FILE_SIZE';
+    res.status(tooBig ? 413 : 400).json({ error: tooBig ? 'Video is larger than 40 MB.' : 'Upload rejected.' });
+  });
+}
+
+router.post('/interpolate', interpolateLimit, requireSceneApi, receiveVideo, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No video file provided' });
   }
 
+  const fs = require('fs');
+  let fileBytes;
   try {
-    const fs = require('fs');
+    fileBytes = await fs.promises.readFile(req.file.path);
+  } finally {
+    fs.promises.unlink(req.file.path).catch(() => {});
+  }
+
+  try {
     const form = new FormData();
-    // Wrap file in a Blob for fetch
-    const fileBytes = fs.readFileSync(req.file.path);
     form.append('file', new Blob([fileBytes], { type: req.file.mimetype }), req.file.originalname);
-    
-    // Clean up tmp file
-    fs.unlinkSync(req.file.path);
 
     const r = await fetch(`${config.scene.baseUrl}/interpolate`, {
       method: 'POST',
       body: form,
+      signal: AbortSignal.timeout(config.scene.timeoutMs),
     });
-    
+
     if (!r.ok) {
-      const errText = await r.text();
-      return res.status(r.status).json({ error: `Interpolation failed: ${errText}` });
+      console.error('interpolate upstream:', r.status, (await r.text()).slice(0, 300));
+      return res.status(502).json({ error: 'Interpolation failed upstream.' });
     }
 
     res.set('Content-Type', r.headers.get('content-type') || 'video/mp4');
-    // Pipe the response stream back to the client
     const Readable = require('stream').Readable;
     if (r.body) {
       Readable.fromWeb(r.body).pipe(res);
@@ -380,7 +408,9 @@ router.post('/interpolate', upload.single('file'), async (req, res) => {
       res.end();
     }
   } catch (error) {
-    res.status(500).json({ error: `Interpolation proxy error: ${error.message}` });
+    console.error('interpolate proxy:', error.message);
+    const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+    if (!res.headersSent) res.status(timedOut ? 504 : 500).json({ error: 'Interpolation proxy error.' });
   }
 });
 

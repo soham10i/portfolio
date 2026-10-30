@@ -57,15 +57,15 @@ export const PROJECTS: Project[] = [
     liveUrl: STF_LIVE_URL,
     image: '/media/work/stf-live.jpg',
     tint: '#4d8dff',
-    description: 'A digital twin of the fischertechnik 536634 training factory, built in three versions. v1 streamed the cell\'s sensors over MQTT into InfluxDB with a failure predictor on top. v2 drew the cell in the browser and drove it from the real PLC process image. v3 simulates all four stations in MuJoCo from the manufacturer\'s PLC step tables, timer values and datasheets, and checks the simulation against the controller.',
+    description: 'A digital twin of the fischertechnik 536634 training factory, built in three versions. v1 streamed the cell\'s sensors over MQTT into InfluxDB with a failure predictor on top. v2 drew the cell in the browser and drove it from the real PLC process image. v3 simulates all four stations in Python from the manufacturer\'s PLC step tables, timer values and datasheets, and checks the simulation against the controller.',
     impact: '56/56 checks passed · 85% failure-prediction accuracy',
-    tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MQTT', 'InfluxDB', 'Streamlit'],
+    tech: ['Python', 'Siemens SCL', 'MQTT', 'InfluxDB', 'Streamlit'],
     versions: [
       {
         key: 'v3', label: 'v3.0',
-        desc: 'Rigid-body simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays.',
+        desc: 'Python simulation of all four stations of the fischertechnik 536634 cell, built from the controller rather than from a photograph: the manufacturer\'s own PLC step tables, TON timer literals, and component datasheets. The suction gripper has no soft limits in the PLC, so its three pulse-to-metre scales were solved from the sorting line\'s three collinear bays.',
         impact: '56/56 checks passed · 1.2 mm RMS prediction',
-        tech: ['MuJoCo', 'Python', 'Siemens SCL', 'MJCF', 'NumPy'],
+        tech: ['Python', 'Siemens SCL', 'NumPy'],
       },
       {
         key: 'v2', label: 'v2.0',
@@ -196,55 +196,155 @@ export interface Experience {
   period: string; type: string; role: string; company: string; location: string;
   /** One sentence of context: what the role was for, and at what scale. */
   description: string;
-  /** What was actually delivered. Each line states an action and its result —
-      a recruiter should be able to read only these and know what to ask about. */
-  highlights: string[];
+  /** The situation the role stepped into — why the work mattered. */
+  context: string;
+  /** What was actually delivered, each task in detail: what was built and how.
+      A recruiter should be able to read only the titles and know what to ask about. */
+  tasks: { title: string; detail: string }[];
+  /** The constraint that shaped the work — what made it hard. */
+  tension: string;
+  /** The numbers the role moved. Only figures stated elsewhere on the site. */
+  outcomes: { value: string; label: string }[];
+  /** What carried into later work. */
+  thread: string;
   technologies: string[];
 }
 
+/* Every fact below is also in backend/src/prompts/systemPrompt.js; the prose
+   around the facts explains the technology, it does not add results.
+   TODO(Soham): details that would strengthen these stories if you want to add
+   them — the Azure services behind the Altera pipelines (e.g. Data Factory,
+   Functions, SQL), what the 30% / 25% were measured against, team sizes, and
+   the name of the settlement approach at Promact. */
 export const EXPERIENCES: Experience[] = [
   {
     period: 'Mar 2025 – Aug 2025', type: 'Part-time', role: 'Teaching Assistant — Decision Modelling & Data Analysis',
     company: 'OTH Amberg-Weiden', location: 'Weiden, Germany',
-    description: 'Ran lab sessions for the data-analysis part of a Master\u2019s module with 30 students.',
-    highlights: [
-      'Taught SQL, statistical modelling and supervised learning in weekly labs.',
-      'Built the KNIME workflows used as reference solutions.',
-      'Held office hours and reviewed student work.',
+    description: 'Ran lab sessions for the data-analysis part of a Master’s module with 30 students.',
+    context:
+      'My first role in Germany, alongside graduate AI coursework at the same university. Decision Modelling & Data Analysis is a Master’s module; I ran its data-analysis half — the weekly labs where 30 students turned the lecture material into working analyses.',
+    tasks: [
+      {
+        title: 'Weekly labs from query to prediction',
+        detail:
+          'The labs covered one chain of skills: SQL to pull and shape raw tables, statistical modelling to describe what the data shows, and supervised learning to predict from it — so each session built on the output of the last.',
+      },
+      {
+        title: 'KNIME reference workflows',
+        detail:
+          'KNIME builds an analysis as a visual graph of nodes: read, filter, join, train, score. I built the workflows used as the reference solutions, so every exercise had a working pipeline students could compare theirs against, step by step.',
+      },
+      {
+        title: 'Office hours and reviews',
+        detail:
+          'Held office hours and reviewed student work — tracing where an analysis went wrong in someone else’s pipeline, which is the same debugging habit production work needs.',
+      },
     ],
+    tension:
+      'A reference solution has to be more than correct: every node in it has to be explainable to a room of 30 people who will copy its structure.',
+    outcomes: [
+      { value: '30', label: 'Master’s students in weekly labs' },
+    ],
+    thread: 'Ran alongside the graduate AI programme that produced the robotics and simulation projects on this site.',
     technologies: ['SQL', 'Machine Learning', 'KNIME', 'Python', 'Statistics'],
   },
   {
     period: 'Feb 2023 – Feb 2024', type: 'Full-time', role: 'Software Engineer — Data Systems',
     company: 'Altera Digital Health', location: 'Remote / Pune, India',
     description: 'Backend data pipelines for a clinical software platform.',
-    highlights: [
-      'Built ETL pipelines on Azure for healthcare audit logs; data retrieval became about 30% faster.',
-      'Implemented the encryption, access logging and retention rules required for health data.',
-      'Refactored older C#/.NET services and added pytest checks that run before each deployment.',
+    context:
+      'A clinical software platform keeps audit logs: the record of who accessed which data, and when. In healthcare those logs are evidence and sensitive data at the same time — they have to be quick to search when someone needs answers, and locked down the rest of the time.',
+    tasks: [
+      {
+        title: 'ETL pipelines on Azure',
+        detail:
+          'Built the pipelines that extract the platform’s audit-log data, transform it into a shape that can be queried efficiently, and load it into storage on Azure. Retrieval of that data became about 30% faster.',
+      },
+      {
+        title: 'Compliance built into the data path',
+        detail:
+          'Implemented the encryption, access logging and retention rules required for health data: records are encrypted, every access to them leaves its own trace, and data is kept and removed on the schedule the rules set.',
+      },
+      {
+        title: 'Refactoring older C#/.NET services',
+        detail:
+          'Refactored older C#/.NET services in the platform’s backend, making existing code easier to change safely before building on it.',
+      },
+      {
+        title: 'Tests that gate every deployment',
+        detail:
+          'Added pytest checks that run in the CI/CD pipeline before each deployment, so a change that breaks something is stopped before it ships rather than found after.',
+      },
     ],
+    tension:
+      'Speed and compliance pull in opposite directions: encryption and access logging add work to every read. Retrieval had to get faster without loosening any of the rules.',
+    outcomes: [
+      { value: '~30%', label: 'Faster data retrieval' },
+    ],
+    thread: 'Testing before shipping stayed: the localisation package and the MedQA modules on this site are tested the same way.',
     technologies: ['C#', '.NET', 'Azure', 'ETL', 'CI/CD', 'pytest', 'SQL'],
   },
   {
     period: 'Aug 2022 – Jan 2023', type: 'Full-time', role: 'Python Backend Engineer',
     company: 'Electrum IT Solutions', location: 'Vadodara, India',
     description: 'REST APIs for a payments platform.',
-    highlights: [
-      'Built FastAPI and Django services handling about 2,000 transactions a day.',
-      'Added JWT authentication and role-based access control.',
-      'Added central logging for failed payments, which made debugging about 25% faster.',
+    context:
+      'A payments platform handling about 2,000 transactions a day. In payments every request moves money, so an API has to know who is calling, what they are allowed to do, and — when a payment fails — exactly why.',
+    tasks: [
+      {
+        title: 'FastAPI and Django services',
+        detail:
+          'Built REST services in FastAPI and Django for the platform’s transaction traffic, about 2,000 transactions a day, backed by PostgreSQL.',
+      },
+      {
+        title: 'JWT authentication and role-based access',
+        detail:
+          'Added JWT authentication and role-based access control. A signed token proves who the caller is on every request without a server-side session lookup; their role then decides which endpoints they can reach.',
+      },
+      {
+        title: 'Central logging for failed payments',
+        detail:
+          'Brought the logs for failed payments into one central place, so a failure can be traced from a single view instead of pieced together. Debugging became about 25% faster.',
+      },
     ],
+    tension:
+      'Authentication runs on every call, so it has to be strict and cheap at once — the trade-off stateless, signed tokens are designed for.',
+    outcomes: [
+      { value: '~2,000', label: 'Transactions a day' },
+      { value: '~25%', label: 'Faster debugging of failed payments' },
+    ],
+    thread: 'JWT auth and role checks came back in the Smart Home sensor API and the CO₂ tracker.',
     technologies: ['Python', 'FastAPI', 'Django', 'JWT', 'REST', 'PostgreSQL'],
   },
   {
     period: 'Dec 2021 – Apr 2022', type: 'Internship', role: 'Full Stack Engineering Intern',
     company: 'Promact Infotech Pvt. Ltd.', location: 'Vadodara, India',
     description: 'A full-stack expense-sharing app.',
-    highlights: [
-      'Built the app with Angular, ASP.NET Core and MSSQL, including login and live updates over WebSocket.',
-      'Wrote a graph-based algorithm that reduces the payments needed to settle a group (up to 33% fewer).',
-      'Worked in two-week sprints with code review.',
+    context:
+      'Where it started: a full-stack expense-sharing app, built in two-week sprints with code review. Recording who paid for what is the easy part. The interesting problem is settling up.',
+    tasks: [
+      {
+        title: 'Full stack, end to end',
+        detail:
+          'Built the app across all three layers: an Angular front end, an ASP.NET Core API and an MSSQL database, with login secured by JWT.',
+      },
+      {
+        title: 'Live updates over WebSocket',
+        detail:
+          'When one member adds an expense, the others see balances change without refreshing: the server pushes the update over a WebSocket connection.',
+      },
+      {
+        title: 'A graph-based settlement algorithm',
+        detail:
+          'A group’s debts form a directed graph: people as nodes, who-owes-whom as weighted edges. I wrote an algorithm that simplifies that graph so the group settles with fewer transfers — up to 33% fewer payments.',
+      },
     ],
+    tension:
+      'A simplified settlement still has to be exactly right: everyone must end up square, with fewer payments than before and none of them wrong.',
+    outcomes: [
+      { value: 'Up to 33%', label: 'Fewer payments to settle a group' },
+    ],
+    thread: 'Graph search returned later as A* path planning in the SLAM robot.',
     technologies: ['Angular', 'ASP.NET Core', 'MSSQL', 'JWT', 'WebSocket'],
   },
 ];
@@ -266,8 +366,8 @@ export const DOMAINS: Domain[] = [
   },
   {
     no: '03', title: 'Modelling & simulation',
-    claim: 'A MuJoCo model of a factory cell built from its PLC code and checked against it. Anomaly detection on wind-turbine sensor data.',
-    items: ['MuJoCo', 'Siemens SCL', 'MQTT', 'OPC-UA', 'XGBoost', 'Three.js'],
+    claim: 'A simulation of a factory cell built from its PLC code and checked against it. Anomaly detection on wind-turbine sensor data.',
+    items: ['Python', 'Siemens SCL', 'MQTT', 'OPC-UA', 'XGBoost', 'Three.js'],
     proof: ['Smart Tabletop Factory', 'Wind-turbine PdM'],
   },
   {
@@ -278,38 +378,46 @@ export const DOMAINS: Domain[] = [
   },
 ];
 
-export const EDUCATION = [
+/* Plain and technical: what each programme covered. The graduate AI
+   coursework lists its subjects rather than its grades. */
+export const EDUCATION: { period: string; degree: string; institution: string; location: string; grade?: string; focus: string; points?: string[] }[] = [
   {
     period: 'Current',
     degree: 'M.Sc. Computer Engineering',
     institution: 'Paderborn University',
     location: 'Paderborn, Germany',
     grade: 'In progress',
-    focus: 'Focus on robotics, embedded systems and the software that connects sensing to action.',
+    focus:
+      'Robotics and embedded systems: state estimation, perception, planning and control. ' +
+      'AI hardware: accelerators for inference and digital chip design.',
   },
   {
     period: 'Oct 2024 – Aug 2026',
     degree: 'Graduate Coursework — Artificial Intelligence for Industrial Applications',
     institution: 'Ostbayerische Technische Hochschule Amberg-Weiden',
     location: 'Amberg, Germany',
-    grade: '45 ECTS · GPA 2.0',
-    focus: 'Digital twins and Industry 4.0, computer vision, generative models, autonomous systems. Coursework is project-led: the tabletop-factory twin, the Webots SLAM robot and the diffusion work on this site are all outputs of it.',
+    focus: 'Projects from this coursework: the tabletop-factory digital twin, the Webots SLAM robot, the diffusion-based MRI segmentation.',
+    points: [
+      'Deep learning and advanced learning algorithms',
+      'Computer vision; generative and diffusion models',
+      'Digital twins and Industry 4.0; autonomous systems; embedded intelligence',
+      'AI Conference 2025 talk: 3D shape-to-image Brownian bridge diffusion (Cor2Vox)',
+    ],
   },
   {
     period: '2020 – 2022',
     degree: 'M.Sc. Information Technology',
     institution: 'Charutar Vidya Mandal University',
     location: 'Gujarat, India',
-    grade: 'Gold Medalist · Rank 1 of cohort · 9.55/10',
-    focus: 'Software engineering, databases and distributed systems; thesis in applied machine learning.',
+    grade: 'Rank 1 of cohort · gold medal',
+    focus: 'Software engineering, databases, distributed systems. Thesis in applied machine learning.',
   },
   {
     period: '2017 – 2020',
     degree: 'B.Sc. Computer Science',
     institution: 'Sardar Patel University',
     location: 'Gujarat, India',
-    grade: '8.5/10',
-    focus: 'Foundations — algorithms and data structures, operating systems, networks, and the first serious programming.',
+    focus: 'Algorithms and data structures, operating systems, computer networks, programming.',
   },
 ];
 
@@ -318,13 +426,6 @@ export const LANGUAGES = [
   { name: 'German', level: 'A2 · in active study toward B1, living in Germany' },
   { name: 'Gujarati', level: 'Native' },
   { name: 'Hindi', level: 'Fluent' },
-];
-
-export const HERO_STATS = [
-  { value: '2.5 years', label: 'Industry experience' },
-  { value: '4', label: 'Roles in software teams' },
-  { value: '9', label: 'Projects with write-ups' },
-  { value: 'Now', label: 'Available' },
 ];
 
 export const HERO_TAGS = ['Python', 'FastAPI', 'Docker', 'PyTorch', 'MQTT', 'Azure', 'Three.js'];

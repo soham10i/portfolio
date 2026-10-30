@@ -56,7 +56,7 @@ function WorkCard({ p, i, total, seen, onOpen }: { p: Project; i: number; total:
   );
 }
 
-/* 04 — Work. Project cards: a real screenshot or replay when there is one,
+/* 03 — Work. Project cards: a real screenshot or replay when there is one,
    generative cover art otherwise, tilting toward the pointer. */
 export default function Work() {
   const collected = useStory((s) => s.collected);
@@ -67,19 +67,19 @@ export default function Work() {
     <section id="work" data-anchor-offset="0" className="chapter panel relative px-[var(--gutter)]">
       <SectionHead label="Selected work" aside={`${collected.length} / ${PROJECTS.length} explored`} />
 
-      <div className="mb-[clamp(24px,4vh,44px)] flex flex-wrap items-end justify-between gap-6">
+      <div className="mb-[clamp(24px,4vh,44px)] flex flex-col items-center gap-4 text-center">
         <h2
           data-reveal
-          className="max-w-[14ch] t-h2"
+          className="max-w-[18ch] t-h2"
         >
           Nine projects, <span className="serif text-s">eight with public code.</span>
         </h2>
-        <p data-reveal className="t-body max-w-[42ch]">
+        <p data-reveal className="t-body max-w-[56ch]">
           Each card opens a short write-up: the problem, what I built, how I measured it and what did not work.
         </p>
       </div>
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="measure grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PROJECTS.map((p, i) => (
           <li key={p.id} data-reveal={(i % 3) * 0.08}>
             <WorkCard p={p} i={i} total={total} seen={collected.includes(p.id)} onOpen={() => collect(p.id)} />

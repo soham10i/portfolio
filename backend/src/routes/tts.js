@@ -83,7 +83,6 @@ function cleanForTTS(text) {
   s = s.replace(/\bRMSE\b/g, 'R M S E');
   s = s.replace(/\bA\*(?!\w)/g, 'A star');
   s = s.replace(/\bYOLOv8\b/gi, 'YOLO version 8');
-  s = s.replace(/\bMuJoCo\b/gi, 'Moo-joh-co');
   s = s.replace(/\bdSPACE\b/gi, 'D-space');
   s = s.replace(/\bfischertechnik\b/gi, 'Fisher-technik');
   s = s.replace(/\bPLC\b/g, 'P L C');

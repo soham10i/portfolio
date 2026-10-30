@@ -204,7 +204,6 @@ export function speakable(text: string): string {
   s = s.replace(/\bRMSE\b/g, 'R M S E');
   s = s.replace(/\bA\*(?!\w)/g, 'A star');
   s = s.replace(/\bYOLOv8\b/gi, 'YOLO version 8');
-  s = s.replace(/\bMuJoCo\b/gi, 'Moo-joh-co');
   s = s.replace(/\bdSPACE\b/gi, 'D-space');
   s = s.replace(/\bfischertechnik\b/gi, 'Fisher-technik');
   s = s.replace(/\bPLC\b/g, 'P L C');
@@ -402,30 +401,24 @@ export function createCloudSpeaker(opts: SpeakerOptions & { apiBase: string }): 
   let cloudDead = false;
   let audio: HTMLAudioElement | null = null;
 
-  const prefetchAudio = (text: string): Promise<HTMLAudioElement> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const spoken = speakable(text);
-        if (!spoken) return reject(new Error('Empty text'));
+  const prefetchAudio = async (text: string): Promise<HTMLAudioElement> => {
+    const spoken = speakable(text);
+    if (!spoken) throw new Error('Empty text');
 
-        const r = await fetch(`${opts.apiBase}/tts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: spoken }),
-        });
-        if (!r.ok) throw new Error(`tts ${r.status}`);
-
-        const blob = await r.blob();
-        if (cancelled) return reject(new Error('Cancelled'));
-
-        const url = URL.createObjectURL(blob);
-        const el = new Audio(url);
-        el.preload = 'auto';
-        resolve(el);
-      } catch (err) {
-        reject(err);
-      }
+    const r = await fetch(`${opts.apiBase}/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: spoken }),
     });
+    if (!r.ok) throw new Error(`tts ${r.status}`);
+
+    const blob = await r.blob();
+    if (cancelled) throw new Error('Cancelled');
+
+    const url = URL.createObjectURL(blob);
+    const el = new Audio(url);
+    el.preload = 'auto';
+    return el;
   };
 
   const finishIfDrained = () => {

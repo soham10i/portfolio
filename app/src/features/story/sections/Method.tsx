@@ -10,7 +10,7 @@ const STEPS = [
   {
     no: '02', title: 'Simulate',
     text: 'Make it run before making it look good. A model is useful once it predicts something you can check.',
-    proof: 'MuJoCo cell: 56/56 checks, 1.2 mm RMS prediction',
+    proof: 'STF simulation: 56/56 checks, 1.2 mm RMS prediction',
   },
   {
     no: '03', title: 'Deploy',
@@ -33,12 +33,12 @@ export default function Method() {
 
       <h2
         data-reveal
-        className="mb-[clamp(24px,4vh,44px)] max-w-[16ch] t-h2"
+        className="mx-auto mb-[clamp(24px,4vh,44px)] max-w-[16ch] text-center t-h2"
       >
         How I <span className="serif text-p">work.</span>
       </h2>
 
-      <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <ol className="measure grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {STEPS.map((s, i) => (
           <li key={s.no} data-reveal={i * 0.08} className="lg-panel flex flex-col justify-between gap-6 p-5 sm:p-6 xl:min-h-[300px]">
             <div>
