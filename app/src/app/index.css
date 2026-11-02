@@ -573,8 +573,9 @@ input[type='range'].twin-scrub::-moz-range-thumb {
   padding: 15px 17px;
   overflow-x: auto;
   line-height: 1.6;
+  color: var(--fg);
 }
-.note-prose pre code { background: none; border: 0; padding: 0; font-size: 13px; }
+.note-prose pre code { background: none; border: 0; padding: 0; font-size: 13px; color: inherit; }
 
 /* Tables carry the worked numbers, so they need to be scannable, not pretty. */
 .note-prose table {
@@ -584,6 +585,9 @@ input[type='range'].twin-scrub::-moz-range-thumb {
   font-size: 13px;
   display: block;
   overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surf);
 }
 .note-prose th, .note-prose td {
   border-bottom: 1px solid var(--line);
@@ -621,6 +625,7 @@ input[type='range'].twin-scrub::-moz-range-thumb {
   background: var(--surf);
   border: 1px solid var(--line);
   border-radius: 14px;
+  color: var(--fg);
 }
 .note-prose figure svg { display: block; width: 100%; height: auto; }
 .note-prose figcaption {
@@ -688,6 +693,7 @@ html { scroll-behavior: smooth; }
   border: 1px solid var(--line);
   background: var(--surf);
   font-size: .97em;
+  color: var(--fg);
 }
 .note-prose .thm { border-left: 3px solid color-mix(in oklab, var(--p) 70%, transparent); }
 .note-prose .defn { border-left: 3px solid color-mix(in oklab, var(--s) 60%, transparent); }

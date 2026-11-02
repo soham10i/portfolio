@@ -180,18 +180,25 @@ export default function NoteView() {
       )}
 
       {note && (
-        <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-12 px-6 pb-32 pt-16 lg:grid-cols-[minmax(0,1fr)_216px]">
-          <div className="mx-auto w-full max-w-[720px]">
-            <p className="font-mono text-[12px] uppercase tracking-[0.15em]" style={{ color: accent }}>
+        <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-4 sm:px-6 pb-32 pt-12 lg:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="lg-panel mx-auto w-full max-w-[780px] p-6 sm:p-10 md:p-12 shadow-[var(--glass-shadow)]">
+            <span
+              className="mono inline-flex items-center rounded-full px-3 py-1 !text-[12px] font-medium"
+              style={{
+                background: 'color-mix(in oklab, var(--p) 14%, transparent)',
+                color: 'var(--p)',
+                border: '1px solid color-mix(in oklab, var(--p) 25%, transparent)',
+              }}
+            >
               {note.topic}
-            </p>
-            <h1 className="mt-3 text-[34px] font-semibold leading-[1.14] tracking-[-0.03em] sm:text-[44px]">
+            </span>
+            <h1 className="mt-4 text-[30px] font-semibold leading-[1.16] tracking-[-0.03em] sm:text-[40px] text-fg">
               {note.title}
             </h1>
             {note.summary && (
-              <p className="mt-5 max-w-[62ch] text-[18px] leading-[1.68] text-fg2">{note.summary}</p>
+              <p className="mt-4 max-w-[62ch] text-[16px] sm:text-[17px] leading-[1.68] text-fg2 font-normal">{note.summary}</p>
             )}
-            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-6 font-mono text-[12px] uppercase tracking-[0.1em] text-fg3">
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[color:var(--line)] pb-6 font-mono text-[12px] uppercase tracking-[0.1em] text-fg3">
               <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{note.readingMinutes} min read</span>
               <span>{note.words.toLocaleString()} words</span>
               {note.tags.map((t) => <span key={t} className="normal-case tracking-normal">#{t}</span>)}
@@ -199,15 +206,15 @@ export default function NoteView() {
 
             {/* The note body is authored by the ADMIN_TOKEN holder and carries
                 inline SVG figures, so it is inserted as HTML on purpose. */}
-            <article ref={article} className="note-prose mt-10"
+            <article ref={article} className="note-prose mt-8"
               dangerouslySetInnerHTML={{ __html: html }} />
           </div>
 
           {headings.length > 2 && (
             <nav className="hidden lg:block">
-              <div className="sticky top-[96px]">
-                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-fg3">Contents</p>
-                <ul className="mt-3 space-y-1.5 border-l border-line">
+              <div className="sticky top-[96px] lg-panel p-5">
+                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-fg3 mb-3 font-semibold">Contents</p>
+                <ul className="space-y-1.5 border-l border-[color:var(--line)]">
                   {headings.map((h) => {
                     const on = active === h.id;
                     return (
@@ -217,7 +224,7 @@ export default function NoteView() {
                             e.preventDefault();
                             document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }}
-                          className={'-ml-px block border-l py-[3px] text-[13.5px] leading-snug transition-colors ' +
+                          className={'-ml-px block border-l py-[3px] text-[13px] leading-snug transition-colors ' +
                             (h.level === 3 ? 'pl-[18px] ' : 'pl-3 ') +
                             (on ? 'text-fg font-medium' : 'border-transparent text-fg3 hover:text-fg2')}
                           style={on ? { borderColor: accent } : undefined}>
