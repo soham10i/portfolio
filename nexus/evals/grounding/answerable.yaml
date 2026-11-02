@@ -1,0 +1,25 @@
+# P7 answerable suite: 20 questions the greenhouse corpus or the seeded memories answer.
+# Passing means answering, citing the expected source (when `ref` is given) and stating every
+# phrase; "a|b" accepts either. Synthetic, nothing private.
+suite: answerable
+cases:
+  - {id: a01, question: "What is the safe temperature range in the greenhouse?", ref: "greenhouse:knowledge/climate.md", phrases: ["12", "32"]}
+  - {id: a02, question: "What setpoint should the seedlings in zone 1 have?", phrases: ["22"]}
+  - {id: a03, question: "What temperature range do the tomatoes need?", ref: "greenhouse:knowledge/climate.md", phrases: ["18", "26"]}
+  - {id: a04, question: "By how much may a temperature setpoint change per hour?", ref: "greenhouse:knowledge/climate.md", phrases: ["3"]}
+  - {id: a05, question: "How long before sunset should the heater boost run when frost is expected?", ref: "greenhouse:knowledge/climate.md", phrases: ["30"]}
+  - {id: a06, question: "Below what outside temperature is frost expected?", ref: "greenhouse:knowledge/climate.md", phrases: ["2"]}
+  - {id: a07, question: "How many approvals does a heater boost need?", ref: "greenhouse:knowledge/climate.md", phrases: ["one|1"]}
+  - {id: a08, question: "How many hours a day are the grow lights on?", ref: "greenhouse:knowledge/lighting.md", phrases: ["16"]}
+  - {id: a09, question: "How many hours of light do the seedlings get?", ref: "greenhouse:knowledge/lighting.md", phrases: ["18"]}
+  - {id: a10, question: "What must be done with a zone's lights before night work?", ref: "greenhouse:knowledge/lighting.md", phrases: ["off"]}
+  - {id: a11, question: "How many hours are the LED panels rated for?", ref: "greenhouse:knowledge/lighting.md", phrases: ["50000|50,000|50 000"]}
+  - {id: a12, question: "Above what temperature should the roof vent open to 30 percent?", ref: "greenhouse:knowledge/ventilation.md", phrases: ["28"]}
+  - {id: a13, question: "At what wind speed should the roof vent be closed?", ref: "greenhouse:knowledge/ventilation.md", phrases: ["50"]}
+  - {id: a14, question: "What humidity range should the greenhouse keep?", ref: "greenhouse:knowledge/ventilation.md", phrases: ["60", "80"]}
+  - {id: a15, question: "How much water do the tomatoes get each morning?", ref: "greenhouse:knowledge/irrigation.md", phrases: ["4"]}
+  - {id: a16, question: "How big is the water tank and when is it refilled?", ref: "greenhouse:knowledge/irrigation.md", phrases: ["500", "monday"]}
+  - {id: a17, question: "How are the seedlings in zone 1 watered?", ref: "greenhouse:knowledge/irrigation.md", phrases: ["hand"]}
+  - {id: a18, question: "Which tomato variety grows in zone 3?", ref: "memory/project/", phrases: ["crimson shield"]}
+  - {id: a19, question: "Who should be called before a heater boost?", ref: "memory/project/", phrases: ["priya"]}
+  - {id: a20, question: "When was the zone 2 drip line replaced?", ref: "memory/project/", phrases: ["2026-09-14|14 september|september 14"]}

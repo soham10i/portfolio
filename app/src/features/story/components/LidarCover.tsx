@@ -89,7 +89,7 @@ export default function LidarCover({ fallback, data = '/media/work/maze1', class
       )}
       <canvas ref={canvas} className="absolute inset-0 h-full w-full transition-opacity duration-700" style={{ opacity: live ? 1 : 0 }} aria-hidden />
       {live && (
-        <span className="mono pointer-events-none absolute bottom-3 left-3 z-[2] flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 !text-[9px] text-white backdrop-blur-md">
+        <span className="mono pointer-events-none absolute bottom-3 left-3 z-[2] flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 !text-[11.5px] text-white backdrop-blur-md">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#86ff9f]" />
           <span ref={hud}>Recorded LIDAR · maze1</span>
         </span>

@@ -4,7 +4,7 @@ import '@/features/story/story.css';
 import MarkdownText from '@/features/chat/components/MarkdownText';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
 import {
-  cloudTtsReady, createCloudSpeaker, createRecognizer, createSpeaker, sttSupported, ttsSupported,
+  cloudTtsReady, createCloudSpeaker, createRecognizer, createSpeaker, sttSupported, ttsSupported, unlockAudio,
   type Recognizer, type Speaker,
 } from '@/features/chat/lib/voice';
 import { conversationId, fetchHistory, newConversation } from '@/features/chat/lib/conversation';
@@ -156,6 +156,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   useEffect(() => () => stopVoiceActivity(), []);
 
   const send = async (text?: string, opts?: { spoken?: boolean }) => {
+    unlockAudio();
     const msg = (text ?? draft).trim();
     if (!msg || sending) return;
     const spoken = opts?.spoken === true;
@@ -249,38 +250,13 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     listenTimer.current = window.setTimeout(() => { listenTimer.current = null; void startListening(); }, delay);
   };
 
-  const startListening = async () => {
+  const startListening = () => {
     if (!sttSupported() || sendingRef.current) return;
     // Barge-in: talking back cuts off any reply still being read out.
     speakerRef.current?.cancel();
     setSpeaking(false);
     recognizerRef.current?.abort();
     gotFinalRef.current = false;
-
-    /* Pre-flight the mic ourselves. SpeechRecognition's failures are opaque —
-       'network', 'audio-capture' — while getUserMedia says exactly what is
-       wrong: no device, no permission, or all clear. It also raises the
-       browser's real permission prompt, which SpeechRecognition alone does
-       not do on every platform. */
-    if (navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (e) {
-        const name = e instanceof DOMException ? e.name : '';
-        haltedRef.current = true;
-        setVoiceModeBoth(false);
-        setListening(false);
-        setError(
-          name === 'NotFoundError' || name === 'DevicesNotFoundError'
-            ? 'No microphone was found on this device — plug one in, or type instead.'
-            : name === 'NotAllowedError' || name === 'SecurityError'
-              ? 'Microphone access is blocked for this site. Allow it in your browser’s site settings (the padlock icon), then try again.'
-              : 'The microphone could not be started — you can still type below.',
-        );
-        return;
-      }
-    }
 
     const rec = createRecognizer({
       onInterim: (t) => setDraft(t),
@@ -291,14 +267,14 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       },
       onError: (e) => {
         setListening(false);
-        if (e === 'not-allowed' || e === 'service-not-allowed') {
+        if (e === 'not-allowed' || e === 'service-not-allowed' || e === 'NotAllowedError') {
           haltedRef.current = true;
           setVoiceModeBoth(false);
-          setError('Microphone access is blocked for this site. Allow it in your browser’s site settings (the padlock icon), then try again.');
+          setError('Microphone access is blocked for this site. Allow it in your browser’s site settings (the padlock/info icon), then try again.');
         } else if (e === 'audio-capture') {
           haltedRef.current = true;
           setVoiceModeBoth(false);
-          setError('No microphone was found on this device — plug one in, or type instead.');
+          setError('No microphone was found or it is in use by another app — plug one in, or type instead.');
         } else if (e === 'network') {
           /* Chrome transcribes speech on Google's servers; a VPN, a firewall
              or a non-Google Chromium build turns that into a silent failure. */
@@ -326,6 +302,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
   };
 
   const toggleVoiceMode = () => {
+    unlockAudio();
     if (voiceModeRef.current) {
       setVoiceModeBoth(false);
       stopVoiceActivity();
@@ -335,15 +312,16 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       setError('');
       speakerRef.current?.cancel();
       setSpeaking(false);
-      void startListening();
+      startListening();
     }
   };
 
   /* One-shot talkback: tap, speak, JARVIS answers aloud. Does not start the
      hands-free loop — that is what the header toggle is for. */
   const onMicClick = () => {
+    unlockAudio();
     if (listening) { recognizerRef.current?.stop(); return; }
-    void startListening();
+    startListening();
   };
 
   /* A new chat is a new conversation id; the old one stays stored. */
@@ -374,7 +352,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
             <p className="text-[15px] font-medium tracking-[-.01em]">
               Nexus
             </p>
-            <p className="mono mt-0.5 flex items-center gap-1.5 truncate !text-[9.5px] text-fg3">
+            <p className="mono mt-0.5 flex items-center gap-1.5 truncate !text-[12px] text-fg3">
               <span
                 className={'h-1.5 w-1.5 flex-none rounded-full ' + (listening ? 'animate-pulse' : '')}
                 style={{ background: listening ? '#ef4444' : speaking || sending ? 'var(--p)' : '#22c55e' }}
@@ -510,7 +488,7 @@ export default function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
               <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
             </button>
           </div>
-          <p className="mono mt-2 text-center !text-[9px] text-fg3">Conversations are stored to improve Nexus</p>
+          <p className="mono mt-2 text-center !text-[11.5px] text-fg3">Conversations are stored to improve Nexus</p>
         </div>
       </div>
     </div>

@@ -37,3 +37,19 @@ def db_schema(monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
         yield schema
     finally:
         asyncio.run(drop_schema(schema))
+
+
+@pytest.fixture(autouse=True)
+def no_real_model_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    """P5 A9: the real HTTP transport refuses to run in tests unless NEXUS_LLM_LIVE=1."""
+    import os
+
+    from nexus.llm import transport
+
+    if os.environ.get("NEXUS_LLM_LIVE") == "1":
+        return
+
+    def refuse(*_: object, **__: object) -> None:
+        raise AssertionError("a test tried to call a real model provider (set NEXUS_LLM_LIVE=1 to allow)")
+
+    monkeypatch.setattr(transport, "_urlopen", refuse)

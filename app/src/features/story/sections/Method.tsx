@@ -46,7 +46,7 @@ export default function Method() {
               <h3 className="mt-4 text-[clamp(34px,3vw,46px)] font-medium tracking-[-.04em]">{s.title}</h3>
               <p className="t-body mt-4">{s.text}</p>
             </div>
-            <p className="mt-8 border-t border-[color:var(--line)] pt-4 text-[13px] leading-relaxed text-fg">
+            <p className="mt-8 border-t border-[color:var(--line)] pt-4 text-[14.5px] sm:text-[15.5px] leading-relaxed text-fg">
               <span className="serif mr-1 text-a">e.g.</span> {s.proof}
             </p>
           </li>

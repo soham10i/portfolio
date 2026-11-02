@@ -155,7 +155,7 @@ export default function CloudLayer({ set: requested = 'home', position }: { set?
     <canvas
       ref={canvas}
       aria-hidden
-      className="cloud-layer pointer-events-none fixed inset-0 z-0 h-full w-full transition-opacity duration-[1500ms]"
+      className="cloud-layer pointer-events-none fixed inset-0 z-0 h-full w-full transition-opacity [transition-duration:1500ms]"
       style={{ opacity: ready ? 1 : 0 }}
     />
   );

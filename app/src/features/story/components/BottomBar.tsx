@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
+import { unlockAudio } from '@/features/chat/lib/voice';
 import { PROJECTS } from '@/shared/data/portfolio';
 import { CHAPTERS } from '../lib/chapters';
 import ThemeToggle from './ThemeToggle';
@@ -27,13 +28,13 @@ export default function BottomBar() {
     /* On phones the strip around the capsule catches taps too: a thumb that
        lands just off a button must not fall through to the card link under it. */
     <div className="story-bottom pointer-events-auto fixed inset-x-0 bottom-0 z-[60] flex justify-center px-[var(--gutter)] pb-4 pt-2 sm:pointer-events-none sm:pt-0">
-      <div className="lg-pill lg-chrome pointer-events-auto flex h-12 max-w-full items-center gap-1 pl-4 pr-1.5">
+      <div className="lg-pill lg-chrome pointer-events-auto flex h-12 max-w-full items-center gap-1.5 pl-4 pr-1.5">
         <div className="flex min-w-0 items-center gap-3 pr-2" aria-live="polite">
-          <span className="whitespace-nowrap text-[13px] font-medium text-fg">{current.label}</span>
+          <span className="whitespace-nowrap text-[14px] sm:text-[14.5px] font-medium text-fg">{current.label}</span>
           <span className="relative hidden h-px w-14 overflow-hidden bg-[color:var(--line)] sm:block">
             <span ref={bar} className="absolute inset-0 origin-left bg-[color:var(--fg)]" style={{ transform: 'scaleX(0)' }} />
           </span>
-          <span className="mono hidden whitespace-nowrap text-fg3 md:inline" title="Projects you have opened">
+          <span className="mono hidden whitespace-nowrap !text-[12px] text-fg3 md:inline" title="Projects you have opened">
             {collected}/{PROJECTS.length} explored
           </span>
         </div>
@@ -43,13 +44,13 @@ export default function BottomBar() {
         <button
           type="button"
           className="glass-ai-btn !h-10 !px-3.5 sm:!h-8 sm:!px-3"
-          onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
+          onClick={() => { unlockAudio(); window.dispatchEvent(new Event('jarvis:open')); }}
           aria-label="Ask Nexus about my work"
         >
           <div className="glass-ai-orb-wrap">
             <JarvisOrb size={20} className="-ml-0.5" />
           </div>
-          <span className="hidden sm:inline font-medium">Ask Nexus</span>
+          <span className="hidden sm:inline text-[13.5px] font-medium">Ask Nexus</span>
         </button>
         <button
           type="button"
@@ -58,7 +59,7 @@ export default function BottomBar() {
           onClick={() => setMotion(!motion)}
           title="Smooth scrolling and animation"
         >
-          <span className="mono whitespace-nowrap !text-[10px]">Motion {motion ? 'on' : 'off'}</span>
+          <span className="mono whitespace-nowrap !text-[11.5px] sm:!text-[12px]">Motion {motion ? 'on' : 'off'}</span>
         </button>
         <ThemeToggle />
       </div>

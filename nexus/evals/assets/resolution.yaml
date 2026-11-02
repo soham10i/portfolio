@@ -1,0 +1,62 @@
+# P7 entity-resolution suite (P7.md §4, A4): 50 phrases resolved against the greenhouse pack and
+# a second, eval-only pack that shares the alias "drip line" with it. A case passes when the
+# mentions are exactly the expected ones. No model is involved; every case must pass, also with
+# the packs loaded in the other order. Synthetic, nothing private.
+packs:
+  - pack: orchard
+    assets:
+      - {id: orchard, kind: site, name: Orchard}
+      - {id: "orchard.row[*]", kind: row, name: Row, parent: orchard, count: 6}
+      - {id: orchard.drip, kind: irrigation, name: Drip line, parent: orchard, aliases: [drip]}
+      - {id: orchard.pump, kind: pump, name: Pump, parent: orchard, aliases: [water pump]}
+cases:
+  - {id: r01, text: "Set zone 2 to 21", expect: [{text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r02, text: "zone two", expect: [{text: zone two, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r03, text: "the second zone", expect: [{text: second zone, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r04, text: "z3 lights", expect: [{text: z3, status: resolved, entities: ["greenhouse.zone[3]"]}]}
+  - {id: r05, text: "bed 4", expect: [{text: bed 4, status: resolved, entities: ["greenhouse.zone[4]"]}]}
+  - {id: r06, text: "zone #1", expect: [{text: "zone #1", status: resolved, entities: ["greenhouse.zone[1]"]}]}
+  - {id: r07, text: "zone number 3", expect: [{text: zone number 3, status: resolved, entities: ["greenhouse.zone[3]"]}]}
+  - {id: r08, text: "zones 1 and 3", expect: [{text: zones 1 and 3, status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[3]"]}]}
+  - {id: r09, text: "zones 1, 2, and 4", expect: [{text: "zones 1, 2, and 4", status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[4]"]}]}
+  - {id: r10, text: "all zones", expect: [{text: all zones, status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r11, text: "all four zones", expect: [{text: all four zones, status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r12, text: "every zone", expect: [{text: every zone, status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r13, text: "all of the zones", expect: [{text: all of the zones, status: resolved, entities: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r14, text: "zone 7", expect: [{text: zone 7, status: unknown}]}
+  - {id: r15, text: "zone 0", expect: [{text: zone 0, status: unknown}]}
+  - {id: r16, text: "which zone is warmest?", expect: [{text: zone, status: ambiguous, candidates: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r17, text: "open the roof vent", expect: [{text: roof vent, status: resolved, entities: [greenhouse.roof_vent]}]}
+  - {id: r18, text: "how open is the vent", expect: [{text: vent, status: resolved, entities: [greenhouse.roof_vent]}]}
+  - {id: r19, text: "the boiler", expect: [{text: boiler, status: resolved, entities: [greenhouse.heater]}]}
+  - {id: r20, text: "main heater", expect: [{text: main heater, status: resolved, entities: [greenhouse.heater]}]}
+  - {id: r21, text: "the glasshouse", expect: [{text: glasshouse, status: resolved, entities: [greenhouse]}]}
+  - {id: r22, text: "water zone 2 with 3 litres", expect: [{text: water, status: resolved, entities: [greenhouse.drip]}, {text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r23, text: "zone 2 and 3 litres", expect: [{text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r24, text: "the drip line", expect: [{text: drip line, status: ambiguous, candidates: [greenhouse.drip, orchard.drip]}]}
+  - {id: r25, text: "drip", expect: [{text: drip, status: ambiguous, candidates: [greenhouse.drip, orchard.drip]}]}
+  - {id: r26, text: "irrigation", expect: [{text: irrigation, status: resolved, entities: [greenhouse.drip]}]}
+  - {id: r27, text: "row 5", expect: [{text: row 5, status: resolved, entities: ["orchard.row[5]"]}]}
+  - {id: r28, text: "row 9", expect: [{text: row 9, status: unknown}]}
+  - {id: r29, text: "the water pump", expect: [{text: water pump, status: resolved, entities: [orchard.pump]}]}
+  - {id: r30, text: "the pump", expect: [{text: pump, status: resolved, entities: [orchard.pump]}]}
+  - {id: r31, text: "rows 2 and 6", expect: [{text: rows 2 and 6, status: resolved, entities: ["orchard.row[2]", "orchard.row[6]"]}]}
+  - {id: r32, text: "all rows", expect: [{text: all rows, status: resolved, entities: ["orchard.row[1]", "orchard.row[2]", "orchard.row[3]", "orchard.row[4]", "orchard.row[5]", "orchard.row[6]"]}]}
+  - {id: r33, text: "the orchard", expect: [{text: orchard, status: resolved, entities: [orchard]}]}
+  - {id: r34, text: "Zone 2", expect: [{text: Zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r35, text: "ZONE THREE", expect: [{text: ZONE THREE, status: resolved, entities: ["greenhouse.zone[3]"]}]}
+  - {id: r36, text: "what is the weather like", expect: []}
+  - {id: r37, text: "hello", expect: []}
+  - {id: r38, text: "zone 2 and the vent", expect: [{text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}, {text: vent, status: resolved, entities: [greenhouse.roof_vent]}]}
+  - {id: r39, text: "heater and vent", expect: [{text: heater, status: resolved, entities: [greenhouse.heater]}, {text: vent, status: resolved, entities: [greenhouse.roof_vent]}]}
+  - {id: r40, text: "zone 1 then zone 4", expect: [{text: zone 1, status: resolved, entities: ["greenhouse.zone[1]"]}, {text: zone 4, status: resolved, entities: ["greenhouse.zone[4]"]}]}
+  - {id: r41, text: "the third bed", expect: [{text: third bed, status: resolved, entities: ["greenhouse.zone[3]"]}]}
+  - {id: r42, text: "z 2", expect: [{text: z 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r43, text: "zone 2 or 3", expect: [{text: zone 2 or 3, status: resolved, entities: ["greenhouse.zone[2]", "greenhouse.zone[3]"]}]}
+  - {id: r44, text: "zone 2 at 3 degrees", expect: [{text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}]}
+  - {id: r45, text: "zone 12", expect: [{text: zone 12, status: unknown}]}
+  - {id: r46, text: "the zones", expect: [{text: zones, status: ambiguous, candidates: ["greenhouse.zone[1]", "greenhouse.zone[2]", "greenhouse.zone[3]", "greenhouse.zone[4]"]}]}
+  - {id: r47, text: "the first row", expect: [{text: first row, status: resolved, entities: ["orchard.row[1]"]}]}
+  - {id: r48, text: "rows", expect: [{text: rows, status: ambiguous, candidates: ["orchard.row[1]", "orchard.row[2]", "orchard.row[3]", "orchard.row[4]", "orchard.row[5]", "orchard.row[6]"]}]}
+  - {id: r49, text: "watering", expect: [{text: watering, status: resolved, entities: [greenhouse.drip]}]}
+  - {id: r50, text: "zone 2 heater", expect: [{text: zone 2, status: resolved, entities: ["greenhouse.zone[2]"]}, {text: heater, status: resolved, entities: [greenhouse.heater]}]}

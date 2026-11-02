@@ -29,7 +29,7 @@ export default function LiveShot({ project, className = '' }: { project: Project
         aria-label={`Open ${project.title}${project.liveUrl ? ' — live site' : ''} in a new tab`}
       >
         <ProjectCover project={project} index={index} chrome className="cq aspect-[16/10]" />
-        <span className="absolute bottom-5 left-1/2 z-[3] inline-flex h-12 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 text-[14px] font-medium text-[#0d1626] shadow-2xl" style={{ transform: 'translateX(-50%) translateZ(40px)' }}>
+        <span className="absolute bottom-5 left-1/2 z-[3] inline-flex h-12 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-6 text-[15px] sm:text-[16px] font-medium text-[#0d1626] shadow-2xl" style={{ transform: 'translateX(-50%) translateZ(40px)' }}>
           {project.liveUrl ? (
             <><span className="h-2 w-2 rounded-full bg-[#22c55e]" /> Open the live site</>
           ) : 'View on GitHub'}

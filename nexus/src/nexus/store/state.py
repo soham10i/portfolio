@@ -102,7 +102,7 @@ class WorldState:
             value_text = canonical_json(value).decode()
         except ValueError as exc:
             raise StoreError(str(exc)) from exc
-        async with self._store._pool.acquire() as conn, conn.transaction():
+        async with self._store.transaction() as conn:
             # Lock order is always key, then stream head (inside _append_in), so two writers can
             # never wait on each other in a cycle. The key lock is an advisory lock because a
             # first write has no state row to lock yet (ADR-0008).

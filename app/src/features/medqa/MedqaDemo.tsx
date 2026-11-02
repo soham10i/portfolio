@@ -67,7 +67,7 @@ const fmtMs = (ms?: number) => (ms === undefined ? '' : ms < 1000 ? `${Math.roun
 function Bar({ value, color = 'var(--p)', max = 1 }: { value: number; color?: string; max?: number }) {
   return (
     <span className="relative block h-2 overflow-hidden rounded-full bg-[color:var(--surf2)]">
-      <span className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 ease-[cubic-bezier(.16,1,.3,1)]"
+      <span className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
         style={{ width: `${Math.max(2, Math.min(100, (value / max) * 100))}%`, background: color }} />
     </span>
   );

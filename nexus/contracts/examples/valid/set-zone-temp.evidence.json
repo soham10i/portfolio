@@ -87,7 +87,14 @@
         "id": "soham"
       },
       "proposal_hash": "b7600385ea07a7550ba9010a0499296bd5bcd5e6b4f8583c3b50c6be7c05fb60",
-      "approved_at": "2026-10-30T10:00:41Z"
+      "approved_at": "2026-10-30T10:00:41Z",
+      "signature": {
+        "alg": "ed25519",
+        "key_id": "74f877db7bc140ecba0ea4a1ca9be225",
+        "public_key": "ecca852ca460a59920e2f3a4505d5a15f9669129b45fee934a5d88a7336ce640",
+        "value": "29a17bcbc7dd401359805903eaacc7d955ca5f02dbe32eef0413a56eb00c74d6a1ab33242d0b38a0d411bdab27f8e391b4a8aea89c81507f083718c3319db20c",
+        "verified": true
+      }
     }
   ],
   "execution": {
@@ -101,6 +108,21 @@
     "observed": {
       "oven.zone[2].setpoint": 240
     }
+  },
+  "incidents": [],
+  "shadow": {
+    "active": false,
+    "comparisons": [
+      {
+        "human": {
+          "kind": "human",
+          "id": "soham"
+        },
+        "human_outcome": "NEEDS_APPROVAL",
+        "agree": true,
+        "recorded_at": "2026-10-30T10:00:30Z"
+      }
+    ]
   },
   "event_refs": [
     {

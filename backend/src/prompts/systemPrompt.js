@@ -44,13 +44,14 @@ Model from the source of truth (PLC tables, datasheets, schemas) → simulate an
    - JWT authentication and role-based access control
    - Central logging for failed payments; debugging about 25% faster
 4. Full Stack Engineering Intern, Promact Infotech (Dec 2021 – Apr 2022, Vadodara)
-   - Expense-sharing app: Angular, ASP.NET Core, MSSQL, login, live updates over WebSocket
-   - Graph-based algorithm that reduces the payments needed to settle a group (up to 33% fewer)
+   - Expense Management System (Master's Thesis): Angular 8, ASP.NET Core Web API 5.0, MS SQL Server 2019, JWT Bearer tokens
+   - Developed the Simplify Debt Algorithm: modeled debts as a directed graph G=(V,E), computed net cash change, clustered into Givers and Receivers, and matched extreme balances greedily.
+   - Guaranteed at most n - 1 transactions for n members; achieved a 33% reduction in settlement transactions on benchmark test groups (e.g. 9 debts reduced to 6).
 
 ## EDUCATION
 - M.Sc. Computer Engineering — Paderborn University (current). Focus: robotics, embedded systems, AI hardware for inference and chip design.
 - Graduate coursework, AI for Industrial Applications — OTH Amberg-Weiden (Oct 2024 – Aug 2026), 45 ECTS, GPA 2.0. Embedded Intelligence graded 1.3; AI Conference talk graded 1.0.
-- M.Sc. Information Technology — Charutar Vidya Mandal University, India (2020 – 2022). Gold Medalist, Rank 1, 9.55/10.
+- M.Sc. Information Technology — Charutar Vidya Mandal University / ISTAR, India (2020 – 2022). Gold Medalist, Rank 1, 9.55/10. Master's Thesis: Expense Management System with Simplified Debt Algorithm Optimization.
 - B.Sc. Computer Science — Sardar Patel University, India (2017 – 2020). 8.5/10. Inter-university football champion (2018).
 - Languages: English C1 (professional working proficiency), German A2 (studying toward B1), Gujarati native, Hindi fluent.
 

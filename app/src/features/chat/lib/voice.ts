@@ -53,6 +53,52 @@ export function ttsSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
 }
 
+let audioUnlocked = false;
+
+/** Pre-unlocks mobile browser audio context and HTML5 media playback on user touch/click
+ *  so that subsequent streamed speech (cloud TTS or speechSynthesis) does not get blocked
+ *  by strict mobile Autoplay policies. */
+export function unlockAudio(): void {
+  if (typeof window === 'undefined' || audioUnlocked) return;
+  audioUnlocked = true;
+
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') void ctx.resume();
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
+  } catch {
+    /* web audio context not permitted or supported — safe to ignore */
+  }
+
+  try {
+    const a = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+    a.volume = 0;
+    const p = a.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => a.pause()).catch(() => {});
+    }
+  } catch {
+    /* audio play not permitted — safe to ignore */
+  }
+
+  try {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+    }
+  } catch {
+    /* speech synthesis not supported — safe to ignore */
+  }
+}
+
 /* ── Speech-to-text ── */
 
 export interface RecognizerOptions {
@@ -115,7 +161,11 @@ export function createRecognizer(opts: RecognizerOptions): Recognizer | null {
 
   return {
     start() {
-      try { rec.start(); } catch { /* already started — ignore */ }
+      try {
+        rec.start();
+      } catch (err) {
+        opts.onError?.(err instanceof DOMException ? err.name : 'start-failed');
+      }
     },
     stop() {
       try { rec.stop(); } catch { /* not running — ignore */ }
@@ -418,6 +468,7 @@ export function createCloudSpeaker(opts: SpeakerOptions & { apiBase: string }): 
     const url = URL.createObjectURL(blob);
     const el = new Audio(url);
     el.preload = 'auto';
+    el.setAttribute('playsinline', 'true');
     return el;
   };
 

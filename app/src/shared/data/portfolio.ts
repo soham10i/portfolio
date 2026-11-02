@@ -319,33 +319,39 @@ export const EXPERIENCES: Experience[] = [
   {
     period: 'Dec 2021 – Apr 2022', type: 'Internship', role: 'Full Stack Engineering Intern',
     company: 'Promact Infotech Pvt. Ltd.', location: 'Vadodara, India',
-    description: 'A full-stack expense-sharing app.',
+    description: 'Expense Management System & Simplify Debt Algorithm Optimization.',
     context:
-      'Where it started: a full-stack expense-sharing app, built in two-week sprints with code review. Recording who paid for what is the easy part. The interesting problem is settling up.',
+      'Master’s thesis project and industrial training: developing an end-to-end Expense Management System. Recording who paid for what is straightforward; the central challenge was designing, implementing, and optimizing the Simplify Debt Algorithm to resolve multi-party group debts with minimal total transactions.',
     tasks: [
       {
-        title: 'Full stack, end to end',
+        title: 'Full-stack architecture with Angular & .NET',
         detail:
-          'Built the app across all three layers: an Angular front end, an ASP.NET Core API and an MSSQL database, with login secured by JWT.',
+          'Built the complete application across all three tiers: an Angular 8 SPA frontend, an ASP.NET Core Web API 5.0 backend with dependency injection, and MS SQL Server 2019 with JWT Bearer authentication and SHA-1 encrypted user credentials.',
       },
       {
-        title: 'Live updates over WebSocket',
+        title: 'Simplify Debt Algorithm development',
         detail:
-          'When one member adds an expense, the others see balances change without refreshing: the server pushes the update over a WebSocket connection.',
+          'Modeled group debts as a weighted directed graph G=(V,E). Developed a greedy bipartite cash-flow settlement algorithm that computes each member’s net cash change, clusters them into Givers (creditors) and Receivers (debtors), and matches extreme balances iteratively to guarantee settlement in at most n - 1 transactions.',
       },
       {
-        title: 'A graph-based settlement algorithm',
+        title: 'Empirical transaction optimization',
         detail:
-          'A group’s debts form a directed graph: people as nodes, who-owes-whom as weighted edges. I wrote an algorithm that simplifies that graph so the group settles with fewer transfers — up to 33% fewer payments.',
+          'Benchmarked the algorithm on multi-party debt cycles, demonstrating a 33% reduction in settlement transfers (e.g. from 9 pairwise debts down to 6 simplified transactions in a 7-person group) while guaranteeing zero ledger imbalance.',
+      },
+      {
+        title: 'Group operations & currency support',
+        detail:
+          'Implemented equal, exact-amount, and percentage splits across global currencies (EUR, INR, USD), with real-time group chat rooms and activity audit feeds.',
       },
     ],
     tension:
-      'A simplified settlement still has to be exactly right: everyone must end up square, with fewer payments than before and none of them wrong.',
+      'Finding the absolute minimum number of settlement transactions in arbitrary balance sets is an NP-complete subset-sum problem; the greedy bipartite algorithm had to guarantee correctness, maintain exact zero-sum balance, and execute within interactive API response times.',
     outcomes: [
-      { value: 'Up to 33%', label: 'Fewer payments to settle a group' },
+      { value: '33%', label: 'Fewer transactions to settle complex group debts' },
+      { value: '≤ n - 1', label: 'Guaranteed upper bound on group transactions' },
     ],
-    thread: 'Graph search returned later as A* path planning in the SLAM robot.',
-    technologies: ['Angular', 'ASP.NET Core', 'MSSQL', 'JWT', 'WebSocket'],
+    thread: 'Graph modeling and algorithmic optimization directly carried into A* path planning and grid heuristics in later robotics work.',
+    technologies: ['Angular 8', 'ASP.NET Core Web API', 'C#', 'MS SQL Server', 'TypeScript', 'JWT', 'Graph Algorithms'],
   },
 ];
 
@@ -407,10 +413,18 @@ export const EDUCATION: { period: string; degree: string; institution: string; l
   {
     period: '2020 – 2022',
     degree: 'M.Sc. Information Technology',
-    institution: 'Charutar Vidya Mandal University',
+    institution: 'Charutar Vidya Mandal University · ISTAR',
     location: 'Gujarat, India',
-    grade: 'Rank 1 of cohort · gold medal',
-    focus: 'Software engineering, databases, distributed systems. Thesis in applied machine learning.',
+    grade: 'Rank 1 of cohort · Gold Medal (9.55 / 10)',
+    focus:
+      'Thesis: Building an Expense Management System with Simplified Debt Algorithm Optimization. ' +
+      'Formulated multi-party shared debt obligations as a directed graph and designed a bipartite greedy cash-flow settlement algorithm to minimize inter-user transactions.',
+    points: [
+      'Master’s Thesis: "Expense Management System" (completed at Promact Infotech under academic and industrial guidance).',
+      'Developed and optimized the Simplify Debt Algorithm: converts cyclic group debts into a directed graph G = (V, E), evaluates net cash change per node, clusters members into Givers (creditors) and Receivers (debtors), and iteratively settles maximum debit/credit pairs.',
+      'Proved and achieved an upper bound of at most n - 1 transactions for n group members, cutting redundant settlement transactions by 33% (reduced 9 cyclic debts to 6 direct transfers in test groups) with zero balance error.',
+      'Engineered the end-to-end web application with ASP.NET Core Web API 5.0, MS SQL Server (SHA-1 password encryption, JWT Bearer tokens), and an Angular 8 single-page application.',
+    ],
   },
   {
     period: '2017 – 2020',

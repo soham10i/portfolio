@@ -182,27 +182,31 @@ html[data-style="slate"] .story { text-shadow: 0 1px 2px rgba(38, 45, 52, .28); 
 }
 
 /* ---------------- type scale ----------------
-   One scale for every page: display (hero), h2 (chapter titles), statement
-   (About), closing (Contact), lead and body. Sized for reading first —
-   generous line height, measured line length, balanced headings. */
-.story .t-display   { font-size: clamp(42px, 6.2vw, 96px);  line-height: 1.03; letter-spacing: -.034em; font-weight: 500; text-wrap: balance; }
-.story .t-h2        { font-size: clamp(34px, 4.4vw, 66px);  line-height: 1.05; letter-spacing: -.03em;  font-weight: 500; text-wrap: balance; }
-.story .t-statement { font-size: clamp(26px, 3.1vw, 46px);  line-height: 1.16; letter-spacing: -.022em; font-weight: 500; text-wrap: balance; }
-.story .t-closing   { font-size: clamp(46px, 7.6vw, 120px); line-height: .98; letter-spacing: -.04em;  font-weight: 500; }
-.story .t-lead      { font-size: clamp(17px, 1.3vw, 19px);  line-height: 1.62; color: var(--fg2); max-width: 62ch; text-wrap: pretty; }
-.story .t-body      { font-size: 16px; line-height: 1.68; color: var(--fg2); text-wrap: pretty; }
+   Responsive type scale for high readability across all devices (mobile, tablet, desktop, ultra-wide):
+   - display: hero name & title
+   - h2: section headings
+   - statement: highlight phrases
+   - closing: contact banner
+   - lead: intro paragraphs
+   - body: body content & descriptions
+   - mono: labels, badges & technical metadata */
+.story .t-display   { font-size: clamp(44px, 6.5vw, 98px);  line-height: 1.05; letter-spacing: -.034em; font-weight: 500; text-wrap: balance; }
+.story .t-h2        { font-size: clamp(36px, 4.6vw, 68px);  line-height: 1.08; letter-spacing: -.03em;  font-weight: 500; text-wrap: balance; }
+.story .t-statement { font-size: clamp(28px, 3.3vw, 48px);  line-height: 1.2;  letter-spacing: -.022em; font-weight: 500; text-wrap: balance; }
+.story .t-closing   { font-size: clamp(48px, 8vw, 124px);   line-height: 1.0;  letter-spacing: -.04em;  font-weight: 500; }
+.story .t-lead      { font-size: clamp(18px, 1.5vw, 21px);  line-height: 1.65; color: var(--fg2); max-width: 65ch; text-wrap: pretty; }
+.story .t-body      { font-size: clamp(16px, 1.15vw, 18px); line-height: 1.7;  color: var(--fg2); text-wrap: pretty; }
 
 :is(.story, .jarvis) .mono {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: .14em;
+  font-size: clamp(12px, 0.9vw, 13.5px);
+  letter-spacing: .09em;
   text-transform: uppercase;
 }
 
 /* ---------------- ground ----------------
    One fixed gradient behind the whole page. The chapters are transparent
-   over it, so there is no seam where one section ends and the next begins;
-   the glass balls drifting above it carry the sense of scrolling. */
+   over it, so there is no seam where one section ends and the next begins. */
 .story::before {
   content: "";
   position: fixed;
@@ -235,7 +239,6 @@ html[data-style="slate"] .story::before {
     radial-gradient(70vmax 55vmax at 100% 100%, rgba(70, 81, 91, .7), transparent 65%),
     linear-gradient(165deg, #56616a 0%, #6b767e 40%, #626d75 70%, #4b5660 100%);
 }
-html[data-style="slate"] .glass-ball { display: none; }
 /* Editorial swaps the blue/violet fields for warm ones. */
 html[data-style="editorial"] .story::before {
   background:
@@ -250,21 +253,7 @@ html[data-style="editorial"] .story::before {
   overflow: hidden;
   pointer-events: none;
 }
-.glass-ball {
-  position: absolute;
-  top: 0;
-  will-change: transform;
-  filter: drop-shadow(0 18px 40px rgba(37, 99, 235, .25));
-}
-/* The balls drift behind the text, so their bright rim arcs must never win
-   against it: the layer is kept faint, and text in the themes that show balls
-   carries a soft halo in the page colour that knocks back an arc behind it. */
-.glass-balls { opacity: .42; }
-html[data-theme="light"] .glass-balls,
-html[data-style="editorial"] .glass-balls { opacity: .3; }
-html:not([data-style="slate"]):not([data-style="liquid"]) .story .panel {
-  text-shadow: 0 0 14px var(--bg), 0 0 4px var(--bg);
-}
+
 /* One reading width for every chapter: headings, lists, grids and timelines
    share the same centred column, so edges line up from section to section. */
 .story .measure {
@@ -274,22 +263,8 @@ html:not([data-style="slate"]):not([data-style="liquid"]) .story .panel {
   margin-right: auto;
 }
 
-/* The halo is only for text on the page ground. Anything with its own fill
-   (buttons, pills, cards, badges) would smear a page-coloured blur over that
-   fill, so the inherited shadow stops there. */
-.story .panel :is(button, a, .lg-pill, .lg-panel, .btn-ink, .glass-ai-btn, [class*="rounded-full"], [class*="bg-"]) {
-  text-shadow: none;
-}
-
 /* ---------------- low-power mode ----------------
-   html[data-perf="low"] is set on phones and modest hardware (shared/lib/perf.ts).
-   Everything here is a per-frame or per-tile cost on a phone GPU: backdrop
-   blur re-sampled under the fixed bars on every scroll frame, blurred drop
-   shadows, the glass balls and the text halo that exists only to separate
-   text from them. Without blur, the chrome gets a near-opaque fill so text
-   on it stays legible. */
-html[data-perf="low"] .glass-ball { display: none; }
-html[data-perf="low"] .story .panel { text-shadow: none; }
+   html[data-perf="low"] is set on phones and modest hardware (shared/lib/perf.ts). */
 html[data-perf="low"] * {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
@@ -298,8 +273,12 @@ html[data-perf="low"] :is(.lg-chrome, .glass-ai-btn) {
   background: var(--bg2) !important;
 }
 html[data-perf="low"] .glass-ai-orb-wrap::before { animation: none; }
+html[data-perf="low"] .jarvis-globe {
+  filter: none !important;
+  box-shadow: 0 2px 10px var(--orb-glow);
+}
 
-/* Liquid swaps the balls for the drifting ribbon ground (see GlassBalls). */
+/* Liquid drifting ribbon ground */
 .ground-drift { display: none; }
 html[data-style="liquid"] .ground-drift {
   display: block;
@@ -309,7 +288,6 @@ html[data-style="liquid"] .ground-drift {
   background: #04082a url('./liquid-ground.svg') center top / cover no-repeat;
   will-change: transform;
 }
-html[data-style="liquid"] .glass-ball { display: none; }
 
 /* ---------------- chapters ----------------
    Transparent over the ground; --t1 / --t2 on a section are no longer
@@ -371,8 +349,8 @@ html[data-style="liquid"] .glass-ball { display: none; }
   gap: 8px;
   border-radius: 999px;
   padding: 0 14px;
-  height: 34px;
-  font-size: 13px;
+  height: 36px;
+  font-size: 14px;
   color: var(--fg);
   background: color-mix(in oklab, var(--fg) 6%, transparent);
   border: 1px solid transparent;
@@ -389,9 +367,9 @@ html[data-style="liquid"] .glass-ball { display: none; }
   align-items: center;
   gap: 9px;
   border-radius: 9999px;
-  padding: 0 16px;
-  height: 38px;
-  font-size: 13.5px;
+  padding: 0 18px;
+  height: 40px;
+  font-size: 14.5px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--fg);
@@ -512,10 +490,10 @@ html[data-style="liquid"] .glass-ball { display: none; }
   align-items: center;
   gap: 8px;
   height: 48px;
-  padding: 0 20px;
+  padding: 0 22px;
   border-radius: 999px;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   background: var(--fg);
   color: var(--on-fg);

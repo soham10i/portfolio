@@ -74,6 +74,32 @@ def test_chain_into_a_self_compensating_action_is_allowed():
     assert codes("pack", doc) == []
 
 
+@pytest.mark.parametrize(
+    ("field", "pointer"),
+    [
+        ("preconditions", "/actions/1/preconditions/0"),
+        ("effects", "/actions/1/effects/0"),
+        ("compensation", "/actions/1/compensation/params/temp"),
+    ],
+)
+def test_cel_syntax_in_preconditions_effects_and_compensation(field, pointer):
+    doc = base("stf.pack.yaml")
+    action = doc["actions"][1]
+    if field == "compensation":
+        action["compensation"]["params"]["temp"] = "prev.oven.zone[params.zone"
+    else:
+        action[field][0] = "state.oven.zone[params.zone].mode =="
+    assert codes("pack", doc) == [("CEL_SYNTAX", pointer)]
+    standalone = base("echo-say.action.yaml")
+    standalone["preconditions"] = ["params.text != ''", "size(params.text) <"]
+    assert codes("action", standalone) == [("CEL_SYNTAX", "/preconditions/1")]
+
+
+def test_every_valid_example_expression_parses():
+    for name in ("stf.pack.yaml", "echo.pack.yaml", "opcua-line.pack.yaml"):
+        assert codes("pack", base(name)) == []
+
+
 def test_envelope_param_mismatch_in_pack_and_action():
     doc = base("stf.pack.yaml")
     doc["actions"][1]["envelope"]["params"]["pressure"] = {"min": 1}
@@ -172,3 +198,13 @@ def test_pointer_escapes_tilde_and_slash():
     (issue,) = validate("event", doc)
     assert issue.code == "SCHEMA" and issue.pointer == ""
     assert "extra/key~" in issue.message
+
+
+@pytest.mark.parametrize("key", ["on", "off", "yes", "1", "null"])
+def test_yaml_keys_that_are_not_strings_are_refused(tmp_path, key):
+    path = tmp_path / "x.pack.yaml"
+    path.write_text(f"params:\n  properties:\n    {key}: {{type: boolean}}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="is not a string; quote it"):
+        load_document(path)
+    path.write_text(f'params:\n  properties:\n    "{key}": {{type: boolean}}\n', encoding="utf-8")
+    assert load_document(path) == {"params": {"properties": {key: {"type": "boolean"}}}}

@@ -67,14 +67,14 @@ export default function Notes() {
     <div className="story min-h-screen">
       <header className="sticky top-0 z-40 border-b border-line" style={{ background: 'var(--bg)' }}>
         <div className="mx-auto flex h-[62px] max-w-[1080px] items-center justify-between gap-4 px-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" /> Portfolio
+          <Link to="/" className="inline-flex items-center gap-2 text-[14px] text-fg2 transition-colors hover:text-fg">
+            <ArrowLeft className="h-4 w-4" /> Portfolio
           </Link>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-fg3">Blog</p>
+          <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-fg3">Blog</p>
           <div className="flex items-center gap-2">
             {canEdit && (
               <Link to="/notes/new"
-                className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
+                className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-2.5 py-1.5 font-mono text-[12px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
                 <Plus className="h-3.5 w-3.5" /> New
               </Link>
             )}
@@ -96,13 +96,13 @@ export default function Notes() {
             <input
               value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder="Search titles and tags"
-              className="w-full bg-transparent text-[14px] text-fg outline-none placeholder:text-fg3"
+              className="w-full bg-transparent text-[15px] text-fg outline-none placeholder:text-fg3"
             />
           </label>
           <div className="flex flex-wrap gap-1.5">
             {topics.map((t) => (
               <button key={t} type="button" onClick={() => setTopic(t)}
-                className={'rounded-[8px] border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] transition-colors ' +
+                className={'rounded-[8px] border px-3 py-1 font-mono text-[11.5px] uppercase tracking-[0.1em] transition-colors ' +
                   (topic === t ? 'border-[color-mix(in_oklab,var(--a)_50%,transparent)] text-fg' : 'border-line text-fg3 hover:text-fg2')}
                 style={topic === t ? { background: 'color-mix(in oklab,var(--a) 12%,transparent)' } : undefined}>
                 {t}
@@ -111,7 +111,7 @@ export default function Notes() {
           </div>
         </div>
 
-        {error && <p className="mt-10 text-[14px] text-[#f87171]">{error}</p>}
+        {error && <p className="mt-10 text-[15px] text-[#f87171]">{error}</p>}
 
         {notes === null && !error && (
           <div className="mt-10 space-y-3">
@@ -122,7 +122,7 @@ export default function Notes() {
         )}
 
         {notes !== null && shown.length === 0 && (
-          <p className="mt-10 text-[14.5px] text-fg3">
+          <p className="mt-10 text-[15px] text-fg3">
             {notes.length === 0
               ? 'No posts published yet.'
               : 'Nothing matches that search.'}
@@ -134,25 +134,25 @@ export default function Notes() {
             <li key={n.slug}>
               <Link to={`/blog/${n.slug}`}
                 className="group block border-b border-line py-7 transition-colors hover:bg-surf2">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.13em]" style={{ color: accent }}>
+                <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
+                  <span className="font-mono text-[12px] uppercase tracking-[0.13em]" style={{ color: accent }}>
                     {n.topic}
                   </span>
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-fg3">
-                    <Clock className="h-3 w-3" />{n.readingMinutes} min
+                  <span className="inline-flex items-center gap-1 font-mono text-[12px] uppercase tracking-[0.1em] text-fg3">
+                    <Clock className="h-3.5 w-3.5" />{n.readingMinutes} min
                   </span>
-                  {n.updated && <span className="font-mono text-[10px] text-fg3">{formatDate(n.updated)}</span>}
+                  {n.updated && <span className="font-mono text-[12px] text-fg3">{formatDate(n.updated)}</span>}
                 </div>
-                <h2 className="mt-2 text-[21px] font-semibold leading-snug tracking-[-0.015em] text-fg transition-colors group-hover:text-[color:var(--p)]">
+                <h2 className="mt-2 text-[22px] font-semibold leading-snug tracking-[-0.015em] text-fg transition-colors group-hover:text-[color:var(--p)]">
                   {n.title}
                 </h2>
                 {n.summary && (
-                  <p className="mt-2 max-w-[70ch] text-[15px] leading-[1.65] text-fg2">{n.summary}</p>
+                  <p className="mt-2 max-w-[70ch] text-[16px] leading-[1.65] text-fg2">{n.summary}</p>
                 )}
                 {n.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {n.tags.map((t) => (
-                      <span key={t} className="rounded-[7px] border border-line px-2 py-0.5 font-mono text-[10px] text-fg3">
+                      <span key={t} className="rounded-[7px] border border-line px-2.5 py-0.5 font-mono text-[11.5px] text-fg3">
                         {t}
                       </span>
                     ))}

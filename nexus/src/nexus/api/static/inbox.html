@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>NEXUS approvals</title>
+  <link rel="stylesheet" href="/inbox/inbox.css">
+  <script type="module" src="/inbox/inbox.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Approvals</h1>
+    <p id="who" class="muted">Not signed in.</p>
+  </header>
+
+  <section id="signin" hidden>
+    <form id="token-form" autocomplete="off">
+      <label for="token">Approver token</label>
+      <input id="token" type="password" spellcheck="false" required minlength="10">
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="muted">The token stays in this tab (sessionStorage). Your signing key is made here and
+      cannot be exported; only its public half is sent.</p>
+  </section>
+
+  <section id="main" hidden>
+    <div class="bar">
+      <span id="key" class="muted"></span>
+      <button id="refresh" type="button">Refresh</button>
+      <button id="signout" type="button" class="quiet">Sign out</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <ol id="items"></ol>
+    <p id="empty" class="muted" hidden>Nothing is waiting for approval.</p>
+  </section>
+
+  <template id="item">
+    <li class="item">
+      <div class="head">
+        <code class="action"></code>
+        <span class="badge outcome"></span>
+        <span class="badge chain"></span>
+      </div>
+      <dl>
+        <dt>Parameters</dt><dd><pre class="params"></pre></dd>
+        <dt>Rationale</dt><dd class="rationale"></dd>
+        <dt>Context</dt><dd><ul class="context"></ul></dd>
+        <dt>Why it is held</dt><dd><ul class="reasons"></ul></dd>
+        <dt>Proposer</dt><dd class="proposer"></dd>
+        <dt>Approvals</dt><dd class="approvals"></dd>
+        <dt>Proposal hash</dt><dd><code class="hash-server"></code><br><code class="hash-local"></code></dd>
+      </dl>
+      <p class="warn" hidden></p>
+      <div class="actions">
+        <button type="button" class="approve">Sign and approve</button>
+        <input type="text" class="reason" placeholder="Reason to reject" maxlength="500">
+        <button type="button" class="reject quiet">Reject</button>
+      </div>
+    </li>
+  </template>
+</body>
+</html>

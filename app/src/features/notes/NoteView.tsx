@@ -140,17 +140,17 @@ export default function NoteView() {
           over a note this long it is the single biggest source of stutter. */}
       <header className="sticky top-0 z-40 border-b border-line" style={{ background: 'var(--bg)' }}>
         <div className="mx-auto flex h-[62px] max-w-[1180px] items-center justify-between gap-4 px-6">
-          <Link to="/blog" className="inline-flex items-center gap-2 text-[13px] text-fg2 transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" /> Blog
+          <Link to="/blog" className="inline-flex items-center gap-2 text-[14px] text-fg2 transition-colors hover:text-fg">
+            <ArrowLeft className="h-4 w-4" /> Blog
           </Link>
-          <p className="hidden truncate font-mono text-[10px] uppercase tracking-[0.15em] text-fg3 sm:block">
+          <p className="hidden truncate font-mono text-[12px] uppercase tracking-[0.15em] text-fg3 sm:block">
             {note?.topic ?? ''}
           </p>
           <div className="flex items-center gap-2">
             {canEdit && note && (
               <Link to={`/notes/${slug}/edit`}
-                className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
-                <Pencil className="h-3 w-3" /> Edit
+                className="inline-flex items-center gap-1.5 rounded-[9px] border border-line px-2.5 py-1.5 font-mono text-[12px] uppercase tracking-[0.1em] text-fg2 transition-colors hover:text-fg">
+                <Pencil className="h-3.5 w-3.5" /> Edit
               </Link>
             )}
             <ThemeToggle className="!h-9 !w-9" placement="down" />
@@ -182,17 +182,17 @@ export default function NoteView() {
       {note && (
         <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-12 px-6 pb-32 pt-16 lg:grid-cols-[minmax(0,1fr)_216px]">
           <div className="mx-auto w-full max-w-[720px]">
-            <p className="font-mono text-[10.5px] uppercase tracking-[0.15em]" style={{ color: accent }}>
+            <p className="font-mono text-[12px] uppercase tracking-[0.15em]" style={{ color: accent }}>
               {note.topic}
             </p>
-            <h1 className="mt-3 text-[34px] font-semibold leading-[1.14] tracking-[-0.03em] sm:text-[42px]">
+            <h1 className="mt-3 text-[34px] font-semibold leading-[1.14] tracking-[-0.03em] sm:text-[44px]">
               {note.title}
             </h1>
             {note.summary && (
-              <p className="mt-5 max-w-[62ch] text-[17px] leading-[1.68] text-fg2">{note.summary}</p>
+              <p className="mt-5 max-w-[62ch] text-[18px] leading-[1.68] text-fg2">{note.summary}</p>
             )}
-            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-6 font-mono text-[10.5px] uppercase tracking-[0.1em] text-fg3">
-              <span className="inline-flex items-center gap-1.5"><Clock className="h-3 w-3" />{note.readingMinutes} min read</span>
+            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-6 font-mono text-[12px] uppercase tracking-[0.1em] text-fg3">
+              <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{note.readingMinutes} min read</span>
               <span>{note.words.toLocaleString()} words</span>
               {note.tags.map((t) => <span key={t} className="normal-case tracking-normal">#{t}</span>)}
             </div>
@@ -206,7 +206,7 @@ export default function NoteView() {
           {headings.length > 2 && (
             <nav className="hidden lg:block">
               <div className="sticky top-[96px]">
-                <p className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-fg3">Contents</p>
+                <p className="font-mono text-[12px] uppercase tracking-[0.15em] text-fg3">Contents</p>
                 <ul className="mt-3 space-y-1.5 border-l border-line">
                   {headings.map((h) => {
                     const on = active === h.id;
@@ -217,9 +217,9 @@ export default function NoteView() {
                             e.preventDefault();
                             document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }}
-                          className={'-ml-px block border-l py-[3px] text-[12.5px] leading-snug transition-colors ' +
+                          className={'-ml-px block border-l py-[3px] text-[13.5px] leading-snug transition-colors ' +
                             (h.level === 3 ? 'pl-[18px] ' : 'pl-3 ') +
-                            (on ? 'text-fg' : 'border-transparent text-fg3 hover:text-fg2')}
+                            (on ? 'text-fg font-medium' : 'border-transparent text-fg3 hover:text-fg2')}
                           style={on ? { borderColor: accent } : undefined}>
                           {h.text}
                         </a>

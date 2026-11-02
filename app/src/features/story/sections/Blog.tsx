@@ -42,13 +42,13 @@ export default function Blog() {
         {posts?.map((p) => (
           <Link key={p.slug} to={`/blog/${p.slug}`}
             className="group grid gap-2 border-b border-[color:var(--line)] py-6 last:border-b-0 md:grid-cols-[180px_1fr_auto] md:gap-8">
-            <span className="mono pt-1 text-fg3">{p.topic}</span>
+            <span className="mono pt-1 !text-[12.5px] sm:!text-[13px] text-fg3">{p.topic}</span>
             <span>
-              <span className="block text-[clamp(19px,1.7vw,23px)] font-medium tracking-[-.015em] text-fg">{p.title}</span>
+              <span className="block text-[clamp(21px,1.8vw,25px)] font-medium tracking-[-.015em] text-fg">{p.title}</span>
               {p.summary && <span className="t-body mt-2 line-clamp-2 block max-w-[72ch]">{p.summary}</span>}
             </span>
             <span className="flex items-center gap-3 self-start text-fg3 md:pt-1">
-              <span className="mono inline-flex items-center gap-1.5"><Clock className="h-3 w-3" />{p.readingMinutes} min</span>
+              <span className="mono inline-flex items-center gap-1.5 !text-[12px]"><Clock className="h-3.5 w-3.5" />{p.readingMinutes} min</span>
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </span>
           </Link>
@@ -56,7 +56,7 @@ export default function Blog() {
       </div>
 
       <div className="measure mt-6 flex justify-center">
-        <Link to="/blog" className="lg-pill inline-flex h-11 items-center gap-2 px-5 text-[14px]">
+        <Link to="/blog" className="lg-pill inline-flex h-11 items-center gap-2 px-5 text-[15px] sm:text-[15.5px]">
           All posts <ArrowUpRight className="h-4 w-4" />
         </Link>
       </div>

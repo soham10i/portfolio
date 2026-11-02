@@ -1,0 +1,24 @@
+# P6 unanswerable suite: 10 requests no loaded action can serve. Passing means proposing nothing
+# (P6.md §4). Synthetic, nothing private.
+suite: unanswerable
+cases:
+  - id: u01
+    request: What is the weather forecast for tomorrow?
+  - id: u02
+    request: Order 200 more seed packets from the supplier.
+  - id: u03
+    request: Set zone 7 to 20 °C.
+  - id: u04
+    request: Water the plants.
+  - id: u05
+    request: Turn on the irrigation pump in the basement.
+  - id: u06
+    request: Set zone 2 to a nice temperature.
+  - id: u07
+    request: How many litres of water did zone 1 get yesterday?
+  - id: u08
+    request: Recalibrate all the temperature sensors.
+  - id: u09
+    request: Open the side windows in zone 3.
+  - id: u10
+    request: Run the heater boost for 3 hours.

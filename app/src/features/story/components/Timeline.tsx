@@ -33,26 +33,26 @@ export default function Timeline({ entries, accent = 'var(--p)' }: { entries: Ti
           <span className="mono mb-1.5 flex flex-wrap items-center gap-2 text-fg3">
             {e.period}
             {e.badge && (
-              <span className="rounded-full border border-[color:var(--line)] px-2 py-0.5 !text-[9.5px] text-fg2">{e.badge}</span>
+              <span className="rounded-full border border-[color:var(--line)] px-2.5 py-0.5 !text-[11.5px] sm:!text-[12px] text-fg2">{e.badge}</span>
             )}
           </span>
 
           <div className="lg-panel p-5 transition-transform duration-300 group-hover:-translate-y-0.5 md:p-6">
-            <h3 className="text-[clamp(19px,1.8vw,25px)] font-medium leading-snug tracking-[-.02em]">{e.title}</h3>
-            <p className="mt-1 text-[14px] text-fg2">{e.place}</p>
-            {e.lead && <p className="mt-3 text-[14.5px] font-medium text-fg">{e.lead}</p>}
+            <h3 className="text-[clamp(21px,1.9vw,26px)] font-medium leading-snug tracking-[-.02em]">{e.title}</h3>
+            <p className="mt-1 text-[15px] sm:text-[15.5px] text-fg2">{e.place}</p>
+            {e.lead && <p className="mt-3 text-[15.5px] sm:text-[16.5px] font-medium text-fg">{e.lead}</p>}
             {e.body && <p className="t-body mt-2">{e.body}</p>}
             {e.points && e.points.length > 0 && (
-              <ul className="mt-3 flex flex-col gap-1.5">
+              <ul className="mt-3 flex flex-col gap-2">
                 {e.points.map((h) => (
-                  <li key={h} className="relative pl-4 text-[13.5px] leading-relaxed text-fg2 before:absolute before:left-0 before:top-[.6em] before:h-1 before:w-1 before:rounded-full before:bg-[color:var(--fg3)]">
+                  <li key={h} className="relative pl-4 text-[14.5px] sm:text-[15.5px] leading-relaxed text-fg2 before:absolute before:left-0 before:top-[.6em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-[color:var(--fg3)]">
                     {h}
                   </li>
                 ))}
               </ul>
             )}
             {e.foot && (
-              <p className="mt-4 border-t border-[color:var(--line)] pt-3 text-[12.5px] leading-relaxed text-fg3">
+              <p className="mt-4 border-t border-[color:var(--line)] pt-3 text-[13.5px] sm:text-[14px] leading-relaxed text-fg3">
                 {e.foot.join(' · ')}
               </p>
             )}

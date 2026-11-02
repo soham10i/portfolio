@@ -40,7 +40,7 @@ export default function ObjectChart({ counts, total, filter, onFilter }: {
                   <span className="truncate text-[13px] text-fg2 group-hover:text-fg">{label}</span>
                   <span className="relative h-2.5 overflow-hidden rounded-full bg-[color:var(--surf2)]">
                     <span
-                      className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 ease-[cubic-bezier(.16,1,.3,1)]"
+                      className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
                       style={{ width: `${(n / max) * 100}%`, background: COLORS[i % COLORS.length] }}
                     />
                   </span>

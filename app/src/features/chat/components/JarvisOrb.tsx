@@ -20,6 +20,7 @@ interface Orb { cv: HTMLCanvasElement; size: number; active: boolean; speed: num
 const orbs = new Set<Orb>();
 let raf = 0;
 let last = 0;
+let lastFrameTime = 0;
 
 const motionOn = () => document.documentElement.dataset.motion !== 'off';
 function draw(o: Orb) {
@@ -31,21 +32,34 @@ function draw(o: Orb) {
 }
 
 function tick(now: number) {
-  const dt = Math.min(0.05, (now - (last || now)) / 1000);
-  last = now;
   const moving = motionOn();
   const lowPerf = isLowPerf();
-  let animating = false;
+
+  // On low power / mobile devices when all orbs are idle, throttle to ~25 FPS to conserve battery while keeping it alive and breathing
+  let anyActive = false;
+  for (const o of orbs) {
+    if (o.active || o.energy > 0.05) { anyActive = true; break; }
+  }
+  const minInterval = lowPerf && !anyActive ? 40 : 0; // ~25 FPS when idle on mobile
+  if (minInterval > 0 && now - lastFrameTime < minInterval) {
+    raf = orbs.size && moving ? requestAnimationFrame(tick) : 0;
+    return;
+  }
+  lastFrameTime = now;
+
+  const dt = Math.min(0.05, (now - (last || now)) / 1000);
+  last = now;
+
   for (const o of orbs) {
     const ease = Math.min(1, dt * 3);
     o.speed += ((o.active ? 2.4 : 0.8) - o.speed) * ease;   // flow rate
     o.energy += ((o.active ? 1 : 0) - o.energy) * ease;
     if (moving) o.time += o.speed * dt;
     draw(o);
-    // Low power: keep flowing only while Nexus is active or settling back down.
-    if (!lowPerf || o.active || o.energy > 0.02) animating = true;
   }
-  raf = orbs.size && moving && animating ? requestAnimationFrame(tick) : 0;
+
+  // Animate continuously as long as orbs exist and motion is not explicitly turned off
+  raf = orbs.size && moving ? requestAnimationFrame(tick) : 0;
 }
 
 function start() {
@@ -72,8 +86,8 @@ export default function JarvisOrb({ size, active = false, className = '' }: {
   useEffect(() => {
     const cv = canvas.current;
     if (!cv) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, isLowPerf() ? 2 : 3);
-    cv.width = Math.round(size * dpr * (isLowPerf() ? 1 : 1.25));   // a little supersampling for clean edges
+    const dpr = Math.min(window.devicePixelRatio || 1, isLowPerf() ? 1.5 : 2.5);
+    cv.width = Math.round(size * dpr);
     cv.height = cv.width;
     const o: Orb = { cv, size, active: false, speed: 0.8, energy: 0, time: Math.random() * 100 };
     orb.current = o;

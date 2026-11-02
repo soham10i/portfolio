@@ -24,6 +24,11 @@ DEPENDENCY_MODULES = {
     "asyncpg",
     "rfc8785",
     "celpy",
+    "cryptography",
+    "fastapi",
+    "starlette",
+    "uvicorn",
+    "httpx",
 }
 
 LINK = re.compile(r"(?:\]\(|`|\"|'|\s)((?:\.\./)+[^\s)`\"']*)")
@@ -59,7 +64,7 @@ def test_no_reference_outside_nexus(path):
 
 
 def test_imports_are_stdlib_dependencies_or_nexus():
-    allowed = set(sys.stdlib_module_names) | DEPENDENCY_MODULES | {"nexus", "tests"}
+    allowed = set(sys.stdlib_module_names) | DEPENDENCY_MODULES | {"nexus", "nexus_packs", "tests"}
     bad = []
     for path in FILES:
         if path.suffix != ".py":

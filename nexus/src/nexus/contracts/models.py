@@ -67,6 +67,10 @@ ObservableId = Annotated[
     str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*|\[\*\]|\[\d+\])*$")
 ]
 RelPath = Annotated[str, StringConstraints(min_length=1, max_length=256)]
+AssetId = Annotated[
+    str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*(\[\*\])?$", max_length=128)
+]
+Alias = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9 ]{0,47}$")]
 
 
 class Contract(BaseModel):
@@ -153,6 +157,7 @@ class Action(Contract):
     effects: Annotated[list[CelExpr], Field(max_length=32)]
     envelope: Envelope | None = None
     verify_within_s: Annotated[int, Field(ge=1, le=3600)] | None = None
+    timeout_s: Annotated[int, Field(ge=1, le=600)] | None = None
     compensation: Compensation | None = None
     sandbox: IdSegment | None = None
     approvers: Annotated[int, Field(ge=1, le=2)] | None = None
@@ -185,6 +190,23 @@ class Observable(Contract):
     def _enum_values(self) -> Observable:
         if (self.type == "enum") != (self.enum_values is not None):
             raise ValueError("enum_values is required iff type is 'enum'")
+        return self
+
+
+class Asset(Contract):
+    id: AssetId
+    kind: IdSegment
+    name: Annotated[str, StringConstraints(min_length=1, max_length=120)]
+    aliases: Annotated[list[Alias], Field(max_length=16), AfterValidator(_unique)] | None = None
+    parent: AssetId | None = None
+    count: Annotated[int, Field(ge=1, le=1000)] | None = None
+    observables: Annotated[list[str], AfterValidator(_unique)] | None = None
+    description: Annotated[str, StringConstraints(max_length=1000)] | None = None
+
+    @model_validator(mode="after")
+    def _family_count(self) -> Asset:
+        if self.id.endswith("[*]") != (self.count is not None):
+            raise ValueError("count is required iff the id ends in '[*]'")
         return self
 
 
@@ -239,6 +261,7 @@ class PackManifest(Contract):
     tags: Annotated[list[IdSegment], AfterValidator(_unique)] | None = None
     observables: list[Observable]
     actions: list[Action]
+    assets: list[Asset] | None = None
     sandboxes: list[Sandbox] | None = None
     knowledge: list[RelPath] | None = None
     evals: list[RelPath] | None = None
@@ -302,10 +325,19 @@ class Simulation(Contract):
     trace_ref: Annotated[str, StringConstraints(max_length=512)] | None = None
 
 
+class ApprovalSignature(Contract):
+    alg: Literal["ed25519"]
+    key_id: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")]
+    public_key: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
+    value: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{128}$")]
+    verified: bool
+
+
 class Approval(Contract):
     approver: Actor
     proposal_hash: Sha256
     approved_at: Timestamp
+    signature: ApprovalSignature | None = None
 
 
 class Execution(Contract):
@@ -321,6 +353,25 @@ class Verification(Contract):
     observed: dict[str, Any] | None = None
 
 
+class Incident(Contract):
+    incident_id: Uuid
+    kind: IdSegment
+    detail: Annotated[str, StringConstraints(max_length=2000)]
+    opened_at: Timestamp
+
+
+class ShadowComparison(Contract):
+    human: Actor
+    human_outcome: Literal["ALLOW", "DENY", "NEEDS_APPROVAL"]
+    agree: bool
+    recorded_at: Timestamp
+
+
+class Shadow(Contract):
+    active: bool
+    comparisons: list[ShadowComparison]
+
+
 class EventRef(Contract):
     stream: Annotated[str, StringConstraints(min_length=1, max_length=256)]
     seq: Annotated[int, Field(ge=1)]
@@ -334,6 +385,8 @@ class EvidencePack(Contract):
     approvals: list[Approval]
     execution: Execution
     verification: Verification
+    incidents: list[Incident] | None = None
+    shadow: Shadow | None = None
     event_refs: list[EventRef]
     chain_head: Sha256
 

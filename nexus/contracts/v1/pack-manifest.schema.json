@@ -24,6 +24,11 @@
       "type": "array",
       "items": {"$ref": "action.schema.json"}
     },
+    "assets": {
+      "description": "The asset graph: the things the observables belong to, with the names people use for them (ADR-0024).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/asset"}
+    },
     "sandboxes": {
       "description": "Simulators that actions can be dry-run in before execution.",
       "type": "array",
@@ -67,6 +72,24 @@
       "if": {"required": ["type"], "properties": {"type": {"const": "enum"}}},
       "then": {"required": ["enum_values"]},
       "else": {"not": {"required": ["enum_values"]}}
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name"],
+      "properties": {
+        "id": {"description": "Dotted path; a trailing '[*]' marks a numbered family, e.g. 'greenhouse.zone[*]'.", "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*(\\[\\*\\])?$", "maxLength": 128},
+        "kind": {"description": "What sort of thing it is, e.g. 'site', 'zone', 'vent'.", "$ref": "common.schema.json#/$defs/id_segment"},
+        "name": {"description": "Human-readable name; also matched as an alias.", "type": "string", "minLength": 1, "maxLength": 120},
+        "aliases": {"description": "Other lower-case names people use for it.", "type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9 ]{0,47}$"}, "uniqueItems": true, "maxItems": 16},
+        "parent": {"description": "Id of the asset this one belongs to, declared earlier.", "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*(\\[\\*\\])?$", "maxLength": 128},
+        "count": {"description": "Number of members of a family, numbered from 1; required iff the id ends in '[*]'.", "type": "integer", "minimum": 1, "maximum": 1000},
+        "observables": {"description": "Ids of the pack's observables that belong to this asset.", "type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "description": {"description": "What the asset is.", "type": "string", "maxLength": 1000}
+      },
+      "if": {"required": ["id"], "properties": {"id": {"pattern": "\\[\\*\\]$"}}},
+      "then": {"required": ["count"]},
+      "else": {"not": {"required": ["count"]}}
     },
     "connector": {
       "type": "object",

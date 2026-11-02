@@ -1,0 +1,27 @@
+# P7 live suite: 10 questions about current values, asked against seeded world state (`state`,
+# with each value's age in seconds at question time). A fresh value must be cited from its live
+# read and stated. A stale or missing one (`unknown`) must not be given at all: no sentence citing
+# a live read may state a number the question and that read do not contain, and no sentence may
+# state a `forbid` value (the stale one). Abstaining is fine there. Synthetic, nothing private.
+suite: live
+state:
+  - {key: "greenhouse.zone[1].setpoint_c", value: 22, age_s: 30}
+  - {key: "greenhouse.zone[2].setpoint_c", value: 21.5, age_s: 60}
+  - {key: "greenhouse.zone[3].setpoint_c", value: 24, age_s: 900}
+  - {key: "greenhouse.zone[1].lights", value: true, age_s: 10}
+  - {key: "greenhouse.zone[2].lights", value: false, age_s: 10}
+  - {key: "greenhouse.zone[3].lights", value: true, age_s: 10}
+  - {key: "greenhouse.zone[4].lights", value: false, age_s: 10}
+  - {key: greenhouse.vent_pct, value: 35, age_s: 20}
+  - {key: greenhouse.water_l, value: 12.5, age_s: 40}
+cases:
+  - {id: l01, question: "What is the setpoint of zone 1 right now?", keys: ["greenhouse.zone[1].setpoint_c"], phrases: ["22"]}
+  - {id: l02, question: "What is zone 2 set to at the moment?", keys: ["greenhouse.zone[2].setpoint_c"], phrases: ["21.5"]}
+  - {id: l03, question: "What is the current setpoint of zone 3?", unknown: true, forbid: [24]}
+  - {id: l04, question: "What is the setpoint of zone 4 now?", unknown: true}
+  - {id: l05, question: "Are the lights on in zone 1 right now?", keys: ["greenhouse.zone[1].lights"], phrases: ["on|true"]}
+  - {id: l06, question: "Are the lights in zone 2 on at the moment?", keys: ["greenhouse.zone[2].lights"], phrases: ["off|false|not"]}
+  - {id: l07, question: "How far open is the roof vent right now?", keys: [greenhouse.vent_pct], phrases: ["35"]}
+  - {id: l08, question: "How much water has the drip line delivered so far?", keys: [greenhouse.water_l], phrases: ["12.5"]}
+  - {id: l09, question: "What are the current setpoints of zones 1 and 2?", keys: ["greenhouse.zone[1].setpoint_c", "greenhouse.zone[2].setpoint_c"], phrases: ["22", "21.5"]}
+  - {id: l10, question: "Are the lights on in zone 4, and what is its setpoint right now?", unknown: true}

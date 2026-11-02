@@ -1,8 +1,9 @@
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Github } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Github, Sparkles } from 'lucide-react';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
+import { unlockAudio } from '@/features/chat/lib/voice';
 import { PROJECTS, CONTACT, type Project } from '@/shared/data/portfolio';
 import { PROJECT_DETAILS } from '@/features/projects/lib/projectDetailContent';
 import { lenis } from '@/shared/lib/lenis';
@@ -13,6 +14,7 @@ import ProjectCover from '@/features/story/components/ProjectCover';
 import { useStory } from '@/features/story/lib/store';
 import { useTilt } from '@/features/story/lib/useTilt';
 import RunViewer from '@/features/projects/components/RunViewer';
+import ArchitectureFlow from '@/features/projects/components/ArchitectureFlow';
 
 /* Project case study, in the gallery art direction (story.css), light/dark.
  *
@@ -20,11 +22,12 @@ import RunViewer from '@/features/projects/components/RunViewer';
  *             a screenshot of the live site when there is one (it opens the
  *             real thing), otherwise its photo or generative cover art
  *   glance    timeline · category · status · stack
- *   body      problem → approach (stepper) → gallery → architecture (a layer
- *             stack that fans apart on hover) → notes → timeline, with an aside
+ *   nav-bar   quick jump between engineering sections (overview, approach, architecture, notes, etc.)
+ *   body      problem → approach → gallery → architecture (pipeline flow / matrix) →
+ *             deep technical notes → evolution → timeline, with an aside
  *   next      the following project as a large photo card */
 
-const H2 = 'mono mb-6 text-fg3';
+const H2 = 'mono mb-4 text-[12.5px] sm:text-[13.5px] uppercase tracking-wider text-fg3';
 
 function tints(p: Project): React.CSSProperties {
   const t = p.tint ?? '#4d8dff';
@@ -76,10 +79,54 @@ export default function ProjectDetail() {
   const project = index >= 0 ? PROJECTS[index] : undefined;
   const detail = id ? PROJECT_DETAILS[id] : undefined;
 
+  const [activeTab, setActiveTab] = useState<string>('overview');
+
+  const tabs = useMemo(() => {
+    if (!project) return [];
+    return [
+      { id: 'overview', label: 'Overview' },
+      { id: 'approach', label: 'Approach' },
+      ...(project.gallery && project.gallery.length > 0 ? [{ id: 'pipeline', label: 'Pipeline' }] : []),
+      ...(detail?.architecture && detail.architecture.length > 0 ? [{ id: 'architecture', label: 'Architecture' }] : []),
+      ...(detail?.technicalNotes && detail.technicalNotes.length > 0 ? [{ id: 'technical-notes', label: 'Technical Notes' }] : []),
+      ...(project.versions && project.versions.length > 0 ? [{ id: 'evolution', label: 'System Evolution' }] : []),
+      ...(detail?.timeline && detail.timeline.length > 0 ? [{ id: 'timeline', label: 'Timeline' }] : []),
+    ];
+  }, [project, detail]);
+
   useEffect(() => {
     lenis.scrollTo(0, { immediate: true });
     if (id) collect(id);
   }, [id, collect]);
+
+  useEffect(() => {
+    if (tabs.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveTab(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: '-20% 0px -70% 0px' }
+    );
+
+    tabs.forEach((tab) => {
+      const el = document.getElementById(tab.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [tabs]);
+
+  const scrollTo = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      lenis.scrollTo(el, { offset: -120 });
+    }
+  };
 
   if (!project) {
     return (
@@ -127,7 +174,7 @@ export default function ProjectDetail() {
                   <Link to={project.demoUrl} className="btn-ink">Open live demo <ArrowUpRight className="h-4 w-4" /></Link>
                 )}
                 {project.githubUrl ? (
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-12 items-center gap-2 px-5 text-[14px]">
+                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-12 items-center gap-2 px-5 text-[15px]">
                     <Github className="h-4 w-4" /> View code
                   </a>
                 ) : (
@@ -143,8 +190,8 @@ export default function ProjectDetail() {
             <div className="mt-[clamp(32px,5vh,56px)] grid grid-cols-2 gap-3 md:grid-cols-4">
               {detail.results.map((r) => (
                 <div key={r.label} className="lg-panel p-5">
-                  <p className="text-[clamp(22px,2.4vw,34px)] font-medium tracking-[-.03em]" style={{ color: r.color }}>{r.value}</p>
-                  <p className="mt-2 text-[13px] text-fg2">{r.label}</p>
+                  <p className="text-[clamp(24px,2.5vw,36px)] font-medium tracking-[-.03em]" style={{ color: r.color }}>{r.value}</p>
+                  <p className="mt-2 text-[14px] sm:text-[14.5px] text-fg2">{r.label}</p>
                 </div>
               ))}
             </div>
@@ -165,9 +212,9 @@ export default function ProjectDetail() {
           ))}
           <div className="px-[var(--gutter)] py-6">
             <p className="mono mb-3 text-fg3">Stack</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {(project.tech ?? []).map((t) => (
-                <span key={t} className="rounded-full border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-3 py-1 text-[12.5px] text-fg2">{t}</span>
+                <span key={t} className="rounded-full border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-3.5 py-1 text-[13.5px] sm:text-[14px] text-fg2">{t}</span>
               ))}
             </div>
           </div>
@@ -183,29 +230,65 @@ export default function ProjectDetail() {
           </section>
         )}
 
+        {/* Sticky section tabs bar */}
+        {tabs.length > 0 && (
+          <nav
+            aria-label="Project sections"
+            className="sticky top-[64px] z-30 border-y border-[color:var(--line)] bg-[color-mix(in_oklab,var(--bg)_88%,transparent)] backdrop-blur-md px-[var(--gutter)] py-2.5 transition-all"
+          >
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5" data-lenis-prevent>
+              <span className="mono mr-1 hidden text-[11px] uppercase tracking-wider text-fg3 sm:inline-block">Jump to:</span>
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => scrollTo(tab.id)}
+                    className={
+                      'mono whitespace-nowrap rounded-full px-3.5 py-1 text-[12px] sm:text-[12.5px] font-medium transition-all ' +
+                      (isActive
+                        ? 'bg-[color:var(--fg)] text-[color:var(--on-fg)] shadow-sm'
+                        : 'border border-[color:var(--line)] bg-[color:var(--surf2)] text-fg2 hover:border-fg3 hover:text-fg')
+                    }
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        )}
+
         {/* body */}
         <section className="panel px-[var(--gutter)] py-[clamp(56px,9vh,112px)]">
           <div className="grid items-start gap-[clamp(32px,5vw,72px)] lg:grid-cols-[minmax(0,1.6fr)_minmax(0,.6fr)]">
             <div className="flex flex-col gap-[clamp(48px,7vh,80px)]">
               {(detail?.problem || project.description) && (
-                <section>
-                  <h2 className={H2}>{detail?.problem ? 'The problem' : 'Overview'}</h2>
+                <section id="overview" className="scroll-mt-28">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                    <h2 className={H2}>{detail?.problem ? 'The Engineering Problem' : 'Overview'}</h2>
+                  </div>
                   <p className="text-[clamp(22px,2.2vw,32px)] font-medium leading-[1.25] tracking-[-.025em]">
                     {detail?.problem ?? project.description}
                   </p>
                   {detail?.problem && project.description && (
-                    <p className="mt-6 max-w-[68ch] text-[16px] leading-relaxed text-fg2">{project.description}</p>
+                    <p className="mt-6 max-w-[68ch] text-[15.5px] sm:text-[16px] leading-relaxed text-fg2">{project.description}</p>
                   )}
                 </section>
               )}
 
-              <section>
-                <h2 className={H2}>Approach</h2>
+              <section id="approach" className="scroll-mt-28">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                  <h2 className={H2}>Systematic Implementation Approach</h2>
+                </div>
                 <ol className="relative">
                   <span aria-hidden className="absolute bottom-6 left-[19px] top-6 w-px bg-[color:var(--line)]" />
                   {approach.map((a, i) => (
                     <li key={i} className="relative grid grid-cols-[40px_1fr] gap-4 pb-5 last:pb-0">
-                      <span className="relative grid h-10 w-10 place-items-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg2)] text-[13px] font-medium">
+                      <span className="relative grid h-10 w-10 place-items-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg2)] text-[14px] font-medium">
                         {i + 1}
                       </span>
                       <p className="lg-panel t-body p-5">{a}</p>
@@ -214,15 +297,18 @@ export default function ProjectDetail() {
                 </ol>
               </section>
 
-              {project.gallery && (
-                <section>
-                  <h2 className={H2}>Pipeline</h2>
+              {project.gallery && project.gallery.length > 0 && (
+                <section id="pipeline" className="scroll-mt-28">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                    <h2 className={H2}>Execution Pipeline & Visual Evidence</h2>
+                  </div>
                   <div className="flex items-center gap-2 overflow-x-auto pb-2" data-lenis-prevent>
                     {project.gallery.map((g, i) => (
                       <div key={g.src} className="flex flex-none items-center gap-2">
                         <figure className="w-[clamp(140px,18vw,200px)]">
                           <img src={g.src} alt={g.caption} loading="lazy" className="aspect-square w-full rounded-2xl border border-[color:var(--line)] bg-black object-cover" />
-                          <figcaption className="mono mt-2 !text-[10px] text-fg3">{String(i + 1).padStart(2, '0')} · {g.caption}</figcaption>
+                          <figcaption className="mono mt-2 !text-[12px] text-fg3">{String(i + 1).padStart(2, '0')} · {g.caption}</figcaption>
                         </figure>
                         {i < project.gallery!.length - 1 && <ArrowRight className="mb-6 h-4 w-4 flex-none text-fg3" />}
                       </div>
@@ -232,24 +318,81 @@ export default function ProjectDetail() {
               )}
 
               {detail?.architecture && (
-                <section>
-                  <h2 className={H2}>Architecture</h2>
-                  {/* A layer stack: each tier a glass slab, offset like a deck,
-                      fanning apart on hover. Top of the stack = top of the system. */}
-                  <div className="group/stack flex flex-col">
-                    {[...detail.architecture].reverse().map((l, i, arr) => (
+                <section id="architecture" className="scroll-mt-28">
+                  <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                      <h2 className={H2}>System Architecture & Pipeline Flow</h2>
+                    </div>
+                    <span className="mono text-[12px] text-fg3">Zero-overlap technical decomposition</span>
+                  </div>
+                  <ArchitectureFlow architecture={detail.architecture} tint={project.tint} />
+                </section>
+              )}
+
+              {detail?.technicalNotes && detail.technicalNotes.length > 0 && (
+                <section id="technical-notes" className="scroll-mt-28">
+                  <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                      <h2 className={H2}>Deep Technical Notes & Engineering Trade-offs</h2>
+                    </div>
+                    <span className="mono text-[12px] text-fg3">{detail.technicalNotes.length} key insights</span>
+                  </div>
+                  <div className="flex flex-col gap-3.5">
+                    {detail.technicalNotes.map((n, i) => (
                       <div
-                        key={l.tier}
-                        className="lg-panel relative -mt-3 grid gap-3 p-5 transition-[margin,transform] duration-500 ease-[cubic-bezier(.16,1,.3,1)] first:mt-0 group-hover/stack:mt-3 group-hover/stack:first:mt-0 sm:grid-cols-[130px_1fr]"
-                        style={{ marginLeft: `${i * 14}px`, marginRight: `${(arr.length - 1 - i) * 14}px`, zIndex: arr.length - i }}
+                        key={i}
+                        className="lg-panel relative flex items-start gap-4 p-5 transition-all hover:border-[color-mix(in_oklab,var(--fg)_20%,transparent)]"
                       >
-                        <span className="mono flex items-center gap-2 text-fg2">
-                          <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
-                          {l.tier}
+                        <span
+                          className="mono mt-0.5 grid h-6 w-8 flex-none place-items-center rounded bg-[color:var(--surf2)] text-[11px] font-semibold text-fg3"
+                        >
+                          {String(i + 1).padStart(2, '0')}
                         </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {l.parts.map((pt) => (
-                            <span key={pt} className="rounded-full border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-3 py-1 text-[12.5px] text-fg2">{pt}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[15px] sm:text-[15.5px] leading-relaxed text-fg2 font-normal">
+                            {n}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {project.versions && project.versions.length > 0 && (
+                <section id="evolution" className="scroll-mt-28">
+                  <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                      <h2 className={H2}>System Evolution & Version Iterations</h2>
+                    </div>
+                    <span className="mono text-[12px] text-fg3">{project.versions.length} versions</span>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    {project.versions.map((ver) => (
+                      <div key={ver.key} className="lg-panel flex flex-col gap-3.5 p-5 sm:p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--line)] pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="mono rounded-full px-3 py-0.5 text-[12px] font-semibold text-white shadow-xs"
+                              style={{ background: project.tint ?? 'var(--p)' }}
+                            >
+                              {ver.label}
+                            </span>
+                            <span className="text-[14.5px] font-medium text-fg">{ver.impact}</span>
+                          </div>
+                        </div>
+                        <p className="text-[15px] leading-relaxed text-fg2">{ver.desc}</p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {ver.tech.map((t) => (
+                            <span
+                              key={t}
+                              className="rounded-full border border-[color:var(--line)] bg-[color:var(--chip-fill)] px-3 py-0.5 text-[12.5px] text-fg2"
+                            >
+                              {t}
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -258,20 +401,12 @@ export default function ProjectDetail() {
                 </section>
               )}
 
-              {detail?.technicalNotes && (
-                <section>
-                  <h2 className={H2}>Technical notes</h2>
-                  <ul className="flex flex-col gap-4 border-l-2 pl-6" style={{ borderColor: project.tint ?? 'var(--p)' }}>
-                    {detail.technicalNotes.map((n, i) => (
-                      <li key={i} className="t-body">{n}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {detail?.timeline && (
-                <section>
-                  <h2 className={H2}>Timeline</h2>
+              {detail?.timeline && detail.timeline.length > 0 && (
+                <section id="timeline" className="scroll-mt-28">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="h-2 w-2 rounded-full" style={{ background: project.tint ?? 'var(--p)' }} />
+                    <h2 className={H2}>Project Timeline & Milestones</h2>
+                  </div>
                   <ol className="border-t border-[color:var(--line)]">
                     {detail.timeline.map((t) => (
                       <li key={t.phase} className="grid gap-2 border-b border-[color:var(--line)] py-5 md:grid-cols-[240px_1fr] md:gap-6">
@@ -283,42 +418,47 @@ export default function ProjectDetail() {
                 </section>
               )}
 
-              {detail?.githubNote && <p className="text-[14px] leading-relaxed text-fg3">{detail.githubNote}</p>}
+              {detail?.githubNote && (
+                <div className="lg-panel flex items-center gap-3 p-4 text-[14px] leading-relaxed text-fg2">
+                  <Sparkles className="h-4 w-4 flex-none text-p" />
+                  <span>{detail.githubNote}</span>
+                </div>
+              )}
             </div>
 
             <aside className="flex flex-col gap-3 lg:sticky lg:top-24">
               <div className="lg-panel flex flex-col gap-1 p-6">
                 <p className="mono mb-3 text-fg3">Links</p>
                 {project.liveUrl && (
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1.5 text-[14.5px] hover:text-p">
+                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1.5 text-[15.5px] hover:text-p">
                     Live site <ArrowUpRight className="h-4 w-4" />
                   </a>
                 )}
                 {project.demoUrl && (
-                  <Link to={project.demoUrl} className="flex items-center justify-between gap-3 py-1.5 text-[14.5px] hover:text-p">
+                  <Link to={project.demoUrl} className="flex items-center justify-between gap-3 py-1.5 text-[15.5px] hover:text-p">
                     Live demo on this site <ArrowUpRight className="h-4 w-4" />
                   </Link>
                 )}
                 {project.githubUrl ? (
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1.5 text-[14.5px] hover:text-p">
+                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 py-1.5 text-[15.5px] hover:text-p">
                     Source on GitHub <Github className="h-4 w-4" />
                   </a>
                 ) : (
-                  <span className="py-1.5 text-[14.5px] text-fg3">Source coming soon</span>
+                  <span className="py-1.5 text-[15px] text-fg3">Source coming soon</span>
                 )}
               </div>
               <button
                 type="button"
-                onClick={() => window.dispatchEvent(new Event('jarvis:open'))}
-                className="lg-panel flex items-start gap-3 p-6 text-left transition-transform hover:-translate-y-0.5"
+                onClick={() => { unlockAudio(); window.dispatchEvent(new Event('jarvis:open')); }}
+                className="lg-panel flex items-start gap-3.5 p-6 text-left transition-transform hover:-translate-y-0.5"
               >
                 <JarvisOrb size={30} className="mt-0.5" />
                 <span>
-                  <span className="flex items-center gap-1.5 text-[15px] font-medium">Ask Nexus</span>
-                  <span className="mt-1 block text-[13.5px] leading-relaxed text-fg2">Questions about how this was built?</span>
+                  <span className="flex items-center gap-1.5 text-[16px] font-medium">Ask Nexus</span>
+                  <span className="mt-1 block text-[14px] sm:text-[14.5px] leading-relaxed text-fg2">Questions about how this was built?</span>
                 </span>
               </button>
-              <a href={`mailto:${CONTACT.email}`} className="lg-panel block p-6 text-[13.5px] text-fg2 hover:text-fg">
+              <a href={`mailto:${CONTACT.email}`} className="lg-panel block p-6 text-[14px] sm:text-[14.5px] text-fg2 hover:text-fg">
                 <span className="mono mb-2 block text-fg3">Contact</span>
                 <span className="break-all">{CONTACT.email}</span>
               </a>

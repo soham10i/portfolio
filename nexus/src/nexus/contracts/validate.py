@@ -86,6 +86,37 @@ def _rule_duplicate_observable(doc: Mapping[str, Any], base: str) -> Iterator[Va
     yield from _duplicates(doc["observables"], f"{base}/observables", "DUPLICATE_OBSERVABLE", "observable")
 
 
+def _rule_duplicate_asset(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
+    yield from _duplicates(doc.get("assets", []), f"{base}/assets", "DUPLICATE_ASSET", "asset")
+
+
+def _rule_unknown_asset_ref(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
+    """An asset's parent must be declared before it, and its observables must be the pack's own;
+    a family's observables are per member ('[*]'), a single asset's are not."""
+    observables = {o["id"] for o in doc["observables"]}
+    earlier: set[str] = set()
+    for i, asset in enumerate(doc.get("assets", [])):
+        where = f"{base}/assets/{i}"
+        parent = asset.get("parent")
+        if parent is not None and parent not in earlier:
+            message = f"parent '{parent}' is not an asset declared before it"
+            yield ValidationIssue(f"{where}/parent", "UNKNOWN_ASSET_REF", message)
+        family = asset["id"].endswith("[*]")
+        for j, obs in enumerate(asset.get("observables", [])):
+            belongs = obs.startswith(asset["id"] + ".") if family else "[*]" not in obs
+            if obs not in observables:
+                yield ValidationIssue(
+                    f"{where}/observables/{j}", "UNKNOWN_ASSET_REF", f"observable '{obs}' is not declared"
+                )
+            elif not belongs:
+                yield ValidationIssue(
+                    f"{where}/observables/{j}",
+                    "UNKNOWN_ASSET_REF",
+                    f"observable '{obs}' does not belong under asset '{asset['id']}'",
+                )
+        earlier.add(asset["id"])
+
+
 def _rule_unknown_sandbox(doc: Mapping[str, Any], base: str) -> Iterator[ValidationIssue]:
     declared = {s["id"] for s in doc.get("sandboxes", [])}
     for i, action in enumerate(doc["actions"]):
@@ -243,6 +274,8 @@ RULES: dict[Kind, list[Rule]] = {
     Kind.PACK: [
         _rule_duplicate_action,
         _rule_duplicate_observable,
+        _rule_duplicate_asset,
+        _rule_unknown_asset_ref,
         _rule_unknown_sandbox,
         _rule_unknown_compensation,
         _rule_compensation_loop,
@@ -261,6 +294,8 @@ SEMANTIC_CODES = frozenset(
     {
         "DUPLICATE_ACTION",
         "DUPLICATE_OBSERVABLE",
+        "DUPLICATE_ASSET",
+        "UNKNOWN_ASSET_REF",
         "UNKNOWN_SANDBOX",
         "UNKNOWN_COMPENSATION",
         "SELF_COMPENSATION_LOOP",
@@ -311,9 +346,23 @@ def load_document(path: Path) -> Any:
     if path.suffix == ".json":
         return json.loads(text)
     try:
-        return yaml.load(text, Loader=_Loader)  # noqa: S506 (_Loader subclasses SafeLoader)
+        data = yaml.load(text, Loader=_Loader)  # noqa: S506 (_Loader subclasses SafeLoader)
     except yaml.YAMLError as exc:
         raise ValueError(f"invalid YAML: {exc}") from exc
+    _string_keys(data, "")
+    return data
+
+
+def _string_keys(node: Any, where: str) -> None:
+    """JSON keys are strings; YAML would read `on:` as True and `1:` as 1 without a word."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if not isinstance(key, str):
+                raise ValueError(f"invalid YAML: key {key!r} at {where or '/'} is not a string; quote it")
+            _string_keys(value, f"{where}/{key}")
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            _string_keys(value, f"{where}/{i}")
 
 
 def validate_file(path: Path, kind: Kind | str | None = None) -> list[ValidationIssue]:

@@ -33,7 +33,11 @@ varying vec2 vUv;
 void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
 const FRAG = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 uniform float uRes, uTime, uEnergy;
 uniform vec3 uBase, uA, uB, uC;
 varying vec2 vUv;
@@ -127,7 +131,10 @@ function init(): Renderer | null {
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   gl.clearColor(0, 0, 0, 0);
 
-  canvas.addEventListener('webglcontextlost', () => { renderer = null; });
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    renderer = null;
+  });
   const u = (name: string) => gl.getUniformLocation(prog, name);
   return {
     canvas, gl,

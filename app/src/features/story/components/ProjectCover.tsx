@@ -25,7 +25,7 @@ export default function ProjectCover({
           <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
           {project.liveUrl && (
-            <span className="ml-3 truncate text-[11px] text-white/70">{project.liveUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+            <span className="ml-3 truncate text-[12px] text-white/80">{project.liveUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
           )}
         </div>
       )}
@@ -45,7 +45,7 @@ export default function ProjectCover({
           <span className="cover-no absolute -bottom-[.18em] right-[.04em] select-none font-medium leading-none tracking-[-.08em] [font-size:clamp(120px,22cqw,260px)]">
             {no}
           </span>
-          <span className="cover-meta mono absolute left-4 top-12 max-w-[70%] !text-[10px] leading-relaxed">
+          <span className="cover-meta mono absolute left-4 top-12 max-w-[70%] !text-[11.5px] sm:!text-[12px] leading-relaxed">
             {project.category}
             <br />
             {project.tech?.slice(0, 4).join(' · ')}

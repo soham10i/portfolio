@@ -103,3 +103,15 @@ def test_console_script_is_installed():
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_models_lists_providers_without_showing_keys(monkeypatch, capsys):
+    monkeypatch.delenv("NEXUS_DB_URL", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "AIza-not-a-real-key")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    assert main(["models"]) == 0
+    out = capsys.readouterr().out
+    assert "AIza-not-a-real-key" not in out
+    assert "$GEMINI_API_KEY set" in out and "$GROQ_API_KEY not set" in out
+    assert "ollama" in out and "no key needed" in out and "private_ok=True" in out
+    assert main(["models", "try", "hi", "--provider", "nope"]) == 2  # no database configured

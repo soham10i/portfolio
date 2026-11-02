@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import '@/features/story/story.css';
 import JarvisOrb from '@/features/chat/components/JarvisOrb';
+import { unlockAudio } from '@/features/chat/lib/voice';
 
 /* The floating JARVIS button and its panel.
  *
@@ -42,7 +43,7 @@ export default function ChatLauncher() {
         <div className="jarvis fixed bottom-5 right-5 z-[75]">
           <button
             type="button"
-            onClick={() => { setOpen(true); setTouched(true); }}
+            onClick={() => { unlockAudio(); setOpen(true); setTouched(true); }}
             aria-label="Ask Nexus"
             className="lg-pill lg-chrome flex h-12 items-center gap-2.5 pl-1.5 pr-1.5 text-[13.5px] font-medium transition-transform duration-300 hover:-translate-y-0.5 sm:pr-4"
           >

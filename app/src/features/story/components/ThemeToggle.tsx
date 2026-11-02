@@ -55,7 +55,7 @@ export default function ThemeToggle({ className = '', placement = 'up' }: { clas
             (placement === 'up' ? 'bottom-[calc(100%+12px)]' : 'top-[calc(100%+12px)]')}
           style={{ background: 'color-mix(in oklab, var(--bg2) 96%, transparent)', backdropFilter: 'blur(20px) saturate(160%)', textShadow: 'none' }}
         >
-          <p className="mono mx-2.5 mb-1.5 mt-2 !text-[9.5px] text-fg3">Theme</p>
+          <p className="mono mx-2.5 mb-1.5 mt-2 !text-[11.5px] text-fg3">Theme</p>
           {OPTIONS.map((o) => {
             const active = o.key === theme;
             return (
@@ -75,10 +75,10 @@ export default function ThemeToggle({ className = '', placement = 'up' }: { clas
                   <o.icon className="h-3.5 w-3.5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-medium leading-tight text-fg">
+                  <span className="block text-[15px] font-medium leading-tight text-fg">
                     {o.label}
                   </span>
-                  <span className="block text-[11.5px] leading-tight text-fg3">{o.note}</span>
+                  <span className="block text-[12.5px] leading-tight text-fg3">{o.note}</span>
                 </span>
                 {active && <Check className="h-3.5 w-3.5 flex-none text-[color:var(--p)]" strokeWidth={2.6} />}
               </button>

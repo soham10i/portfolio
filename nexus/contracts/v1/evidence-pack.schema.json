@@ -37,7 +37,7 @@
       }
     },
     "approvals": {
-      "description": "Signed approvals; each signs the exact proposal hash.",
+      "description": "Approvals that count; each binds the exact proposal hash, and a signed one carries its signature.",
       "type": "array",
       "items": {
         "type": "object",
@@ -46,7 +46,20 @@
         "properties": {
           "approver": {"$ref": "common.schema.json#/$defs/actor"},
           "proposal_hash": {"$ref": "common.schema.json#/$defs/sha256_hex"},
-          "approved_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+          "approved_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+          "signature": {
+            "description": "Ed25519 over JCS({v: \"nexus.approval/1\", decision_id, proposal_hash, approver: {kind, id}}), hex encoded (ADR-0027). Present only on a signed approval; verified says it verified when the pack was built.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["alg", "key_id", "public_key", "value", "verified"],
+            "properties": {
+              "alg": {"const": "ed25519"},
+              "key_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+              "public_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "value": {"type": "string", "pattern": "^[0-9a-f]{128}$"},
+              "verified": {"type": "boolean"}
+            }
+          }
         }
       }
     },
@@ -69,6 +82,44 @@
       "properties": {
         "status": {"enum": ["not_run", "passed", "failed", "timed_out"]},
         "observed": {"description": "Observed values used to verify effects.", "type": "object"}
+      }
+    },
+    "incidents": {
+      "description": "Incidents opened while executing or compensating this action, in order. The evidence builder always fills it; [] means none.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["incident_id", "kind", "detail", "opened_at"],
+        "properties": {
+          "incident_id": {"$ref": "common.schema.json#/$defs/uuid"},
+          "kind": {"$ref": "common.schema.json#/$defs/id_segment"},
+          "detail": {"type": "string", "maxLength": 2000},
+          "opened_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+        }
+      }
+    },
+    "shadow": {
+      "description": "Shadow mode: whether the executor ran in shadow (decided and recorded, nothing executed), and any human verdicts recorded next to the gate's. The evidence builder always fills it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "comparisons"],
+      "properties": {
+        "active": {"type": "boolean"},
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["human", "human_outcome", "agree", "recorded_at"],
+            "properties": {
+              "human": {"$ref": "common.schema.json#/$defs/actor"},
+              "human_outcome": {"enum": ["ALLOW", "DENY", "NEEDS_APPROVAL"]},
+              "agree": {"type": "boolean"},
+              "recorded_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+            }
+          }
+        }
       }
     },
     "event_refs": {

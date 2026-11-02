@@ -35,22 +35,22 @@ export default function Lab() {
 
       <article data-reveal className="measure lg-panel mt-3 grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
         <div>
-          <p className="mono mb-3 text-fg3">Featured · {twin.timeline}</p>
+          <p className="mono mb-3 !text-[12.5px] sm:!text-[13px] text-fg3">Featured · {twin.timeline}</p>
           <p className="t-body max-w-[60ch]">
             The twin models all four stations of the fischertechnik 536634 training factory from its PLC programs
             and datasheets, and is checked against them. It runs on Google Cloud Run, so you can start a production
             cycle yourself.
           </p>
-          <ul className="mt-4 flex flex-wrap gap-1.5">
+          <ul className="mt-4 flex flex-wrap gap-2">
             {twin.tech?.map((t) => (
-              <li key={t} className="rounded-full border border-[color:var(--line)] px-3 py-1 text-[12px] text-fg2">{t}</li>
+              <li key={t} className="rounded-full border border-[color:var(--line)] px-3.5 py-1 text-[13.5px] sm:text-[14px] text-fg2">{t}</li>
             ))}
           </ul>
         </div>
         <div className="flex flex-col items-start justify-between gap-4 md:items-end">
-          <p className="text-[clamp(20px,1.8vw,26px)] font-medium tracking-[-.02em] md:text-right">{twin.impact}</p>
+          <p className="text-[clamp(21px,1.9vw,27px)] font-medium tracking-[-.02em] md:text-right">{twin.impact}</p>
           <div className="flex flex-wrap gap-2">
-            <Link to={`/project/${twin.id}`} className="lg-pill inline-flex h-11 items-center gap-2 px-5 text-[14px]">
+            <Link to={`/project/${twin.id}`} className="lg-pill inline-flex h-11 items-center gap-2 px-5 text-[15px] sm:text-[15.5px]">
               Case study <ArrowUpRight className="h-4 w-4" />
             </Link>
             {twin.githubUrl && (
@@ -67,8 +67,8 @@ export default function Lab() {
           <li key={d.to} data-reveal={i * 0.08}>
             <Link to={d.to} className="lg-panel group flex h-full items-start justify-between gap-4 p-6">
               <span>
-                <span className="block text-[20px] font-medium tracking-[-.02em]">{d.title}</span>
-                <span className="mt-2 block text-[14px] leading-relaxed text-fg2">{d.note}</span>
+                <span className="block text-[21px] font-medium tracking-[-.02em]">{d.title}</span>
+                <span className="mt-2 block text-[15px] sm:text-[15.5px] leading-relaxed text-fg2">{d.note}</span>
               </span>
               <ArrowUpRight className="h-5 w-5 flex-none text-fg2 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>

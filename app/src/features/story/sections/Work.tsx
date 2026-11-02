@@ -24,28 +24,28 @@ function WorkCard({ p, i, total, seen, onOpen }: { p: Project; i: number; total:
         <div className="cq relative">
           <ProjectCover project={p} index={i} className="aspect-[16/11] rounded-[20px]" />
           <div className="absolute inset-x-3 top-3 z-[2] flex items-center justify-between">
-            <span className="mono rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md">
+            <span className="mono rounded-full bg-black/45 px-3 py-1 !text-[11.5px] sm:!text-[12px] text-white backdrop-blur-md">
               {String(i + 1).padStart(2, '0')} / {total}
             </span>
             <span className="flex items-center gap-1.5">
-              {p.featured && <span className="mono rounded-full bg-white px-2.5 py-1 !text-[9.5px] text-[#0d1626]">Featured</span>}
-              {p.liveUrl && <span className="mono flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md"><span className="h-1.5 w-1.5 rounded-full bg-[#34d399]" />Live</span>}
-              {!p.githubUrl && <span className="mono rounded-full bg-black/35 px-2.5 py-1 !text-[9.5px] text-white backdrop-blur-md">Soon</span>}
+              {p.featured && <span className="mono rounded-full bg-white px-3 py-1 !text-[11.5px] sm:!text-[12px] font-medium text-[#0d1626]">Featured</span>}
+              {p.liveUrl && <span className="mono flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1 !text-[11.5px] sm:!text-[12px] text-white backdrop-blur-md"><span className="h-1.5 w-1.5 rounded-full bg-[#34d399]" />Live</span>}
+              {!p.githubUrl && <span className="mono rounded-full bg-black/45 px-3 py-1 !text-[11.5px] sm:!text-[12px] text-white backdrop-blur-md">Soon</span>}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col justify-between gap-4 px-3 pb-2 pt-4" style={{ transform: 'translateZ(30px)' }}>
+        <div className="flex flex-1 flex-col justify-between gap-4 px-3.5 pb-2 pt-4" style={{ transform: 'translateZ(30px)' }}>
           <div>
             <p className="mono mb-2 flex items-center gap-2 text-fg3">
               {p.category} · {yearOf(p)}
               {seen && <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" title="Explored" />}
             </p>
-            <h3 className="text-[clamp(21px,1.9vw,27px)] font-medium leading-[1.08] tracking-[-.03em]">{p.title}</h3>
-            {p.impact && <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-fg2">{p.impact}</p>}
+            <h3 className="text-[clamp(22px,2vw,28px)] font-medium leading-[1.12] tracking-[-.03em]">{p.title}</h3>
+            {p.impact && <p className="mt-2.5 line-clamp-2 text-[15px] sm:text-[16px] leading-snug text-fg2">{p.impact}</p>}
           </div>
           <div className="flex items-center justify-between gap-3 border-t border-[color:var(--line)] pt-3">
-            <span className="truncate text-[12.5px] text-fg3">{p.tech?.slice(0, 3).join(' · ')}</span>
+            <span className="truncate text-[13.5px] sm:text-[14px] text-fg3">{p.tech?.slice(0, 3).join(' · ')}</span>
             <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--on-fg)] transition-transform duration-300 group-hover:rotate-45">
               <ArrowUpRight className="h-4 w-4" />
             </span>

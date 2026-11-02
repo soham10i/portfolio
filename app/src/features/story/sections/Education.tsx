@@ -32,8 +32,8 @@ export default function Education() {
       </div>
 
       <div data-reveal className="measure mt-[clamp(36px,6vh,60px)]">
-        <p className="mono mb-4 text-center !text-[10.5px] text-fg3">Languages</p>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <p className="mono mb-4 text-center !text-[12.5px] sm:!text-[13px] text-fg3">Languages</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {LANGUAGES.map((l) => {
             const parts = l.level.split(' · ');
             const badge = parts.length > 1 ? parts[0] : l.level;
@@ -45,12 +45,12 @@ export default function Education() {
             return (
               <div key={l.name} className="lg-panel flex flex-col justify-between p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[15px] font-medium text-fg">{l.name}</span>
-                  <span className="rounded-full border border-[color:var(--line)] bg-[color-mix(in_oklab,var(--fg)_6%,transparent)] px-2.5 py-0.5 mono !text-[10px] text-fg font-medium">
+                  <span className="text-[16px] sm:text-[17px] font-medium text-fg">{l.name}</span>
+                  <span className="rounded-full border border-[color:var(--line)] bg-[color-mix(in_oklab,var(--fg)_6%,transparent)] px-2.5 py-0.5 mono !text-[11.5px] sm:!text-[12px] text-fg font-medium">
                     {badge}
                   </span>
                 </div>
-                <p className="mt-3 text-[12.5px] leading-snug text-fg2">{desc}</p>
+                <p className="mt-3 text-[14px] sm:text-[14.5px] leading-snug text-fg2">{desc}</p>
               </div>
             );
           })}

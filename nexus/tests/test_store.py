@@ -168,12 +168,12 @@ def test_100_concurrent_appends_to_one_stream_have_no_gaps(db_schema):
 
 def test_cli_chain_verify_exit_codes(db_schema, capsys):
     asyncio.run(_append_n(db_schema, 3))
-    assert main(["chain", "verify"]) == 0
+    assert main(["chain", "verify", "--no-anchor"]) == 0
     assert "3 events in 1 stream" in capsys.readouterr().out
     asyncio.run(
         _owner_edit(db_schema, "UPDATE events SET payload = replace(payload::text, 'hello', 'HELLO')::json")
     )
-    assert main(["chain", "verify"]) == 1
+    assert main(["chain", "verify", "--no-anchor"]) == 1
     lines = capsys.readouterr().out.splitlines()
     assert sum(" HASH_MISMATCH " in line for line in lines) == 3
 

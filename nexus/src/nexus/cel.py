@@ -14,6 +14,7 @@ from celpy import celtypes
 
 _ENV = celpy.Environment()
 _SEGMENT = re.compile(r"([a-z][a-z0-9_]*)|\[(\d+)\]")
+_KEY = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*|\[\d+\])*")
 
 Path = tuple[str | int, ...]
 
@@ -83,21 +84,31 @@ def to_cel(value: Any, declared: str | None = None) -> Any:
     raise TypeError(f"{value!r} is not a {declared}")
 
 
+def from_cel(value: Any) -> Any:
+    """A CEL result as plain JSON values (bool is checked before int: BoolType is an int)."""
+    if isinstance(value, celtypes.BoolType):
+        return bool(value)
+    if isinstance(value, celtypes.IntType | celtypes.UintType):
+        return int(value)
+    if isinstance(value, celtypes.DoubleType):
+        return float(value)
+    if isinstance(value, celtypes.StringType):
+        return str(value)
+    if isinstance(value, celtypes.MapType):
+        return {str(k): from_cel(v) for k, v in value.items()}
+    if isinstance(value, celtypes.ListType):
+        return [from_cel(v) for v in value]
+    if value is None or isinstance(value, celtypes.NullType):
+        return None
+    raise TypeError(f"{type(value).__name__} has no JSON form")
+
+
 def parse_path(key: str) -> Path:
-    """'oven.zone[2].mode' -> ('oven', 'zone', 2, 'mode')."""
-    parts: list[str | int] = []
-    pos = 0
-    while pos < len(key):
-        if key[pos] == "." and parts:
-            pos += 1
-        match = _SEGMENT.match(key, pos)
-        if not match:
-            raise ValueError(f"not a state key: {key!r}")
-        parts.append(match.group(1) if match.group(1) else int(match.group(2)))
-        pos = match.end()
-    if not parts:
-        raise ValueError("empty state key")
-    return tuple(parts)
+    """'oven.zone[2].mode' -> ('oven', 'zone', 2, 'mode'). A key starts with a name; names after
+    the first follow a dot, and indexes follow a name or another index."""
+    if not isinstance(key, str) or not _KEY.fullmatch(key):
+        raise ValueError(f"not a state key: {key!r}")
+    return tuple(name if name else int(index) for name, index in _SEGMENT.findall(key))
 
 
 def _cel_key(part: str | int) -> Any:

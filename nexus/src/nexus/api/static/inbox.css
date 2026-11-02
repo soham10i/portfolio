@@ -1,0 +1,44 @@
+:root {
+  --bg: #fbfbfa; --fg: #1d1d1b; --muted: #6b6b66; --line: #e2e1dc; --card: #ffffff;
+  --ok: #1f7a4d; --hold: #9a5b00; --bad: #b3261e; --accent: #2b59c3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615; --fg: #ecebe6; --muted: #a09f98; --line: #34332f; --card: #1e1e1c;
+    --ok: #5fc48f; --hold: #e0a24a; --bad: #f08b84; --accent: #8fb0ff;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; max-width: 860px; padding: 24px 16px 64px; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+h1 { margin: 0 0 4px; font-size: 22px; }
+.muted { color: var(--muted); }
+code, pre { font: 13px/1.45 ui-monospace, "SF Mono", Menlo, monospace; }
+pre { margin: 0; white-space: pre-wrap; word-break: break-word; }
+form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); min-width: 0; }
+#token { flex: 1 1 260px; }
+button {
+  padding: 7px 14px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent);
+  color: #fff; font: inherit; cursor: pointer;
+}
+button.quiet { background: transparent; color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.bar { display: flex; gap: 8px; align-items: center; margin: 16px 0 8px; flex-wrap: wrap; }
+.bar #key { flex: 1 1 auto; }
+#items { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.item { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.action { font-weight: 600; font-size: 14px; }
+.badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.badge.hold { color: var(--hold); } .badge.ok { color: var(--ok); } .badge.bad { color: var(--bad); }
+dl { display: grid; grid-template-columns: 9.5em 1fr; gap: 4px 12px; margin: 0; }
+dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+dd ul { margin: 0; padding-left: 18px; }
+.tainted { color: var(--hold); }
+.warn { color: var(--bad); font-weight: 600; }
+.actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.actions .reason { flex: 1 1 200px; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; } dt { margin-top: 6px; } }

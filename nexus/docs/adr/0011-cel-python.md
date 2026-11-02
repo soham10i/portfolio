@@ -14,8 +14,9 @@ P2, with a licence check. The gate's budget is p95 < 50 ms per decision over 10k
 ## Decision
 
 Use **cel-python** (`celpy`), 0.5.0, Apache-2.0 (its `LICENSE` file; the wheel metadata leaves
-the licence field empty, so `pip-licenses` shows `UNKNOWN`; the deny-list check passes it, and
-the licence was read by hand). Its
+the licence field empty, so `pip-licenses` shows `UNKNOWN`; the licence was read by hand, and
+`make licenses` names it as the one package checked by hand; every other package must match the
+allow-list). Its
 dependencies are MIT or BSD: `lark`, `jmespath`, `pendulum`, `google-re2`, `pyyaml`. Measured
 on an Apple M4 before adoption: compile ≈ 0.07 ms, evaluation of a two-clause precondition
 ≈ 0.14 ms.

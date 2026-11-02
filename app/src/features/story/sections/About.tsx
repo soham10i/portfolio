@@ -15,7 +15,7 @@ const STAGES = [
     body:
       'REST APIs in FastAPI and Django for a payments platform handling about 2,000 transactions a day. ' +
       'Azure ETL pipelines for clinical audit-log data, with retrieval about 30% faster. ' +
-      'Before that, a full-stack internship (Angular, ASP.NET Core).',
+      'Before that, a full-stack internship and thesis developing an expense management system with debt simplification (Angular, ASP.NET Core).',
   },
   {
     when: 'Oct 2024 – Aug 2026',
@@ -53,20 +53,20 @@ export default function About() {
       <ol className="mx-auto mt-[clamp(28px,5vh,48px)] grid max-w-[760px] gap-3 xl:max-w-[1180px] xl:grid-cols-3">
         {STAGES.map((s, i) => (
           <li key={s.title} data-reveal={i * 0.06} className="lg-panel flex flex-col p-5 md:p-6">
-            <p className="mono flex flex-wrap items-center gap-x-2 !text-[10px] text-fg3">
+            <p className="mono flex flex-wrap items-center gap-x-2 !text-[12px] sm:!text-[13px] text-fg3">
               <span>{s.when}</span>
               <span aria-hidden>·</span>
               <span>{s.where}</span>
             </p>
-            <h3 className="mt-3 text-[clamp(18px,1.5vw,21px)] font-medium leading-snug tracking-[-.02em] text-fg">
+            <h3 className="mt-3 text-[clamp(20px,1.6vw,24px)] font-medium leading-snug tracking-[-.02em] text-fg">
               {s.title}
             </h3>
-            <p className="mt-2 text-[14.5px] leading-relaxed text-fg2">{s.body}</p>
+            <p className="mt-2 text-[15.5px] sm:text-[16px] leading-relaxed text-fg2">{s.body}</p>
           </li>
         ))}
       </ol>
 
-      <p data-reveal className="mono mb-1 mt-[clamp(36px,6vh,60px)] text-center !text-[10.5px] text-fg3">Areas of work</p>
+      <p data-reveal className="mono mb-2 mt-[clamp(36px,6vh,60px)] text-center !text-[12.5px] sm:!text-[13px] text-fg3">Areas of work</p>
       <ol className="measure content-list border-t border-[color:var(--line)]">
         {DOMAINS.map((d) => (
           <li
@@ -74,13 +74,13 @@ export default function About() {
             data-reveal
             className="grid gap-3 border-b border-[color:var(--line)] py-6 md:grid-cols-[56px_minmax(0,1fr)_minmax(0,1.5fr)] md:gap-8"
           >
-            <span className="mono pt-1.5 text-fg3">{d.no}</span>
-            <h3 className="text-[clamp(20px,2vw,28px)] font-medium leading-tight tracking-[-.03em]">{d.title}</h3>
+            <span className="mono pt-1.5 !text-[13px] text-fg3">{d.no}</span>
+            <h3 className="text-[clamp(22px,2.2vw,30px)] font-medium leading-tight tracking-[-.03em]">{d.title}</h3>
             <div>
-              <p className="max-w-[64ch] text-[15px] leading-relaxed text-fg2">{d.claim}</p>
-              <ul className="mt-3 flex flex-wrap gap-1.5">
+              <p className="max-w-[64ch] text-[16px] sm:text-[17px] leading-relaxed text-fg2">{d.claim}</p>
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {d.items.map((it) => (
-                  <li key={it} className="lg-pill px-3 py-1 text-[12px] text-fg2">{it}</li>
+                  <li key={it} className="lg-pill px-3.5 py-1 text-[13.5px] sm:text-[14px] text-fg2">{it}</li>
                 ))}
               </ul>
             </div>

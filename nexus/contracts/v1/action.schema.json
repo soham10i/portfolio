@@ -72,6 +72,7 @@
         "per_s": {"description": "Window length in seconds.", "type": "integer", "minimum": 1}
       }
     },
+    "timeout_s": {"description": "Seconds the connector may take to execute before the executor gives up and compensates (ADR-0012). Default 30.", "type": "integer", "minimum": 1, "maximum": 600},
     "idempotent": {"description": "True if executing twice with the same params has the same effect as once.", "type": "boolean", "default": false}
   },
   "allOf": [

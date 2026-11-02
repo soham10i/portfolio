@@ -59,29 +59,29 @@ export default function Contact() {
           software role close to physical systems, based in Paderborn and happy to relocate across Germany and
           the EU. Email reaches me fastest, and I reply to every message.
         </p>
-        <ul className="mt-6 flex max-w-[960px] flex-wrap justify-center gap-1.5">
+        <ul className="mt-6 flex max-w-[960px] flex-wrap justify-center gap-2">
           {FIT.map((f) => (
-            <li key={f} className="rounded-full border border-[color:var(--line)] px-3.5 py-1.5 text-[13px] text-fg2">{f}</li>
+            <li key={f} className="rounded-full border border-[color:var(--line)] px-4 py-1.5 text-[14px] sm:text-[15px] text-fg2">{f}</li>
           ))}
         </ul>
-        <p className="mono mt-6 !text-[10.5px] text-fg3">{CONTACT.availability}</p>
+        <p className="mono mt-6 !text-[12.5px] sm:!text-[13px] text-fg3">{CONTACT.availability}</p>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-2">
+        <div className="mt-8 flex flex-wrap justify-center gap-2.5">
           <button
             type="button"
             onClick={copy}
-            className="inline-flex h-14 items-center gap-3 rounded-full bg-[color:var(--fg)] px-6 text-[15px] font-medium text-[color:var(--on-fg)]"
+            className="inline-flex h-14 items-center gap-3 rounded-full bg-[color:var(--fg)] px-6 text-[15px] sm:text-[16px] font-medium text-[color:var(--on-fg)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? 'Copied to clipboard' : CONTACT.email}
           </button>
-          <a href={CONTACT.github} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
+          <a href={CONTACT.github} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px] sm:text-[16px]">
             <Github className="h-4 w-4" /> GitHub <ArrowUpRight className="h-4 w-4" />
           </a>
-          <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
+          <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer" className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px] sm:text-[16px]">
             <Linkedin className="h-4 w-4" /> LinkedIn <ArrowUpRight className="h-4 w-4" />
           </a>
-          <a href="/Soham_Patel_CV.pdf" download className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px]">
+          <a href="/Soham_Patel_CV.pdf" download className="lg-pill inline-flex h-14 items-center gap-2 px-6 text-[15px] sm:text-[16px]">
             <Download className="h-4 w-4" /> CV
           </a>
         </div>

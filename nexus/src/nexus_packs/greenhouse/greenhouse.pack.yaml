@@ -1,0 +1,159 @@
+# A toy pack for the planner evaluation (P6). Four zones with lights and a temperature setpoint,
+# one roof vent, drip watering, a high-risk heater boost, and an advise-only calibration the
+# planner is never offered. The binding is a simulation; nothing real is connected.
+# P7 adds units, the asset graph and a small synthetic knowledge corpus.
+schema_version: "1"
+pack: greenhouse
+version: 0.1.0
+owner: soham
+title: Greenhouse
+description: A simulated four-zone greenhouse. Exists to exercise the planner (P6) and retrieval (P7).
+tags: [demo, planner]
+observables:
+  - id: greenhouse.zone[*].setpoint_c
+    unit: degC
+    type: number
+    max_age_s: 300
+    description: The temperature setpoint of a zone, in degrees Celsius.
+  - id: greenhouse.zone[*].lights
+    type: boolean
+    max_age_s: 300
+    description: Whether a zone's grow lights are on.
+  - id: greenhouse.vent_pct
+    unit: percent
+    type: integer
+    max_age_s: 300
+    description: How far the roof vent is open, in percent.
+  - id: greenhouse.water_l
+    unit: L
+    type: number
+    max_age_s: 300
+    description: Litres of water delivered since the simulation started.
+assets:
+  - {id: greenhouse, kind: site, name: Greenhouse, aliases: [glasshouse]}
+  - id: "greenhouse.zone[*]"
+    kind: zone
+    name: Zone
+    parent: greenhouse
+    count: 4
+    aliases: [bed, z]
+    observables: ["greenhouse.zone[*].setpoint_c", "greenhouse.zone[*].lights"]
+  - {id: greenhouse.roof_vent, kind: vent, name: Roof vent, parent: greenhouse, aliases: [vent], observables: [greenhouse.vent_pct]}
+  - {id: greenhouse.drip, kind: irrigation, name: Drip line, parent: greenhouse, aliases: [drip, irrigation, water, watering], observables: [greenhouse.water_l]}
+  - {id: greenhouse.heater, kind: heater, name: Heater, parent: greenhouse, aliases: [main heater, boiler]}
+knowledge: [knowledge/]
+actions:
+  - id: greenhouse.set_temperature
+    title: Set a zone's temperature
+    description: Set the temperature setpoint of one zone (1 to 4), in degrees Celsius.
+    risk: low
+    autonomy: L3
+    params:
+      type: object
+      properties:
+        zone: {type: integer, minimum: 1, maximum: 4}
+        celsius: {type: number, minimum: 5, maximum: 40}
+      required: [zone, celsius]
+      additionalProperties: false
+    envelope:
+      params:
+        celsius: {min: 12, max: 32}
+    preconditions: []
+    effects:
+      - "state.greenhouse.zone[params.zone].setpoint_c == params.celsius"
+    verify_within_s: 5
+    compensation:
+      action: greenhouse.set_temperature
+      params:
+        zone: params.zone
+        celsius: prev.greenhouse.zone[params.zone].setpoint_c
+    idempotent: true
+  - id: greenhouse.set_lights
+    title: Switch a zone's grow lights
+    description: Turn the grow lights of one zone (1 to 4) on or off.
+    risk: low
+    autonomy: L3
+    params:
+      type: object
+      properties:
+        zone: {type: integer, minimum: 1, maximum: 4}
+        "on": {type: boolean}
+      required: [zone, "on"]
+      additionalProperties: false
+    preconditions: []
+    effects:
+      - "state.greenhouse.zone[params.zone].lights == params.on"
+    verify_within_s: 5
+    compensation:
+      action: greenhouse.set_lights
+      params:
+        zone: params.zone
+        "on": prev.greenhouse.zone[params.zone].lights
+    idempotent: true
+  - id: greenhouse.set_vent
+    title: Open or close the roof vent
+    description: Set how far the single roof vent is open, from 0 (closed) to 100 percent (fully open).
+    risk: low
+    autonomy: L3
+    params:
+      type: object
+      properties:
+        percent: {type: integer, minimum: 0, maximum: 100}
+      required: [percent]
+      additionalProperties: false
+    preconditions: []
+    effects:
+      - "state.greenhouse.vent_pct == params.percent"
+    verify_within_s: 5
+    compensation:
+      action: greenhouse.set_vent
+      params:
+        percent: prev.greenhouse.vent_pct
+    idempotent: true
+  - id: greenhouse.water
+    title: Water a zone
+    description: Deliver a quantity of water, in litres, to one zone (1 to 4) through its drip line.
+    risk: medium
+    autonomy: L2  # water cannot be taken back, so a human approves each run
+    params:
+      type: object
+      properties:
+        zone: {type: integer, minimum: 1, maximum: 4}
+        litres: {type: number, minimum: 0.5, maximum: 20}
+      required: [zone, litres]
+      additionalProperties: false
+    preconditions: []
+    effects: []
+    rate_limit: {max: 20, per_s: 60}
+    idempotent: false
+  - id: greenhouse.heater_boost
+    title: Boost the heater
+    description: Run the main heater at full power for a number of minutes (5 to 60), for frost protection.
+    risk: high
+    autonomy: L2
+    approvers: 1
+    params:
+      type: object
+      properties:
+        minutes: {type: integer, minimum: 5, maximum: 60}
+      required: [minutes]
+      additionalProperties: false
+    preconditions: []
+    effects: []
+    idempotent: false
+  - id: greenhouse.calibrate_sensors
+    title: Calibrate the sensors
+    description: Recalibrate every temperature sensor. Advise only; never executed by NEXUS.
+    risk: medium
+    autonomy: L1
+    params:
+      type: object
+      properties:
+        all: {type: boolean}
+      required: [all]
+      additionalProperties: false
+    preconditions: []
+    effects: []
+connector:
+  kind: python
+  module: nexus_packs.greenhouse.binding

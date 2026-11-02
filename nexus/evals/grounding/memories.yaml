@@ -1,0 +1,7 @@
+# Memories seeded before the grounding suites run (P7.md §4). Synthetic, nothing private.
+# The session memory belongs to another session, so no case may see it (scope test, u05).
+memories:
+  - {tier: project, scope: greenhouse, source: eval, content: "The zone 3 tomatoes are the blight-resistant variety Crimson Shield."}
+  - {tier: project, scope: greenhouse, source: eval, content: "Priya is the weekend supervisor; call her before any heater boost."}
+  - {tier: project, scope: greenhouse, source: eval, content: "The zone 2 drip line was replaced on 2026-09-14."}
+  - {tier: session, scope: eval-other-session, source: eval, content: "The operator prefers temperatures in Fahrenheit."}

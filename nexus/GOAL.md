@@ -67,5 +67,50 @@ service. The portfolio becomes one of its clients.
   `docs/parts/P0.report.md`).
 - **Done, awaiting review:** P1 — event store and world state (`docs/parts/P1.md`, report in
   `docs/parts/P1.report.md`, ADR-0008). All acceptance items A1–A12 pass; nothing is committed.
-- **Next:** P2 — policy engine and gate. Blocked on the owner's answer to Q2 (structured
-  envelope).
+- **Done, awaiting review:** P2 — policy engine and gate (`docs/parts/P2.md`, report in
+  `docs/parts/P2.report.md`, ADR-0009/0010/0011). All acceptance items A1–A12 pass; gate p95
+  3 ms end to end; nothing is committed.
+- **Done, awaiting review:** P3 — executor, verifier, compensation (`docs/parts/P3.md`, report in
+  `docs/parts/P3.report.md`, ADR-0012/0013). All acceptance items A1–A10 pass; open questions
+  Q-P3-1 and Q-P3-2 are in the report; nothing is committed.
+- **Done, awaiting review:** P4 — echo pack, evidence packs, `nexus trace`, lifecycle demo
+  (`docs/parts/P4.md`, report in `docs/parts/P4.report.md`, ADR-0014). All acceptance items
+  A1–A8 pass; open questions Q-P4-1 and Q-P4-2 are in the report; nothing is committed.
+- **Milestone M1 (governed kernel) reached:** `make db-up && make demo` runs the full lifecycle
+  locally and detects a tampered event.
+- **Done, awaiting review:** P5 — model router, free providers only (`docs/parts/P5.md`, report
+  in `docs/parts/P5.report.md`, ADR-0015). All acceptance items A1–A10 pass; no test or CI run
+  calls a real provider; paid providers refuse by default; open questions Q-P5-1 and Q-P5-2
+  are in the report; nothing is committed.
+- **Done, awaiting review:** P4.1 — the owner's answers to Q-P3-1 (rollbacks pass the same
+  limits, ADR-0016), Q-P3-2 (a refused decision is spent, ADR-0017), Q-P4-1 (incidents and shadow
+  in evidence packs, ADR-0018) and Q-P4-2 (HMAC-signed stream-head checkpoints in an anchor file
+  outside Postgres catch a full rewrite of the history, ADR-0019). Report in
+  `docs/parts/P4.1.report.md`; every earlier check re-run and passing; nothing is committed.
+- **Done, awaiting review:** P6 — planner and critic (`docs/parts/P6.md`, report in
+  `docs/parts/P6.report.md`, ADR-0020/0021/0022). All acceptance items A1–A12 pass; the
+  recorded evaluation scores benign 29/30 and unanswerable 10/10; every step goes through the
+  gate; private by default (Ollama only) pending Q-P5-2; nothing is committed.
+- **Done, awaiting review:** P7 — retrieval, assets and memory (`docs/parts/P7.md`, report in
+  `docs/parts/P7.report.md`, ADR-0023/0024/0025). All acceptance items A1–A10 pass; entity
+  resolution 50/50 in both pack orders; the recorded grounding evaluation scores answerable
+  20/20, live 10/10 and unanswerable 10/10, every sentence independently checked for a citation;
+  a deleted memory's content is in no event; private by default pending Q-P5-2; nothing is
+  committed.
+- **Done, awaiting review:** P8 — API, SDKs and the approvals inbox (`docs/parts/P8.md`, report
+  in `docs/parts/P8.report.md`, ADR-0026/0027/0028/0029). All acceptance items A1–A12 pass;
+  two-session isolation holds (404 everywhere); approving a modified proposal is refused with
+  `HASH_MISMATCH` and nothing written; HTTP approvals are Ed25519-signed over the hash the
+  client computed, and the TypeScript SDK's signatures are accepted; the P4 demo runs over HTTP
+  (`make demo-http`); the inbox was checked in a real browser; loopback only; nothing is
+  committed.
+- **Done, awaiting review:** P8.1 — the owner's answers (`docs/parts/P8.1.md`, report in
+  `docs/parts/P8.1.report.md`, ADR-0030/0031/0032/0033). Q-P5-1: Groq stays not private (its
+  model moves to `openai/gpt-oss-120b`). Q-P5-2: the order stays Gemini, Groq, Ollama; per-minute
+  caps from the docs adapt to 429s and rate-limit headers, and a used-up day is stored; answers
+  cover the question's points, report uncovered ones, size their output limit, may ask up to
+  three clarifying questions, and learn style from answers a human rated up. Q-P7-1: a deleted
+  memory is kept and marked, and `memory purge` erases it. Q-P8-1: CLI approvals stay unsigned.
+  Nothing is committed.
+- **Open questions still unanswered:** none.
+- **Next:** P9 — eval harness v1.

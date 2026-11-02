@@ -1,0 +1,64 @@
+# The default model providers, in preference order (P5.md §2). Override with NEXUS_MODELS_CONFIG.
+#
+# Only free providers are listed. Keys are read from the named environment variables at call
+# time; leave a variable unset and that provider is skipped (model.refused NO_KEY).
+#
+# Data use: Gemini's free tier may use what it receives to improve Google's products, so it must
+# never see private data (private_ok: false). Groq stays false too (the owner's answer to
+# Q-P5-1). Only the local Ollama model receives generate(..., private=True) requests.
+#
+# Caps (ADR-0031), checked 2026-10-31 and kept well inside the published free-tier limits. The
+# router also adapts: it halves a provider's per-minute limit on a 429 and grows it back on
+# success, reads Groq's x-ratelimit-* headers and Gemini's RetryInfo/QuotaFailure, and skips a
+# provider for the rest of its quota day once the provider says the day is used up.
+# Free-tier quotas change; check them and the model names before relying on them.
+#
+# A paid provider would look like this. Its daily_budget_usd defaults to 0, which refuses
+# every call before a request is sent:
+#
+#   - name: paid-example
+#     kind: openai
+#     model: some-model
+#     base_url: https://api.example.com/v1
+#     api_key_env: PAID_EXAMPLE_API_KEY
+#     free: false
+#     price_in_per_mtok: 1.0
+#     price_out_per_mtok: 4.0
+#     daily_budget_usd: 0
+
+providers:
+  - name: gemini
+    kind: gemini
+    # An alias, because pinned names get retired (gemini-2.5-flash: HTTP 404 for new keys).
+    # Lite, because gemini-flash-latest answered 503 "high demand" on the free tier (2026-10-31).
+    model: gemini-flash-lite-latest
+    api_key_env: GEMINI_API_KEY
+    free: true
+    # Google shows free-tier numbers only in AI Studio; public guides give Flash-Lite about
+    # 15 requests/min and 1000/day. The day resets at midnight Pacific.
+    max_requests_per_day: 200
+    requests_per_minute: 10
+    tokens_per_minute: 200000
+    quota_timezone: America/Los_Angeles
+    private_ok: false
+
+  - name: groq
+    kind: openai
+    # llama-3.3-70b-versatile is shut down on 2026-08-16; Groq names this as its replacement.
+    # Free plan (console.groq.com/docs/rate-limits): 30 requests/min, 1000/day, 8000 tokens/min.
+    model: openai/gpt-oss-120b
+    base_url: https://api.groq.com/openai/v1
+    api_key_env: GROQ_API_KEY
+    free: true
+    max_requests_per_day: 500
+    requests_per_minute: 20
+    tokens_per_minute: 6000
+    reasoning_effort: low
+    private_ok: false
+
+  - name: ollama
+    kind: ollama
+    model: llama3.2
+    free: true
+    private_ok: true
+    timeout_s: 60

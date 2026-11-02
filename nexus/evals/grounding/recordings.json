@@ -1,0 +1,1536 @@
+{
+  "cases": {
+    "a01": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What is the safe temperature range in the greenhouse?"
+          ],
+          "questions": [],
+          "reason": "The safe operating range for a temperature setpoint is stated in the climate documentation.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The safe operating range for a temperature setpoint is 12 to 32 degrees Celsius."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "22cc2b0528e591c7eecfe1b73e5b01c7acf667137daaec3fb5cdce18c7d5d401",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "8a0f65da861968ba685e78d99ca3771a49a77f2d839ea598a70b8eaf98b5e7c0",
+        "task": "answer.critique"
+      }
+    ],
+    "a02": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What setpoint should the seedlings in zone 1 have?"
+          ],
+          "questions": [],
+          "reason": "The sources state the temperature setpoint for seedlings in zone 1.",
+          "sentences": [
+            {
+              "cites": [
+                "d2"
+              ],
+              "point": 1,
+              "text": "Seedlings in zone 1 are kept at 22 degrees Celsius."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "36e86b6244cdbbab99bbae90c4b4ae442f674fa0d01e3d577bc19737447572c2",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "cf453af180875499474d3d2e46bfaa0c39d696ac6898157d6c09570381e16740",
+        "task": "answer.critique"
+      }
+    ],
+    "a03": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What temperature range do the tomatoes need?"
+          ],
+          "questions": [],
+          "reason": "The sources specify the optimal temperature range for tomatoes.",
+          "sentences": [
+            {
+              "cites": [
+                "d2"
+              ],
+              "point": 1,
+              "text": "Tomatoes in zones 2 and 3 grow best between 18 and 26 degrees Celsius."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "2feecddf4702fd1ed61ff620edddd9caa9891b39fe90ec689e23886892e9d1d8",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "ce150060ea8da823c0918b4a3d01c297f9ab0686e8e4f909ec2e845102cb2641",
+        "task": "answer.critique"
+      }
+    ],
+    "a04": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "By how much may a temperature setpoint change per hour?"
+          ],
+          "questions": [],
+          "reason": "The sources specify that a temperature setpoint may change by at most 3 degrees Celsius per hour.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "A temperature setpoint may change by at most 3 degrees Celsius per hour to prevent plant shock [d1]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "f018aed6dc9d11730207757c47c1aa1666c58ab532e7cb8c1b11243c62d4575c",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "50943637ade79c7c37f174c2f9439d62e1ffc97fb9d581bd6bfef1ac4d8c330d",
+        "task": "answer.critique"
+      }
+    ],
+    "a05": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How long before sunset should the heater boost run when frost is expected"
+          ],
+          "questions": [],
+          "reason": "The sources state the required duration before sunset for the heater boost when frost is forecast.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "When the outside temperature is forecast to fall below 2 degrees Celsius, run a heater boost of 30 minutes before sunset."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "b0052732fe36c6c084bbdbb3b33334a3cfbdf9a521f7487e5d327de7c0470625",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "2609bd9e8d441667a9731527443a3dadc310f937bbd6063df50740efd50bd406",
+        "task": "answer.critique"
+      }
+    ],
+    "a06": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Below what outside temperature is frost expected?"
+          ],
+          "questions": [],
+          "reason": "The sources state the outside temperature threshold for frost protection.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Frost is expected when the outside temperature is forecast to fall below 2 degrees Celsius [d1]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "e652df3ab6348c5cb9578e6d4ae3495971642a9e0b78f67a7e2d8e6add9d5740",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "61a185630e741f45110445a471839c55e5a0456e87fc5f788d3a6da7e6dc2461",
+        "task": "answer.critique"
+      }
+    ],
+    "a07": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How many approvals does a heater boost need?"
+          ],
+          "questions": [],
+          "reason": "The sources state the number of approvals needed for a heater boost.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "A heater boost needs one human approval."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "d2c7fbccdfcd85e734622bc6f203577ec5473d1a625d7e9cde634d8bbe35e697",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "969b09374d67f08a7622149ec11549204870baf22ea47b5aea0e9702983321fa",
+        "task": "answer.critique"
+      }
+    ],
+    "a08": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How many hours a day are the grow lights on?"
+          ],
+          "questions": [],
+          "reason": "The sources state the operating schedule for the general grow lights and for seedlings in zone 1.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The grow lights run for 16 hours a day, from 06:00 to 22:00."
+            },
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Seedlings in zone 1 get 18 hours of light a day, from 05:00 to 23:00."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "51b067e40151aa81f2f6e75ecc88931044e3e62515a8d8411e32da9e636b1cb1",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            },
+            {
+              "index": 2,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "2adbfd77a7577d1e8dcf0161035e68870a4bd4a22e4fadd4933bd62bedd372f8",
+        "task": "answer.critique"
+      }
+    ],
+    "a09": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How many hours of light do the seedlings get?"
+          ],
+          "questions": [],
+          "reason": "The sources specify that seedlings in zone 1 get 18 hours of light.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Seedlings in zone 1 get 18 hours of light, from 05:00 to 23:00."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "40e422a2a953a26dc1f68074a0e7658efa24e21fcf23bf2dca6b666736ebebd6",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "8bd98f7bf4f80d7bcee5e365b51b34d17711831c77b42951e06df8814637076a",
+        "task": "answer.critique"
+      }
+    ],
+    "a10": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What must be done with a zone's lights before night work?"
+          ],
+          "questions": [],
+          "reason": "The sources specify that grow lights must be switched off before working in a zone at night.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Switch off the grow lights of a zone before anyone works in it at night so that the lamps remain cool to the touch."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "735a8f30eb4de8878b918a8b4f332c9db1cf2e83d12efbcfc7badc5f61d05f62",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "f27fad15920581ca92c8c75f90c6bebbb63afcfded8db5caa5f9efd5704c3045",
+        "task": "answer.critique"
+      }
+    ],
+    "a11": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How many hours are the LED panels rated for?"
+          ],
+          "questions": [],
+          "reason": "The sources explicitly state the rated hours for the LED panels.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The LED panels are rated for 50000 hours."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "c30cfa50ae5b9de07d98b3b83c96a4e0e72b0198091766585404760d22f142dd",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "5ba239c33cb2fd2007a5ccfad435848e18a8cb1852e1dd210153e9b15f0d2b98",
+        "task": "answer.critique"
+      }
+    ],
+    "a12": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Above what temperature should the roof vent open to 30 percent?"
+          ],
+          "questions": [],
+          "reason": "The sources state the temperature threshold for opening the roof vent to 30 percent.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The roof vent should be opened to 30 percent when the inside temperature passes 28 degrees Celsius."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "72dfe91732b9307370c4bc2922248937cca14ab346fe62dc42a5a0783b601e6c",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "935f3ee1aa7709c0834b1b73963511d50324db9b1937f1d54e19cc6766d244e6",
+        "task": "answer.critique"
+      }
+    ],
+    "a13": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "wind speed at which the roof vent should be closed"
+          ],
+          "questions": [],
+          "reason": "The sources specify the exact wind speed threshold required to close the roof vent.",
+          "sentences": [
+            {
+              "cites": [
+                "d2"
+              ],
+              "point": 1,
+              "text": "The roof vent should be closed when the wind speed is above 50 km/h."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "bfa8d19e059573f88284ca4ebbd9bc95c88ae1947b2230378623c365cf546b20",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "bcc2c1bbecae21f4cb3127a410dd122b2f91b34cf7572bcb941bd367991994d5",
+        "task": "answer.critique"
+      }
+    ],
+    "a14": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What humidity range should the greenhouse keep?"
+          ],
+          "questions": [],
+          "reason": "The sources specify the relative humidity range for the greenhouse.",
+          "sentences": [
+            {
+              "cites": [
+                "d2"
+              ],
+              "point": 1,
+              "text": "The greenhouse should keep the relative humidity between 60 and 80 percent."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "fdc292a3e380ba71faabc0c0a15f0de60a1a1bf446e184f0bd79f43450fa407c",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "6e6ef5271ab01d1a9edd08f147e39f99fb3b6feeeff78b78de2ac2b194546996",
+        "task": "answer.critique"
+      }
+    ],
+    "a15": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How much water do the tomatoes get each morning?"
+          ],
+          "questions": [],
+          "reason": "The sources specify that tomatoes need about 4 litres per zone each morning.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Tomatoes need about 4 litres per zone each morning."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "43362d80c62d0f881ac31548e6a436c1834643737472f5040c5edb31a87d6a1e",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "2cfa597b0f1200d921cbee53d5fe854a1cb1c493e125d6fbea55322a15054893",
+        "task": "answer.critique"
+      }
+    ],
+    "a16": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How big is the water tank",
+            "When is it refilled"
+          ],
+          "questions": [],
+          "reason": "The sources state the capacity of the water tank and its refill schedule.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The water tank holds 500 litres."
+            },
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 2,
+              "text": "The water tank is refilled every Monday."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "eafcecf0750992bd41868234a26c269fd2caf65b7f5fa8901766a44b1c93b56e",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            },
+            {
+              "index": 2,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "6534f2644812d15bbbe787500f3d4b1b2ac2f8f41d3ef4ea7fe2929eeb2b91c8",
+        "task": "answer.critique"
+      }
+    ],
+    "a17": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How are the seedlings in zone 1 watered?"
+          ],
+          "questions": [],
+          "reason": "The question is answered using documentation about irrigation methods for zone 1 seedlings.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "Seedlings in zone 1 are misted by hand and are not watered through the drip line."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "505db238cf98c5e0829495b230e54531ce1a9d94b05d646d0693a47b93951ed5",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "d1fd06467ba0e0e6981a87a94d549965679b48ef710e7e28b77a20f7546b04fd",
+        "task": "answer.critique"
+      }
+    ],
+    "a18": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Which tomato variety grows in zone 3?"
+          ],
+          "questions": [],
+          "reason": "The question is answered directly by the provided project memory.",
+          "sentences": [
+            {
+              "cites": [
+                "m1"
+              ],
+              "point": 1,
+              "text": "The zone 3 tomatoes are the blight-resistant variety Crimson Shield."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "ba13acde6a4c76f0356b1d7537a64311d93494702cc701f04403c577d744cb45",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "4c9750a2131ad23b0acc89674aeb9c48799594511d9986edef437104b69d73bd",
+        "task": "answer.critique"
+      }
+    ],
+    "a19": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Who should be called before a heater boost?"
+          ],
+          "questions": [],
+          "reason": "The memory states that Priya is the weekend supervisor and should be called before any heater boost.",
+          "sentences": [
+            {
+              "cites": [
+                "m1"
+              ],
+              "point": 1,
+              "text": "Priya, the weekend supervisor, should be called before any heater boost."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "f124552bb56b4d50ab0a64f413ee1b691e23e4c1577ffb92af8aa5803f28ca43",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "ba8c8b53853f2b0b62a1558223bd6a19e57398fe946b8ca83ba7785e2c3e07d5",
+        "task": "answer.critique"
+      }
+    ],
+    "a20": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "When was the zone 2 drip line replaced?"
+          ],
+          "questions": [],
+          "reason": "The question asks for the replacement date of the zone 2 drip line, which is directly answered in memory m1.",
+          "sentences": [
+            {
+              "cites": [
+                "m1"
+              ],
+              "point": 1,
+              "text": "The zone 2 drip line was replaced on 2026-09-14."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "0f052ef0f05bc896072d5cf414d25ead4a00b33b9d109caf14364f02870f581a",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "5dc6fd39adb84c06cf23689df7cc8e98084b4c51f4e65511b1ebec10e2291927",
+        "task": "answer.critique"
+      }
+    ],
+    "l01": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What is the setpoint of zone 1 right now?"
+          ],
+          "questions": [],
+          "reason": "The question is answered by the live reading for zone 1's temperature setpoint.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The current temperature setpoint of zone 1 is 22 degC."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "e17ebbf336b8016c38c54aecd36a3ced82de3d140eb5ea0944e37eec82b8f186",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "d2128e383258b106f765603309e438f0ffbfae76dfad9461a9c00bfc01ca29f5",
+        "task": "answer.critique"
+      }
+    ],
+    "l02": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What is zone 2 set to at the moment?"
+          ],
+          "questions": [],
+          "reason": "The live reading provides the current temperature setpoint for zone 2.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "Zone 2 is currently set to a temperature of 21.5 degC [l1]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "9c37abe2a38a1dad2eaec3f4d3817fde89b67af2c2837cc75867637b46f02eaf",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "97704a899cb26d587717ed109d306e65ed983a93eb707c01dfa96e0b2b0d45e6",
+        "task": "answer.critique"
+      }
+    ],
+    "l03": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What is the current setpoint of zone 3?"
+          ],
+          "questions": [],
+          "reason": "The sources indicate that the current temperature setpoint for zone 3 is unknown because the live reading is stale.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The current setpoint of zone 3 is unknown."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "d6c0c6de9385f3ca0da30c6fd880654d932af869c2d1c196d0e9c0aa45008772",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "The answer correctly states that the current setpoint of zone 3 is unknown based on the live reading source [l1].",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "3bbe8ec6bdb448627817a0b62835a21ad3bb4cbcb259f18e41914137879edc56",
+        "task": "answer.critique"
+      }
+    ],
+    "l04": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "What is the setpoint of zone 4 now?"
+          ],
+          "questions": [],
+          "reason": "The live reading for zone 4 setpoint is unknown, while document sources specify the general zone 4 temperature.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The current value for the setpoint of zone 4 is unknown."
+            },
+            {
+              "cites": [
+                "d2"
+              ],
+              "point": 1,
+              "text": "Zone 4 holds herbs and is kept at 20 degrees Celsius according to the documentation."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "26fecc85fc091f5d412d5f98a4a44d6d22b25e522498c4b884eca030e86d38d5",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "The answer correctly states that the live value is unknown based on the live reading and mentions the documentation's configured setpoint for zone 4.",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            },
+            {
+              "index": 2,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "5de6ed4938fd695d2373cd3c592a133b8fdc2ca17aebb538986562a5676a7b25",
+        "task": "answer.critique"
+      }
+    ],
+    "l05": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Are the lights on in zone 1 right now?"
+          ],
+          "questions": [],
+          "reason": "The live reading directly provides the current status of the grow lights in zone 1.",
+          "sentences": [
+            {
+              "cites": [
+                "l2"
+              ],
+              "point": 1,
+              "text": "The grow lights in zone 1 are currently on with a status of true [l2]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "3e98b3c9580fcf3725084be83cc87baf8f97687fe6ca425720818edf3548eb45",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "6a1a9f2024d965cd4181ec463090f9156523915ea4011d039b95271400c9242b",
+        "task": "answer.critique"
+      }
+    ],
+    "l06": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Are the lights in zone 2 on at the moment?"
+          ],
+          "questions": [],
+          "reason": "The live reading directly provides the current status of the zone 2 grow lights.",
+          "sentences": [
+            {
+              "cites": [
+                "l2"
+              ],
+              "point": 1,
+              "text": "The grow lights in zone 2 are currently false [l2]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "ec811c8c69fb97d30c13fb63b289de6d0b6bd4458078372cf803a217aecc9141",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "1715375179cf9a9218a48a4d7b66a18aed55c6392f27b71ba922d60a6d21a81e",
+        "task": "answer.critique"
+      }
+    ],
+    "l07": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How far open is the roof vent right now?"
+          ],
+          "questions": [],
+          "reason": "The current percentage of the roof vent is directly stated in the live reading.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The roof vent is currently open to 35 percent [l1]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "85b40c7f2850c44e05f099906fb0758525b1e53d771e1905b638690b0beba05f",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "88753f71b718a298af431afde39ca44b3686b7deee2806134de1a0b22c55fd89",
+        "task": "answer.critique"
+      }
+    ],
+    "l08": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How much water has the drip line delivered so far?"
+          ],
+          "questions": [],
+          "reason": "The live reading provides the exact amount of water delivered since the simulation started.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The water delivered since the simulation started is currently 12.5 L."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "308c3509450912e18ef95ac216f7aee8ec95f884147b96290325852f9a44d341",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "a2a30a6388c91bb97f7e6f0d540787db2594b3d4b17cef7bb7f916775925d3cb",
+        "task": "answer.critique"
+      }
+    ],
+    "l09": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Current setpoint of zone 1",
+            "Current setpoint of zone 2"
+          ],
+          "questions": [],
+          "reason": "The question is answered using live temperature setpoint readings for zones 1 and 2.",
+          "sentences": [
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 1,
+              "text": "The current temperature setpoint of zone 1 is 22 degC [l1]."
+            },
+            {
+              "cites": [
+                "l3"
+              ],
+              "point": 2,
+              "text": "The current temperature setpoint of zone 2 is 21.5 degC [l3]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "962766be84e90f07ded81997611653adb953fd12f3b5897b3e42a9c2b2eebb4f",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            },
+            {
+              "index": 2,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "2b8d235c652afa36059e6f850bf2cee12bcdefafd8d830b91c6604723b9633e2",
+        "task": "answer.critique"
+      }
+    ],
+    "l10": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Are the lights on in zone 4",
+            "what is its setpoint right now"
+          ],
+          "questions": [],
+          "reason": "The sources provide the current status of the grow lights in zone 4 and indicate that the temperature setpoint is unknown.",
+          "sentences": [
+            {
+              "cites": [
+                "l2"
+              ],
+              "point": 1,
+              "text": "The grow lights in zone 4 are currently false [l2]."
+            },
+            {
+              "cites": [
+                "l1"
+              ],
+              "point": 2,
+              "text": "The current value for the temperature setpoint of zone 4 is unknown [l1]."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "fefd63855e638b08decfa87c6dc4e7170676ed95381a77873fe69a47c54e4998",
+        "task": "answer.compose"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "missed_points": [],
+          "reason": "",
+          "sentences": [
+            {
+              "index": 1,
+              "problem": "",
+              "supported": true
+            },
+            {
+              "index": 2,
+              "problem": "",
+              "supported": true
+            }
+          ],
+          "verdict": "accept"
+        },
+        "provider": "gemini",
+        "request_sha256": "244437c03e59bd5844dd4e0f1e50e1d7eb027fc8dedabf3aafa7113b3e9fd696",
+        "task": "answer.critique"
+      }
+    ],
+    "u01": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [
+            "What is the weather forecast for tomorrow?"
+          ],
+          "questions": [],
+          "reason": "The sources do not provide any information regarding the weather forecast for tomorrow.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "a3c42708bd6caa31a83565f1074e4b238785d0619b82cf3f49b8df7d49e6a12d",
+        "task": "answer.compose"
+      }
+    ],
+    "u02": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [],
+          "questions": [],
+          "reason": "The provided sources do not contain any information about the cost of a packet of tomato seeds.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "a104674c44ce891a2ad23976c7a3d932c9a901ce9624993d6511ea093d6ffe31",
+        "task": "answer.compose"
+      }
+    ],
+    "u03": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [
+            "What is the setpoint of zone 7?"
+          ],
+          "questions": [],
+          "reason": "The sources do not contain information about the setpoint of zone 7.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "32c1052e38177064ed35baee2aab8c51e8df887d4df8dbef4b4c26efadc716ba",
+        "task": "answer.compose"
+      }
+    ],
+    "u04": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "When will the tomatoes be ready to harvest?"
+          ],
+          "questions": [],
+          "reason": "The sources do not state when the tomatoes will be ready to harvest, as the harvest log is kept on paper in the potting shed.",
+          "sentences": [
+            {
+              "cites": [
+                "d1"
+              ],
+              "point": 1,
+              "text": "The sources do not state when the tomatoes will be ready to harvest because the harvest log is kept on paper in the potting shed."
+            }
+          ]
+        },
+        "provider": "gemini",
+        "request_sha256": "3ed950eb193bacbb7a9f775f6c71ed26a4b5d84f3f20cf63c5092a2d0f5784da",
+        "task": "answer.compose"
+      }
+    ],
+    "u05": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [
+            "Which temperature unit does the operator prefer?"
+          ],
+          "questions": [],
+          "reason": "The provided sources do not contain any information about the operator's temperature unit preference.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "8031bd441082d5d833f6215719f10d9528add38628aaca8fa53aa5c4f0c1ea92",
+        "task": "answer.compose"
+      }
+    ],
+    "u06": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Who installed the roof vent?"
+          ],
+          "questions": [],
+          "reason": "The sources do not contain information about who installed the roof vent.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "aded1caf48824b32dc7cf265149e8c219c2b914e0db100b6575fe51b03548361",
+        "task": "answer.compose"
+      }
+    ],
+    "u07": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "How many people work in the greenhouse?"
+          ],
+          "questions": [],
+          "reason": "The provided sources do not contain information about how many people work in the greenhouse.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "f81d2a875b5e4cb11125b976db166f9ed47078226222837b3b855354b9241a95",
+        "task": "answer.compose"
+      }
+    ],
+    "u08": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "answer",
+          "points": [
+            "Which fertiliser do the herbs in zone 4 get?"
+          ],
+          "questions": [],
+          "reason": "The sources do not contain information about the fertilizer for the herbs in zone 4.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "c79b66e5f9020533bb61f16db0edf538f6b4414335009a6866bb3405889ee761",
+        "task": "answer.compose"
+      }
+    ],
+    "u09": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [
+            "What is the CO2 level in the greenhouse?"
+          ],
+          "questions": [],
+          "reason": "The provided sources do not contain information about the CO2 level in the greenhouse.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "795c8be3237efa54a85240cdd0bfd0c5796bec326b6d17c3a6f6916abd679531",
+        "task": "answer.compose"
+      }
+    ],
+    "u10": [
+      {
+        "model": "gemini-flash-lite-latest",
+        "output": {
+          "decision": "abstain",
+          "points": [
+            "What is the wifi password of the greenhouse controller?"
+          ],
+          "questions": [],
+          "reason": "The provided sources do not contain any information about the wifi password of the greenhouse controller.",
+          "sentences": []
+        },
+        "provider": "gemini",
+        "request_sha256": "5ecd5758d8e8834aa215a876595542d2e1ecb049aad2a135dcbbba41cef31797",
+        "task": "answer.compose"
+      }
+    ]
+  },
+  "note": "Replies from one opt-in live run (scripts/eval_grounding.py --live --record). u04's critique call was removed by hand after recording: the NOT_AN_ANSWER check (ADR-0032) now drops its only sentence before the critic, so that call is no longer made.",
+  "recorded_at": "2026-10-31T14:47:11Z",
+  "version": 1
+}
