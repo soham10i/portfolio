@@ -168,6 +168,36 @@ html[data-style="slate"] :is(.story, .jarvis) {
 }
 html[data-style="slate"] .story { text-shadow: 0 1px 2px rgba(38, 45, 52, .28); }
 
+/* Volt: electric lime on black (#ccff00 / #000000 / #999999 / #f2f2f2).
+   A dark theme: near-black ground with a restrained lime glow in one corner,
+   smoked glass panels, off-white text and grey secondary text. Lime is the
+   only hue in the theme and is reserved for interactive accents. */
+html[data-style="volt"] :is(.story, .jarvis) {
+  --ground: #060606;
+  --bg: #060606;
+  --bg2: #101010;
+  --surf: rgba(16, 16, 16, .85);
+  --surf2: rgba(242, 242, 242, .06);
+  --fg: #f2f2f2;
+  --fg2: rgba(242, 242, 242, .82);
+  --fg3: #999999;
+  --on-fg: #000000;
+  --line: rgba(242, 242, 242, .14);
+  --p: #ccff00;
+  --s: #f2f2f2;
+  --a: #d4ff4d;
+  --canvas: #000000;
+  --glass-fill: rgba(242, 242, 242, .05);
+  --chrome-fill: rgba(10, 10, 10, .8);
+  --chip-fill: rgba(242, 242, 242, .07);
+  --glass-rim: rgba(242, 242, 242, .16);
+  --glass-inner: rgba(242, 242, 242, .06);
+  --glass-shadow: 0 30px 60px -32px rgba(0, 0, 0, .85);
+  --field-alpha: 1;
+  --card-fill: rgba(12, 12, 12, .88);
+  color-scheme: dark;
+}
+
 /* Pine: a three-colour palette — pine teal ground (#004643), ink-black slabs
    (#0c1618), cornsilk text (#faf4d3). A dark theme: frosted ink panels float
    on the teal ground, and accents stay inside the palette — a light mint tint
@@ -288,6 +318,14 @@ html[data-style="pine"] .story::before {
     radial-gradient(55vmax 45vmax at 100% 0%, rgba(12, 22, 24, .38), transparent 60%),
     radial-gradient(70vmax 55vmax at 100% 100%, rgba(12, 22, 24, .55), transparent 65%),
     linear-gradient(165deg, #004643 0%, #003a37 45%, #002e2b 100%);
+}
+/* Volt: near-black with a single lime glow in the top corner, so the accent
+   colour is present in the ground without turning the page into a billboard. */
+html[data-style="volt"] .story::before {
+  background:
+    radial-gradient(60vmax 50vmax at 88% 6%, rgba(204, 255, 0, .09), transparent 62%),
+    radial-gradient(55vmax 45vmax at 4% 96%, rgba(242, 242, 242, .04), transparent 62%),
+    #060606;
 }
 
 .glass-balls {
