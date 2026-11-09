@@ -20,7 +20,7 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'wasm-unsafe-eval' blob: 'sha256-keXAbiEIOMjudanlCId3M7CVgHP/t27PkXBIHzNWrNs='",
+  "script-src 'self' 'wasm-unsafe-eval' blob: 'sha256-BduURgabkV8hlG5SmK9Op64Qqnd8+f1iiZFGUriakvI='",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",

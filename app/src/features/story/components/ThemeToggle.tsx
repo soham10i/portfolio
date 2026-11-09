@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Droplet, Feather, Gem, Moon, Sun, type LucideIcon } from 'lucide-react';
+import { Check, Droplet, Feather, Gem, Moon, Sun, Trees, type LucideIcon } from 'lucide-react';
 import { useTheme, type Theme } from '@/shared/lib/theme';
 
 /* Theme menu for the site: Dark, Light, Editorial (warm paper), Liquid (glass),
@@ -13,6 +13,7 @@ const OPTIONS: { key: Theme; label: string; note: string; icon: LucideIcon; swat
   { key: 'editorial', label: 'Editorial', note: 'Warm paper, terracotta', icon: Feather, swatch: ['#f6f1e7', '#9a3b1c'] },
   { key: 'liquid', label: 'Liquid', note: 'Deep blue, clear glass', icon: Droplet, swatch: ['#0a1450', '#7d8cff'] },
   { key: 'slate', label: 'Slate', note: 'Matte graphite, bevelled glass', icon: Gem, swatch: ['#68737b', '#d9e2e8'] },
+  { key: 'pine', label: 'Pine', note: 'Pine teal, cornsilk ink', icon: Trees, swatch: ['#004643', '#faf4d3'] },
 ];
 
 export default function ThemeToggle({ className = '', placement = 'up' }: { className?: string; placement?: 'up' | 'down' }) {

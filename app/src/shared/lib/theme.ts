@@ -13,11 +13,11 @@ import { applyPalette, storePalette } from './palettes';
  * reads it. Choosing a theme also moves the older palette system — used by the
  * demos and notes — to its matching palette, so every page agrees. */
 
-export type Theme = 'dark' | 'light' | 'editorial' | 'liquid' | 'slate';
-export const THEMES: Theme[] = ['dark', 'light', 'editorial', 'liquid', 'slate'];
-export const isDarkTheme = (t: Theme) => t === 'dark' || t === 'liquid' || t === 'slate';
+export type Theme = 'dark' | 'light' | 'editorial' | 'liquid' | 'slate' | 'pine';
+export const THEMES: Theme[] = ['dark', 'light', 'editorial', 'liquid', 'slate', 'pine'];
+export const isDarkTheme = (t: Theme) => t === 'dark' || t === 'liquid' || t === 'slate' || t === 'pine';
 /** Themes painted as a data-style on top of light/dark. */
-const STYLED: Theme[] = ['editorial', 'liquid', 'slate'];
+const STYLED: Theme[] = ['editorial', 'liquid', 'slate', 'pine'];
 const KEY = 'sp-theme';
 
 const current = (): Theme => {
@@ -26,8 +26,8 @@ const current = (): Theme => {
   return h.theme === 'dark' ? 'dark' : 'light';
 };
 
-const PALETTE_FOR = { dark: 'midnight', light: 'daylight', editorial: 'paper', liquid: 'midnight', slate: 'midnight' } as const;
-const META_COLOR = { dark: '#030509', light: '#e4e9f1', editorial: '#ece5d8', liquid: '#050a2e', slate: '#56616a' } as const;
+const PALETTE_FOR = { dark: 'midnight', light: 'daylight', editorial: 'paper', liquid: 'midnight', slate: 'midnight', pine: 'midnight' } as const;
+const META_COLOR = { dark: '#030509', light: '#e4e9f1', editorial: '#ece5d8', liquid: '#050a2e', slate: '#56616a', pine: '#004643' } as const;
 
 function paint(theme: Theme) {
   const html = document.documentElement;

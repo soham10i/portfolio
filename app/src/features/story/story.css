@@ -168,6 +168,36 @@ html[data-style="slate"] :is(.story, .jarvis) {
 }
 html[data-style="slate"] .story { text-shadow: 0 1px 2px rgba(38, 45, 52, .28); }
 
+/* Pine: a three-colour palette — pine teal ground (#004643), ink-black slabs
+   (#0c1618), cornsilk text (#faf4d3). A dark theme: frosted ink panels float
+   on the teal ground, and accents stay inside the palette — a light mint tint
+   of the teal for interactive highlights, cornsilk for emphasis. */
+html[data-style="pine"] :is(.story, .jarvis) {
+  --ground: #004643;
+  --bg: #004643;
+  --bg2: #0c1618;
+  --surf: rgba(12, 22, 24, .85);
+  --surf2: rgba(250, 244, 211, .07);
+  --fg: #faf4d3;
+  --fg2: rgba(250, 244, 211, .85);
+  --fg3: rgba(250, 244, 211, .58);
+  --on-fg: #0c1618;
+  --line: rgba(250, 244, 211, .16);
+  --p: #a8e6cf;
+  --s: #faf4d3;
+  --a: #8fd8c4;
+  --canvas: #0c1618;
+  --glass-fill: rgba(250, 244, 211, .06);
+  --chrome-fill: rgba(12, 22, 24, .78);
+  --chip-fill: rgba(250, 244, 211, .08);
+  --glass-rim: rgba(250, 244, 211, .22);
+  --glass-inner: rgba(250, 244, 211, .07);
+  --glass-shadow: 0 30px 60px -32px rgba(0, 0, 0, .6);
+  --field-alpha: 1;
+  --card-fill: rgba(12, 22, 24, .86);
+  color-scheme: dark;
+}
+
 .story {
   position: relative;
   min-height: 100vh;
@@ -249,6 +279,15 @@ html[data-style="editorial"] .story::before {
   background:
     radial-gradient(60vmax 50vmax at 88% 6%, rgba(176, 99, 42, .13), transparent 62%),
     radial-gradient(60vmax 50vmax at 4% 100%, rgba(154, 59, 28, .08), transparent 62%);
+}
+/* Pine: the teal ground itself, with ink pooling in the corners and a faint
+   cornsilk haze on the left — depth without leaving the three-colour palette. */
+html[data-style="pine"] .story::before {
+  background:
+    radial-gradient(70vmax 60vmax at 0% 42%, rgba(250, 244, 211, .06), transparent 62%),
+    radial-gradient(55vmax 45vmax at 100% 0%, rgba(12, 22, 24, .38), transparent 60%),
+    radial-gradient(70vmax 55vmax at 100% 100%, rgba(12, 22, 24, .55), transparent 65%),
+    linear-gradient(165deg, #004643 0%, #003a37 45%, #002e2b 100%);
 }
 
 .glass-balls {
