@@ -46,6 +46,11 @@ COPY backend/data ./data
 # the right destination despite how the path in the source reads.
 COPY --from=builder /build/app/dist ./dist
 
+# The runtime only runs `node server.js`. The npm and yarn bundled in the base
+# image are never used here and carry their own (fixable) CVEs, so remove them.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+           /opt/yarn* /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
 # The contact mailbox is the only path the process writes to at runtime.
 RUN chown -R node:node /app
 

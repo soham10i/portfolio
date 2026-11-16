@@ -32,6 +32,24 @@
  */
 
 const PROVIDERS = {
+  /* ── Primary choice for generation: Inception Labs (Mercury) ───────────────
+     Diffusion-based LLM (dLLM) with 1,000,000 token context window and
+     131,072 max output token limit. Fastest generation with reasoning. */
+  mercury: {
+    label: 'Inception Labs (Mercury)',
+    baseUrl: 'https://api.inceptionlabs.ai/v1',
+    model: 'mercury-3',
+    visionModel: null,
+    keyEnv: 'MERCURY_API_KEY',
+    console: 'https://inceptionlabs.ai',
+    contextWindow: 1_000_000,
+    maxOutputTokens: 131_072,
+    notes: 'Verified 2026-11-04 on Inception Labs dLLM.\n'
+         + 'mercury-3 answered in 1.1s with 1M context window and 131k max output tokens.\n'
+         + 'Uses encrypted reasoning tokens in completion_tokens_details before content.\n'
+         + 'Full OpenAI /chat/completions wire format compatibility.',
+  },
+
   /* ── Default for chat ──────────────────────────────────────────────────────
      Chosen for quota, not raw speed: Google's free tier is measured in
      requests per day rather than tokens, which suits a portfolio whose traffic
@@ -43,7 +61,9 @@ const PROVIDERS = {
     visionModel: 'gemini-3.5-flash-lite',
     keyEnv: 'GEMINI_API_KEY',
     console: 'https://aistudio.google.com/app/apikey',
-    notes: 'Verified 2026-08-30: gemini-3.5-flash-lite 815ms text, 3663ms on a '
+    contextWindow: 1_000_000,
+    maxOutputTokens: 8_192,
+    notes: 'Verified 2026-08-30 and 2026-11-04: gemini-3.5-flash-lite 815ms text, 3663ms on a '
          + '19KB image. gemini-flash-lite-latest is the rolling alias and was '
          + '613ms — prefer the alias if you would rather not chase id changes, '
          + 'accepting that it can move under you.\n'
@@ -52,6 +72,22 @@ const PROVIDERS = {
          + 'is small, because hidden thinking consumes the whole budget. Google '
          + 'also retires dated -lite ids aggressively: 2.0-flash-lite and '
          + '2.5-flash-lite both answer 404 now.',
+  },
+
+  /* ── Zhipu AI (GLM) ────────────────────────────────────────────────────────
+     OpenAI-compatible /chat/completions endpoint for Zhipu BigModel GLM.
+     128,000 token context window, 8,192 max output tokens. */
+  glm: {
+    label: 'Zhipu AI (GLM)',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4.5-air',
+    visionModel: null,
+    keyEnv: 'GLM_API_KEY',
+    console: 'https://open.bigmodel.cn',
+    contextWindow: 128_000,
+    maxOutputTokens: 8_192,
+    notes: 'Verified 2026-11-04 on Zhipu AI API v4.\n'
+         + 'GLM-4.5-air / GLM-4.7 OpenAI-compatible endpoint. 128k context, 8k output.',
   },
 
   /* ── Fastest text ──────────────────────────────────────────────────────────
@@ -153,11 +189,20 @@ const PROVIDERS = {
   },
 };
 
-/* Resolve one role ("text" or "vision") into { baseUrl, model, apiKey }.
+/* Helper to lookup key from env handling case variations and alternatives (e.g. Mercury_API_KEY) */
+function lookupKey(keyEnv, env) {
+  if (!keyEnv) return '';
+  return env[keyEnv]
+    || env[keyEnv.toLowerCase()]
+    || (keyEnv === 'MERCURY_API_KEY' ? (env['Mercury_API_KEY'] || env['MERCURY_API_KEY_1']) : '')
+    || '';
+}
+
+/* Resolve one role ("text" or "vision") into { provider, baseUrl, model, apiKey, contextWindow, maxOutputTokens }.
  *
  * Precedence, highest first:
  *   1. the role's explicit vars   (LLM_API_BASE / LLM_MODEL / LLM_API_KEY)
- *   2. the role's provider name   (LLM_PROVIDER=gemini → registry defaults)
+ *   2. the role's provider name   (LLM_PROVIDER=mercury → registry defaults)
  *   3. for vision only: whatever the text role resolved to
  *
  * Returning empty strings rather than throwing is deliberate: a deploy with no
@@ -168,9 +213,28 @@ function resolve({ providerEnv, baseEnv, modelEnv, keyEnv, role = 'text', env = 
 
   const baseUrl = (env[baseEnv] || preset?.baseUrl || '').replace(/\/$/, '');
   const model = env[modelEnv] || (role === 'vision' ? preset?.visionModel : preset?.model) || '';
-  const apiKey = env[keyEnv] || (preset?.keyEnv ? env[preset.keyEnv] : '') || '';
+  const apiKey = env[keyEnv] || (preset?.keyEnv ? lookupKey(preset.keyEnv, env) : '') || '';
 
   return { provider: preset ? name : null, baseUrl, model, apiKey };
 }
 
-module.exports = { PROVIDERS, resolve };
+/* Resolve a preset by name into a complete provider descriptor. */
+function resolveProvider(name, role = 'text', env = process.env) {
+  if (!name) return null;
+  const key = name.trim().toLowerCase();
+  const preset = PROVIDERS[key];
+  if (!preset) return null;
+  const model = (role === 'vision' ? preset.visionModel : preset.model) || '';
+  const apiKey = preset.keyEnv ? lookupKey(preset.keyEnv, env) : '';
+  return {
+    provider: key,
+    label: preset.label,
+    baseUrl: preset.baseUrl,
+    model,
+    apiKey,
+    contextWindow: preset.contextWindow || 128_000,
+    maxOutputTokens: preset.maxOutputTokens || 4096,
+  };
+}
+
+module.exports = { PROVIDERS, resolve, resolveProvider };

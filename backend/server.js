@@ -49,9 +49,13 @@ app.get('/api/health', (req, res) => {
     llm: config.llm.ready,
     visionLlm: config.llm.visionReady,
     fallback: !!config.llm.fallback,
+    fallbacks: (config.llm.fallbacks || []).map((f) => f.provider || f.label),
+    contextWindow: config.llm.contextWindow,
+    maxOutputTokens: config.llm.maxOutputTokens,
     medqa: config.medqa.enabled,
     scene: !!config.scene.baseUrl,
     tts: config.tts.ready,
+    nexus: config.nexus.ready,
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
@@ -63,9 +67,23 @@ app.use('/api/scene', sceneJson, require('./src/routes/scene'));
 app.use('/api/notes', notesJson, require('./src/routes/notes'));
 app.use('/api/medqa', smallJson, require('./src/routes/medqa'));
 app.use('/api/tts', smallJson, require('./src/routes/tts'));
+app.use('/api/nexus', smallJson, require('./src/routes/nexus'));
 
 // Unknown API routes → JSON 404, never the SPA shell
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+/* API errors that reach Express itself (malformed JSON, a body over the limit)
+   would otherwise get the default HTML error page. Answer in JSON and keep the
+   internals out of the response. */
+app.use('/api', (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.status === 413 || err.type === 'entity.too.large' ? 413
+    : err.type === 'entity.parse.failed' ? 400 : 500;
+  if (status === 500) console.error('Unhandled API error:', err.message || err);
+  res.status(status).json({
+    error: status === 413 ? 'Request body too large.' : status === 400 ? 'Malformed JSON.' : 'Internal server error',
+  });
+});
 
 // Built frontend, then the SPA fallback for client-side routes
 const dist = path.join(__dirname, '../app/dist');

@@ -8,6 +8,10 @@ const { requireAdmin, tokenMatches } = require('../middleware/adminAuth');
 
 const router = express.Router();
 const limit = createLimiter({ ...config.limits.chat, message: 'Too many requests — try again shortly.' });
+/* Every write route checks the admin token, so without a ceiling here the
+   token could be guessed at full speed. Failed and successful attempts both
+   count; an author editing a note stays far below this. */
+const writeLimit = createLimiter({ windowMs: 10 * 60 * 1000, max: 30, message: 'Too many edit requests — try again later.' });
 
 function validDraft(req, res) {
   const { title, body } = req.body || {};
@@ -53,7 +57,7 @@ router.get('/:slug', (req, res) => {
   res.json(note);
 });
 
-router.post('/', requireAdmin, (req, res) => {
+router.post('/', writeLimit, requireAdmin, (req, res) => {
   const { slug } = req.body || {};
   if (!store.SLUG_RE.test(String(slug || ''))) {
     return res.status(400).json({ error: 'Slug must be lowercase letters, digits and hyphens (2–64 chars).' });
@@ -69,7 +73,7 @@ router.post('/', requireAdmin, (req, res) => {
   }
 });
 
-router.put('/:slug', requireAdmin, (req, res) => {
+router.put('/:slug', writeLimit, requireAdmin, (req, res) => {
   const { slug } = req.params;
   if (!store.SLUG_RE.test(slug)) return res.status(400).json({ error: 'Bad slug.' });
   if (!store.exists(slug)) return res.status(404).json({ error: 'No note with that slug.' });
@@ -83,7 +87,7 @@ router.put('/:slug', requireAdmin, (req, res) => {
   }
 });
 
-router.delete('/:slug', requireAdmin, (req, res) => {
+router.delete('/:slug', writeLimit, requireAdmin, (req, res) => {
   const { slug } = req.params;
   if (!store.SLUG_RE.test(slug)) return res.status(400).json({ error: 'Bad slug.' });
   if (!store.exists(slug)) return res.status(404).json({ error: 'No note with that slug.' });

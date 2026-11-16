@@ -29,7 +29,11 @@ const limit = createLimiter({
   message: `Frame budget reached (${config.limits.scene.max} per 5 minutes). Detection keeps running locally — only narration is paused.`,
 });
 
-router.get('/status', async (req, res) => {
+/* Status probes the model servers on every call, so it gets a ceiling of its
+   own; the session routes are cheap but also unauthenticated. */
+const statusLimit = createLimiter({ windowMs: 5 * 60 * 1000, max: 120, message: 'Too many status checks — try again shortly.' });
+
+router.get('/status', statusLimit, async (req, res) => {
   const vlm = await reachableVision();
   const blip = await blipHealth();
 
@@ -119,8 +123,8 @@ router.post('/summarise', limit, async (req, res) => {
   try {
     const r = await callLLMWithFallback({ messages, maxTokens: 700, temperature: 0.3, timeoutMs: config.scene.timeoutMs });
     if (!r.ok) {
-      const detail = await r.text().catch(() => '');
-      return res.status(502).json({ error: `Summariser returned ${r.status}`, detail: detail.slice(0, 200) });
+      console.error('summarise upstream:', r.status, (await r.text().catch(() => '')).slice(0, 200));
+      return res.status(502).json({ error: `Summariser returned ${r.status}` });
     }
     const { text } = extractText(await r.json());
     if (!text) return res.status(502).json({ error: 'Summariser returned an empty response.' });
@@ -144,12 +148,12 @@ router.post('/summarise', limit, async (req, res) => {
  * State is in-memory with a 30-minute idle TTL. A deploy or a free-instance
  * spin-down loses it. That is reported to the client as `ephemeral: true`
  * rather than left to be discovered. */
-router.get('/session', (req, res) => {
+router.get('/session', statusLimit, (req, res) => {
   const { id, session } = sessions.resolve(req.query.id);
   res.json(sessions.toPublic(id, session));
 });
 
-router.put('/session', (req, res) => {
+router.put('/session', statusLimit, (req, res) => {
   const { sessionId, scenario, frames, summary } = req.body || {};
   if (scenario !== undefined && typeof scenario !== 'string') {
     return res.status(400).json({ error: 'scenario must be a string' });
@@ -249,8 +253,8 @@ router.post('/ask', limit, async (req, res) => {
       ...targetModel(a.hasSheet),
     });
     if (!r.ok) {
-      const detail = await r.text().catch(() => '');
-      return res.status(502).json({ error: `Q&A returned ${r.status}`, detail: detail.slice(0, 300) });
+      console.error('ask upstream:', r.status, (await r.text().catch(() => '')).slice(0, 300));
+      return res.status(502).json({ error: `Q&A returned ${r.status}` });
     }
     const { text: answer } = extractText(await r.json());
     if (!answer) return res.status(502).json({ error: 'The model returned an empty answer. Try rephrasing?' });
@@ -290,8 +294,8 @@ router.post('/ask/stream', limit, async (req, res) => {
     });
 
     if (!upstream.ok || !upstream.body) {
-      const detail = await upstream.text().catch(() => '');
-      return res.status(502).json({ error: `Q&A returned ${upstream.status}`, detail: detail.slice(0, 300) });
+      console.error('ask stream upstream:', upstream.status, (await upstream.text().catch(() => '')).slice(0, 300));
+      return res.status(502).json({ error: `Q&A returned ${upstream.status}` });
     }
 
     res.writeHead(200, {
@@ -392,6 +396,7 @@ router.post('/interpolate', interpolateLimit, requireSceneApi, receiveVideo, asy
     const r = await fetch(`${config.scene.baseUrl}/interpolate`, {
       method: 'POST',
       body: form,
+      headers: config.scene.headers,
       signal: AbortSignal.timeout(config.scene.timeoutMs),
     });
 

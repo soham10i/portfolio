@@ -19,6 +19,7 @@ async function withBlip(bytes) {
     const r = await fetch(`${config.scene.baseUrl}/process-frame`, {
       method: 'POST',
       body: form,
+      headers: config.scene.headers,
       signal: AbortSignal.timeout(config.scene.timeoutMs),
     });
     if (!r.ok) return null;
@@ -80,7 +81,7 @@ const caption = async (bytes, labels) => (await withBlip(bytes)) || (await withV
 async function blipHealth() {
   if (!config.scene.baseUrl) return { up: false, reason: 'not configured' };
   try {
-    const r = await fetch(`${config.scene.baseUrl}/health`, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(`${config.scene.baseUrl}/health`, { headers: config.scene.headers, signal: AbortSignal.timeout(6000) });
     if (!r.ok) return { up: false, reason: `returned ${r.status}` };
     return { up: true, upstream: await r.json().catch(() => ({})) };
   } catch (err) {

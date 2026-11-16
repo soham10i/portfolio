@@ -101,3 +101,28 @@ test('resolve: keyless providers (ollama) yield an empty apiKey', () => {
   assert.equal(r.apiKey, '');
   assert.equal(r.baseUrl, 'http://127.0.0.1:11434/v1');
 });
+
+test('resolve: mercury resolves to Inception Labs with 1M context window and 131k max output', () => {
+  const r = resolve({ ...TEXT_ENVS, env: { LLM_PROVIDER: 'mercury', MERCURY_API_KEY: 'sk_test' } });
+  assert.equal(r.provider, 'mercury');
+  assert.equal(r.baseUrl, 'https://api.inceptionlabs.ai/v1');
+  assert.equal(r.model, 'mercury-3');
+  assert.equal(r.apiKey, 'sk_test');
+  assert.equal(PROVIDERS.mercury.contextWindow, 1_000_000);
+  assert.equal(PROVIDERS.mercury.maxOutputTokens, 131_072);
+});
+
+test('resolve: mercury supports Mercury_API_KEY capitalization fallback', () => {
+  const r = resolve({ ...TEXT_ENVS, env: { LLM_PROVIDER: 'mercury', Mercury_API_KEY: 'sk_m_test' } });
+  assert.equal(r.apiKey, 'sk_m_test');
+});
+
+test('resolve: glm resolves to Zhipu AI with 128k context and 8k max output', () => {
+  const r = resolve({ ...TEXT_ENVS, env: { LLM_PROVIDER: 'glm', GLM_API_KEY: 'glm_key' } });
+  assert.equal(r.provider, 'glm');
+  assert.equal(r.baseUrl, 'https://open.bigmodel.cn/api/paas/v4');
+  assert.equal(r.model, 'glm-4.5-air');
+  assert.equal(r.apiKey, 'glm_key');
+  assert.equal(PROVIDERS.glm.contextWindow, 128_000);
+  assert.equal(PROVIDERS.glm.maxOutputTokens, 8_192);
+});

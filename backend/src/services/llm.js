@@ -33,15 +33,67 @@ async function callLLM({ messages, maxTokens = 1024, temperature = 0.7, stream =
   });
 }
 
-/* Retry the same request against the fallback provider when the primary is
-   rate-limited or down (429 / 5xx). Anything else — 400, 401 — is a caller
-   or config bug that the fallback would reproduce, so it is not retried. */
+/* Retry the same request against the fallback providers in sequence when the
+   current tier is rate-limited, quota-depleted, or down (429 / 5xx / 402 / 403 / 404).
+   Fallback chain (e.g. Mercury -> Gemini -> GLM) ensures zero visitor downtime. */
 async function callLLMWithFallback(opts) {
-  const primary = await callLLM(opts);
-  const fb = LLM.fallback;
-  if (primary.ok || !fb || (primary.status !== 429 && primary.status < 500)) return primary;
-  console.warn(`LLM primary answered ${primary.status} — retrying via fallback ${fb.baseUrl}`);
-  return callLLM({ ...opts, baseUrl: fb.baseUrl, apiKey: fb.apiKey, model: fb.model || opts.model || LLM.model });
+  const tiers = [
+    {
+      provider: LLM.provider || 'primary',
+      label: LLM.label || LLM.provider || 'primary',
+      baseUrl: opts.baseUrl || LLM.baseUrl,
+      apiKey: opts.apiKey || LLM.apiKey,
+      model: opts.model || LLM.model,
+    },
+    ...(Array.isArray(LLM.fallbacks) && LLM.fallbacks.length > 0
+      ? LLM.fallbacks
+      : (LLM.fallback ? [LLM.fallback] : [])),
+  ].filter((t) => t && t.baseUrl);
+
+  let lastResponse = null;
+  let lastError = null;
+
+  for (let i = 0; i < tiers.length; i++) {
+    const tier = tiers[i];
+    try {
+      const callOpts = {
+        ...opts,
+        baseUrl: tier.baseUrl,
+        apiKey: tier.apiKey,
+        model: (i === 0 && opts.model) ? opts.model : (tier.model || opts.model || LLM.model),
+      };
+
+      const res = await callLLM(callOpts);
+      if (res.ok) {
+        if (i > 0) {
+          console.log(`[LLM] Fallback tier ${i} (${tier.label || tier.provider}) succeeded`);
+        }
+        return res;
+      }
+
+      const status = res.status;
+      const shouldFallback = status === 429 || status >= 500 || status === 402 || status === 403 || status === 404;
+      if (!shouldFallback || i === tiers.length - 1) {
+        return res;
+      }
+
+      console.warn(`[LLM] Tier ${i} (${tier.label || tier.provider}) answered ${status} — retrying via next fallback...`);
+      lastResponse = res;
+    } catch (err) {
+      lastError = err;
+      if (isUnreachable(err) && i < tiers.length - 1) {
+        console.warn(`[LLM] Tier ${i} (${tier.label || tier.provider}) unreachable (${err.message}) — retrying via next fallback...`);
+        continue;
+      }
+      if (i === tiers.length - 1) {
+        throw err;
+      }
+    }
+  }
+
+  if (lastResponse) return lastResponse;
+  if (lastError) throw lastError;
+  return callLLM(opts);
 }
 
 function extractText(data) {
@@ -76,14 +128,18 @@ function budgetFor(message, history) {
   const words = m.split(/\s+/).filter(Boolean).length;
 
   const isGreeting = words <= 6 && /^(hi|hii+|hey|hello|yo|sup|good (morning|afternoon|evening)|thanks|thank you|ok|okay|cool|nice|bye)\b/.test(m);
-  const wantsDepth = /\b(explain|detail|deep|architecture|how (does|did|do)|compare|versus|vs\.?|walk me through|tell me (more|about|everything)|all (of )?(his|the|soham)|list|breakdown|why)\b/.test(m) || words > 30;
-  const isComplexReasoning = /\b(compare|versus|vs\.?|trade-?offs?|best|strongest|rank|which (project|skill)|suited|fit for|why should|evaluate)\b/.test(m);
+  const wantsDepth = /\b(explain|detail|deep|architecture|how (does|did|do)|compare|versus|vs\.?|walk me through|tell me (more|about|everything)|all (of )?(his|the|soham)|list|breakdown|why|thesis|algorithm|portfolio|projects?)\b/.test(m) || words > 25;
+  const isComplexReasoning = /\b(compare|versus|vs\.?|trade-?offs?|best|strongest|rank|which (project|skill)|suited|fit for|why should|evaluate|benchmark|optimize|optimization)\b/.test(m);
 
-  if (isGreeting) return { responseTokens: 256 };
-  if (isComplexReasoning) return { responseTokens: 2048 };
-  if (wantsDepth) return { responseTokens: 2048 };
-  const followUp = history.length > 4 ? 256 : 0; // a bit more room deeper into a conversation
-  return { responseTokens: 1024 + followUp };
+  /* Diffusion LLMs (Mercury) and reasoning models generate internal reasoning
+     tokens (~50–300 tokens) before answer tokens. We calibrate budgets so reasoning
+     never exhausts the token allocation.
+     All tiers (Mercury 131k, Gemini 8k, GLM 8k) comfortably handle these limits. */
+  if (isGreeting) return { responseTokens: 1024 };
+  if (isComplexReasoning) return { responseTokens: 3072 };
+  if (wantsDepth) return { responseTokens: 3072 };
+  const followUp = history.length > 4 ? 512 : 0;
+  return { responseTokens: 1536 + followUp };
 }
 
 const UNREACHABLE_MSG = `No model server is answering at ${LLM.baseUrl || '(unset)'}. Start it (e.g. \`ollama serve\`) or point LLM_API_BASE somewhere that is running.`;

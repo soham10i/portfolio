@@ -42,15 +42,19 @@ function parseNote(raw, slug) {
   };
 }
 
+/* Frontmatter values are single-line. A newline inside one would start a new
+   `key: value` line, letting a title add or overwrite other fields. */
+const oneLine = (v) => String(v ?? '').replace(/[\r\n]+/g, ' ').trim();
+
 function serialiseNote({ title, summary, topic, tags, updated, body }) {
   const tagList = (Array.isArray(tags) ? tags : String(tags || '').split(','))
-    .map((t) => String(t).trim()).filter(Boolean).join(', ');
+    .map((t) => oneLine(t)).filter(Boolean).join(', ');
   const fm = [
-    `title: ${title}`,
-    `summary: ${summary || ''}`,
-    `topic: ${topic || 'Notes'}`,
+    `title: ${oneLine(title)}`,
+    `summary: ${oneLine(summary)}`,
+    `topic: ${oneLine(topic) || 'Notes'}`,
     `tags: ${tagList}`,
-    `updated: ${updated || new Date().toISOString()}`,
+    `updated: ${oneLine(updated) || new Date().toISOString()}`,
   ].join('\n');
   return `---\n${fm}\n---\n${body}`;
 }

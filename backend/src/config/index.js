@@ -9,7 +9,7 @@
  * explicit LLM_API_BASE / LLM_MODEL variables still take precedence, so every
  * configuration that worked before this file gained a registry still works. */
 const path = require('path');
-const { resolve } = require('./providers');
+const { resolve, resolveProvider, PROVIDERS } = require('./providers');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -37,9 +37,9 @@ const vision = {
   apiKey: visionRaw.apiKey || (visionRaw.baseUrl ? '' : text.apiKey),
 };
 
-/* The fallback is tried when the primary answers 429 or 5xx. Free tiers
-   rate-limit hard, and the whole value of a fallback is that it is a DIFFERENT
-   vendor — pointing it at the same one buys nothing. */
+/* The fallback chain is tried when the primary answers 429, 5xx, or quota errors.
+   Free tiers rate-limit hard, and the fallback chain tries secondary providers
+   (e.g., Mercury -> Gemini -> GLM) before giving up. */
 const fallbackRaw = resolve({
   providerEnv: 'LLM_FALLBACK_PROVIDER',
   baseEnv: 'LLM_FALLBACK_API_BASE',
@@ -47,30 +47,85 @@ const fallbackRaw = resolve({
   keyEnv: 'LLM_FALLBACK_API_KEY',
 });
 
+// Fallback provider sequence (default: Mercury -> Gemini -> GLM)
+const fallbackNames = (process.env.LLM_FALLBACK_PROVIDERS
+  ? process.env.LLM_FALLBACK_PROVIDERS.split(',')
+  : (process.env.LLM_FALLBACK_PROVIDER ? [process.env.LLM_FALLBACK_PROVIDER] : (text.provider === 'mercury' ? ['gemini', 'glm'] : []))
+).map((s) => s.trim().toLowerCase()).filter(Boolean);
+
+const fallbacks = [];
+
+// If multiple Mercury backup keys exist, include them right after primary Mercury
+if (text.provider === 'mercury') {
+  const extraKeys = [
+    process.env.MERCURY_API_KEY_2,
+    process.env.Mercury_API_KEY_2,
+    process.env.MERCURY_API_KEY_3,
+    process.env.Mercury_API_KEY_3,
+  ].filter(Boolean);
+  for (let i = 0; i < extraKeys.length; i++) {
+    const k = extraKeys[i];
+    if (k && k !== text.apiKey) {
+      fallbacks.push({
+        provider: 'mercury',
+        label: `Inception Labs (Mercury backup key #${i + 2})`,
+        baseUrl: text.baseUrl,
+        model: text.model,
+        apiKey: k,
+        contextWindow: 1_000_000,
+        maxOutputTokens: 131_072,
+      });
+    }
+  }
+}
+
+for (const name of fallbackNames) {
+  if (name === text.provider) continue;
+  const p = resolveProvider(name, 'text', process.env);
+  if (p && p.baseUrl) {
+    fallbacks.push(p);
+  }
+}
+
+if (fallbackRaw.baseUrl && !fallbacks.some((f) => f.baseUrl === fallbackRaw.baseUrl)) {
+  fallbacks.push({
+    provider: fallbackRaw.provider || 'custom',
+    label: fallbackRaw.provider ? (PROVIDERS[fallbackRaw.provider]?.label || fallbackRaw.provider) : 'Custom Fallback',
+    baseUrl: fallbackRaw.baseUrl,
+    model: fallbackRaw.model,
+    apiKey: fallbackRaw.apiKey,
+    contextWindow: (fallbackRaw.provider && PROVIDERS[fallbackRaw.provider]?.contextWindow) || 128_000,
+    maxOutputTokens: (fallbackRaw.provider && PROVIDERS[fallbackRaw.provider]?.maxOutputTokens) || 8_192,
+  });
+}
+
 const config = {
   isProd,
   port: Number(process.env.PORT) || 3001,
 
-  /* Language model: any OpenAI-compatible /chat/completions endpoint — Groq,
-     OpenRouter, NVIDIA NIM, Gemini's compat layer, vLLM, Ollama, LM Studio.
-     Deliberately not tied to one vendor. */
+  /* Language model: any OpenAI-compatible /chat/completions endpoint — Mercury,
+     Gemini's compat layer, GLM, Groq, NVIDIA NIM, OpenRouter, Ollama. */
   llm: {
     provider: text.provider,
+    label: text.provider ? (PROVIDERS[text.provider]?.label || text.provider) : 'Custom',
     baseUrl: text.baseUrl,
-    model: text.model || 'qwen2.5:7b-instruct',
+    model: text.model || 'mercury-3',
     apiKey: text.apiKey,
+    contextWindow: (text.provider && PROVIDERS[text.provider]?.contextWindow) || 1_000_000,
+    maxOutputTokens: (text.provider && PROVIDERS[text.provider]?.maxOutputTokens) || 131_072,
     timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 120_000,
     get ready() { return !!this.baseUrl; },
 
     visionProvider: visionRaw.provider,
     visionBaseUrl: vision.baseUrl,
-    visionModel: vision.model || 'qwen2.5vl:7b',
+    visionModel: vision.model || 'gemini-3.5-flash-lite',
     visionApiKey: vision.apiKey,
     get visionReady() { return !!this.visionBaseUrl; },
 
-    fallback: fallbackRaw.baseUrl
+    fallback: fallbacks[0] || (fallbackRaw.baseUrl
       ? { baseUrl: fallbackRaw.baseUrl, model: fallbackRaw.model, apiKey: fallbackRaw.apiKey }
-      : null,
+      : null),
+    fallbacks,
   },
 
   /* The project's own FastAPI + BLIP captioning service, when it is hosted. */
@@ -78,6 +133,10 @@ const config = {
     baseUrl: (process.env.SCENE_API_BASE || '').replace(/\/$/, ''),
     timeoutMs: Number(process.env.SCENE_TIMEOUT_MS) || 120_000,
     maxImageBytes: 1_500_000,          // ~1.5 MB of JPEG is plenty at 512 px
+    /* Shared secret the captioning service checks, so only this backend can
+       spend its GPU. Sent as X-Scene-Token; unset means the service is open. */
+    apiToken: process.env.SCENE_API_TOKEN || '',
+    get headers() { return this.apiToken ? { 'X-Scene-Token': this.apiToken } : {}; },
   },
 
   notes: {
@@ -124,6 +183,19 @@ const config = {
     timeoutMs: Number(process.env.ELEVENLABS_TIMEOUT_MS) || 30_000,
     maxChars: 1200,
     get ready() { return !!(this.apiKey && this.voiceId); },
+  },
+
+  /* NEXUS, the governed agent runtime in ../nexus (ADR-0039 there). It binds to
+     loopback only, so it must run on this host. The token belongs to an
+     `agent` principal with the `requester` role only: it can ask and read,
+     never plan, approve or execute. Unset -> /api/nexus reports "not configured". */
+  nexus: {
+    baseUrl: (process.env.NEXUS_URL || '').replace(/\/$/, ''),
+    token: process.env.NEXUS_TOKEN || '',
+    /* false keeps every NEXUS model call on its private (local) providers. */
+    cloud: process.env.NEXUS_CLOUD === 'true',
+    timeoutMs: Number(process.env.NEXUS_TIMEOUT_MS) || 90_000,
+    get ready() { return !!(this.baseUrl && this.token); },
   },
 
   limits: {

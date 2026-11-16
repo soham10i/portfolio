@@ -41,7 +41,7 @@ function validate(req) {
   return {
     message: message.trim(), history: cleanHistory, voice: voice === true,
     conversationId: chatStore.isConversationId(conversationId) ? conversationId : null,
-    page: typeof page === 'string' ? page : null,
+    page: typeof page === 'string' ? page.slice(0, 200) : null,
   };
 }
 
